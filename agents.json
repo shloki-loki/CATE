@@ -47,6 +47,27 @@
    "limited_until": null,
    "last_seen": "2026-11-26T02:27:27+05:30",
    "created_at": "2026-11-26T02:02:55+05:30"
+  },
+  {
+   "id": "free-gemini",
+   "label": "Gemini (free API key)",
+   "provider": "google",
+   "runner": "api",
+   "account": "",
+   "model": "gemini-2.5-flash",
+   "skills": [
+    "write",
+    "review",
+    "plan"
+   ],
+   "weekly_budget_tokens": 0,
+   "status": "active",
+   "limited_until": null,
+   "last_seen": null,
+   "created_at": "2026-11-26T02:42:13+05:30",
+   "preset": "gemini",
+   "secret": "GEMINI_API_KEY",
+   "limits": {}
   }
  ]
 }
