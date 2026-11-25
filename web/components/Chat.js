@@ -14,6 +14,24 @@ const STATUS = {
 };
 const OPEN = ['queued', 'claimed', 'review', 'reviewing'];
 
+// The unsent text in the chat box is kept in this browser (localStorage), one draft per project,
+// so it survives switching projects, leaving the page, or reloading.
+const draftKey = (chatId) => `cate:draft:${chatId || 'new'}`;
+function readDraft(chatId) {
+  try { return window.localStorage.getItem(draftKey(chatId)) || ''; } catch { return ''; }
+}
+function writeDraft(chatId, value) {
+  try {
+    if (value) window.localStorage.setItem(draftKey(chatId), value);
+    else window.localStorage.removeItem(draftKey(chatId));
+  } catch {}
+}
+function fitHeight(el) {
+  if (!el) return;
+  el.style.height = 'auto';
+  el.style.height = `${Math.min(260, el.scrollHeight)}px`;
+}
+
 function ago(iso) {
   if (!iso) return '';
   const m = Math.round((Date.now() - new Date(iso).getTime()) / 60000);
@@ -208,6 +226,9 @@ export default function Chat({ chatId, initial, agents, models, recommended, sup
   const bottom = useRef(null);
   const fileInput = useRef(null);
   const statusKey = useRef('');
+  const textBox = useRef(null);
+  const modelsAnchor = useRef(null);
+  const usageAnchor = useRef(null);
 
   const chat = data.chat;
   const tasks = data.tasks || [];
@@ -233,6 +254,29 @@ export default function Chat({ chatId, initial, agents, models, recommended, sup
   useEffect(() => { setData(initial); }, [initial]);
   useEffect(() => { bottom.current?.scrollIntoView({ block: 'end' }); }, [chat?.messages?.length, optimistic]);
 
+  // Restore the saved draft on mount (after hydration, so server and client HTML match).
+  useEffect(() => {
+    const saved = readDraft(chatId);
+    if (saved) setText((cur) => cur || saved);
+  }, [chatId]);
+  useEffect(() => { fitHeight(textBox.current); }, [text]);
+  // Every edit goes through here so the draft in localStorage always matches the box.
+  const updateText = (value) => { setText(value); writeDraft(chatId, value); };
+
+  // An open popover (model picker or limits panel) closes on a click/tap outside it or on Escape.
+  useEffect(() => {
+    if (!open) return undefined;
+    const anchor = open === 'models' ? modelsAnchor : usageAnchor;
+    const onPointer = (e) => { if (anchor.current && !anchor.current.contains(e.target)) setOpen(''); };
+    const onKey = (e) => { if (e.key === 'Escape') setOpen(''); };
+    document.addEventListener('pointerdown', onPointer);
+    document.addEventListener('keydown', onKey);
+    return () => {
+      document.removeEventListener('pointerdown', onPointer);
+      document.removeEventListener('keydown', onKey);
+    };
+  }, [open]);
+
   const agentRows = useMemo(() => agents, [agents]);
   const toggle = (agent, model) => setSelection((sel) => (sel.some((s) => s.agent === agent && s.model === model)
     ? sel.filter((s) => !(s.agent === agent && s.model === model)) : [...sel, { agent, model, kind: '' }]));
@@ -248,11 +292,12 @@ export default function Chat({ chatId, initial, agents, models, recommended, sup
     setOptimistic({ text, files: files.map((f) => f.name) });
     setError('');
     const sent = text;
-    setText('');
+    setText(''); // the saved draft stays until the message is accepted (or restored below on error)
     setFiles([]);
     start(async () => {
       const result = await sendMessage(form);
-      if (!result?.ok) { setError(result?.error || 'Could not send.'); setText(sent); setOptimistic(null); return; }
+      if (!result?.ok) { setError(result?.error || 'Could not send.'); updateText(sent); setOptimistic(null); return; }
+      writeDraft(chatId, '');
       if (!chatId && result.chatId) { router.push(`/c/${result.chatId}`); return; }
       await poll();
       setOptimistic(null);
@@ -284,7 +329,7 @@ export default function Chat({ chatId, initial, agents, models, recommended, sup
             <p>Describe the project. The supervisor{supervisor ? '' : ' (off until a free Groq key is added)'} frames it with you, then hands each step to the best model on the account with the most limit left.</p>
             <div className="suggestions">
               {['Tailor my resume (attached) to a current Founder’s Office opening in Bengaluru', 'Research 10 companies hiring for strategy roles and summarise each', 'Plan and build a landing page for my NGO’s donation drive'].map((s) => (
-                <button key={s} className="suggestion" onClick={() => setText(s)}>{s}</button>
+                <button key={s} className="suggestion" onClick={() => updateText(s)}>{s}</button>
               ))}
             </div>
           </div>
@@ -349,20 +394,21 @@ export default function Chat({ chatId, initial, agents, models, recommended, sup
             </div>
           ) : null}
           <textarea
+            ref={textBox}
             value={text} placeholder={chatId ? 'Reply, add details, or ask for changes…' : 'Describe your project…'} rows={2}
-            onChange={(e) => { setText(e.target.value); e.target.style.height = 'auto'; e.target.style.height = `${Math.min(260, e.target.scrollHeight)}px`; }}
+            onChange={(e) => updateText(e.target.value)}
             onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); submit(); } }}
           />
           <div className="composer-bar">
             <input ref={fileInput} type="file" multiple hidden onChange={(e) => setFiles([...files, ...Array.from(e.target.files || [])].slice(0, 5))} />
             <button className="tool" onClick={() => fileInput.current?.click()} title="Attach files"><Clip /></button>
-            <div className="pop-anchor">
+            <div className="pop-anchor" ref={modelsAnchor}>
               <button className="tool" aria-expanded={open === 'models'} onClick={() => setOpen(open === 'models' ? '' : 'models')}><Spark /> {selection.length ? `${selection.length} model${selection.length > 1 ? 's' : ''}` : 'Models: auto'}</button>
               {open === 'models' ? <ModelPicker agents={agentRows} models={models} recommended={recommended} selection={selection} toggle={toggle} onClose={() => setOpen('')} /> : null}
             </div>
             <button className="tool" aria-pressed={compare} disabled={selection.length < 2} onClick={() => setCompare(!compare)} title={selection.length < 2 ? 'Pick two or more models to compare their answers side by side' : 'Send the same prompt to each picked model'}><Split /> Compare</button>
             <span className="spacer" />
-            <div className="pop-anchor">
+            <div className="pop-anchor" ref={usageAnchor}>
               <button className="tool" aria-expanded={open === 'usage'} onClick={() => setOpen(open === 'usage' ? '' : 'usage')} title="Limits left on every connection">
                 <Ring value={data.usage?.lowest} /> {data.usage?.lowest !== null && data.usage?.lowest !== undefined ? `${data.usage.lowest}%` : '–'}
               </button>
