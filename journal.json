@@ -125,6 +125,15 @@
    "title": "New agent free-github (other, api)",
    "detail": "",
    "ref": ""
+  },
+  {
+   "id": "J0015",
+   "at": "2026-11-26T02:39:37+05:30",
+   "by": "claude-setup",
+   "kind": "update",
+   "title": "Cancelled T0002",
+   "detail": "Owner will create the resume task on the dashboard",
+   "ref": "T0002"
   }
  ]
 }

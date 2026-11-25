@@ -70,7 +70,7 @@
     "workspace/inputs/resume.md",
     "outputs/T0001.md"
    ],
-   "status": "queued",
+   "status": "cancelled",
    "attempts": 0,
    "exclude": [],
    "review": {
@@ -97,9 +97,16 @@
      "actor": "owner",
      "event": "created",
      "detail": ""
+    },
+    {
+     "at": "2026-11-26T02:39:37+05:30",
+     "actor": "claude-setup",
+     "event": "cancelled",
+     "detail": "Owner will create the resume task on the dashboard"
     }
    ],
-   "updated_at": "2026-11-26T02:02:55+05:30"
+   "updated_at": "2026-11-26T02:39:37+05:30",
+   "reviewer": null
   }
  ]
 }
