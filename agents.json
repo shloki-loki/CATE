@@ -77,15 +77,15 @@
    "provider": "google",
    "runner": "api",
    "account": "",
-   "model": "gemini-2.5-flash",
+   "model": "gemini-3.8-flash",
    "skills": [
     "write",
     "review",
     "plan"
    ],
    "weekly_budget_tokens": 0,
-   "status": "limited",
-   "limited_until": "2026-11-26T04:22:46+05:30",
+   "status": "active",
+   "limited_until": null,
    "last_seen": "2026-11-26T03:22:45+05:30",
    "created_at": "2026-11-26T02:42:13+05:30",
    "preset": "gemini",
