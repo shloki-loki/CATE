@@ -15,7 +15,7 @@ export const RUNNERS = {
 
 // Free (or nearly free) models an API agent can use. Mirrors cate/api_agent.py PRESETS.
 export const PRESETS = {
-  gemini: { label: 'Google Gemini', free: 'Free tier (Flash)', model: 'gemini-2.5-flash', secret: 'GEMINI_API_KEY', key: 'https://aistudio.google.com/apikey', note: 'Free key from Google AI Studio; daily request cap.' },
+  gemini: { label: 'Google Gemini', free: 'Free tier (Flash)', model: 'gemini-3.8-flash', secret: 'GEMINI_API_KEY', key: 'https://aistudio.google.com/apikey', note: 'Free key from Google AI Studio; daily request cap.' },
   openrouter: { label: 'OpenRouter', free: '25+ free models', model: 'openrouter/free', secret: 'OPENROUTER_API_KEY', key: 'https://openrouter.ai/keys', note: 'One key, many free models (DeepSeek, Llama, Qwen…); rate-limited.' },
   groq: { label: 'Groq', free: 'Free tier', model: 'llama-3.3-70b-versatile', secret: 'GROQ_API_KEY', key: 'https://console.groq.com/keys', note: 'Very fast open models; free daily limits.' },
   mistral: { label: 'Mistral', free: 'Free experiment tier', model: 'mistral-small-latest', secret: 'MISTRAL_API_KEY', key: 'https://console.mistral.ai/api-keys', note: 'Free tier for experimenting.' },

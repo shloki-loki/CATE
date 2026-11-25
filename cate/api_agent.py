@@ -15,7 +15,7 @@ from .cli import read_input
 
 # name: (label, base URL, default model, secret holding the key, where to get a free key, note)
 PRESETS = {
-    "gemini": ("Google Gemini (free tier)", "https://generativelanguage.googleapis.com/v1beta/openai", "gemini-2.5-flash",
+    "gemini": ("Google Gemini (free tier)", "https://generativelanguage.googleapis.com/v1beta/openai", "gemini-3.8-flash",
                "GEMINI_API_KEY", "https://aistudio.google.com/apikey", "Free tier: Flash models, daily request cap."),
     "openrouter": ("OpenRouter free models", "https://openrouter.ai/api/v1", "openrouter/free",
                    "OPENROUTER_API_KEY", "https://openrouter.ai/keys", "25+ free models; rate-limited."),
