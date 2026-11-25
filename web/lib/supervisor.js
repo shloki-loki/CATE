@@ -58,6 +58,7 @@ Rules:
 - Prefer the recommended model per job, and accounts with more limit left. Put "review":"cross" on steps whose
   output matters, with 2-4 concrete checks the reviewer scores against.
 - Steps may depend on earlier ones with "after": [index of earlier step, 0-based].
+- Never add separate "review" steps for work you already marked "review":"cross": CATE reviews it automatically.
 - Requests to change CATE itself (this dashboard, its agents, its code) are "code" steps on a subscription
   agent; their brief must say: work on a branch, run the tests, open a pull request for the owner to merge.
 - Use the agent ids and model ids exactly as listed. Never invent facts about the user.
@@ -117,6 +118,12 @@ export function sanitize(parsed, catalog, agents, selection) {
       agent = agents.find((a) => a.id === pick.agent) || agent;
       s.model = pick.agent === agent?.id ? pick.model : s.model;
     }
+    if (!selection?.length) {
+      // No models picked: the account follows CATE's rule (best score for the job, then most limit left).
+      const b = bestFor(catalog, agents, kind, { allowFree: Boolean(agent && agent.runner === 'api' && ['plan', 'review', 'data'].includes(kind)) });
+      agent = agents.find((a) => a.id === b?.agent) || agent;
+      if (b && agent?.id === b.agent && !(s.model && agent.models?.includes?.(s.model))) s.model = b.model;
+    }
     if (!agent) {
       const b = bestFor(catalog, agents, kind);
       agent = agents.find((a) => a.id === b?.agent);
@@ -130,5 +137,9 @@ export function sanitize(parsed, catalog, agents, selection) {
       after: (Array.isArray(s.after) ? s.after : []).filter((i) => Number.isInteger(i) && i >= 0),
     };
   });
-  return { reply, plan: { summary: String(parsed.plan.summary || '').slice(0, 300), steps } };
+  // Drop review steps that only re-check a step already marked for automatic cross review.
+  const kept = steps.filter((st, i) => !(st.kind === 'review' && steps.slice(0, i).some((p) => p.review === 'cross')));
+  const remap = steps.map((st) => kept.indexOf(st));
+  for (const st of kept) st.after = st.after.map((i) => remap[i]).filter((i) => i >= 0);
+  return { reply, plan: { summary: String(parsed.plan.summary || '').slice(0, 300), steps: kept } };
 }
