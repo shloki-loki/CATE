@@ -392,7 +392,7 @@
    "priority": 1,
    "after": [],
    "inputs": [],
-   "status": "queued",
+   "status": "claimed",
    "attempts": 0,
    "exclude": [],
    "review": {
@@ -404,7 +404,7 @@
    "created_by": "claude-setup",
    "created_at": "2026-11-26T03:31:11+05:30",
    "queued_at": "2026-11-26T03:31:11+05:30",
-   "claimed_by": null,
+   "claimed_by": "gpt-1",
    "result": null,
    "reviews": [],
    "history": [
@@ -413,9 +413,16 @@
      "actor": "claude-setup",
      "event": "created",
      "detail": ""
+    },
+    {
+     "at": "2026-11-26T03:31:41+05:30",
+     "actor": "gpt-1",
+     "event": "claimed",
+     "detail": ""
     }
    ],
-   "updated_at": "2026-11-26T03:31:11+05:30"
+   "updated_at": "2026-11-26T03:31:41+05:30",
+   "claimed_at": "2026-11-26T03:31:41+05:30"
   }
  ]
 }
