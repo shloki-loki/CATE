@@ -260,6 +260,15 @@
    "title": "Changed agent gpt-1",
    "detail": "",
    "ref": ""
+  },
+  {
+   "id": "J0030",
+   "at": "2026-11-26T03:13:13+05:30",
+   "by": "claude-2",
+   "kind": "claim",
+   "title": "Took T0005: Connection test: claude-2",
+   "detail": "",
+   "ref": "T0005"
   }
  ]
 }
