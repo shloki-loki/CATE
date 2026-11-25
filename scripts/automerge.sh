@@ -8,17 +8,19 @@ candidates=$(python3 -m cate merge-candidates --json)
 if [ "$candidates" = "[]" ] || [ -z "$candidates" ]; then echo "Nothing to merge."; exit 0; fi
 author=$(python3 -c 'from cate.util import settings; print(settings()["merge"]["author"])')
 name="${author% <*}"; email="${author##*<}"; email="${email%>}"
+repo=$(python3 -c 'from cate.util import settings; print(settings()["repo"])')
 
 record() { python3 -m cate merge-record --task "$task" --pr "$pr" --status "$1" --detail "$2"; }
 
 while read -r task pr; do
   [ -n "$task" ] || continue
   echo "== $task: pull request #$pr"
-  info=$(gh pr view "$pr" --json state,headRefName,baseRefName,files \
-         --jq '[.state, .headRefName, .baseRefName, ([.files[].path] | join(" "))] | @tsv') || { record waiting "could not read the pull request"; continue; }
-  IFS=$'\t' read -r state head base files <<<"$info"
-  if [ "$state" = MERGED ]; then record merged "it was already merged on GitHub"; continue; fi
-  if [ "$state" != OPEN ]; then record blocked "the pull request is ${state,,}"; continue; fi
+  info=$(gh api "repos/$repo/pulls/$pr" --jq '[.state, (.merged|tostring), .head.ref, .base.ref] | @tsv') \
+    || { record waiting "could not read the pull request"; continue; }
+  IFS=$'\t' read -r state merged head base <<<"$info"
+  files=$(gh api --paginate "repos/$repo/pulls/$pr/files" --jq '.[].filename' | tr '\n' ' ')
+  if [ "$merged" = true ]; then record merged "it was already merged on GitHub"; continue; fi
+  if [ "$state" != open ]; then record blocked "the pull request is $state"; continue; fi
   case "$head" in cate/*) ;; *) record blocked "branch $head is not an agent branch"; continue ;; esac
   if [ "$base" != main ]; then record blocked "it targets $base, not main"; continue; fi
   if [[ " $files" == *" .github/"* ]]; then record blocked "it changes .github/ (workflow changes need the owner)"; continue; fi
@@ -38,7 +40,7 @@ while read -r task pr; do
     fi
   fi
   if git push -q origin automerge:main; then
-    gh pr comment "$pr" --body "Merged by CATE ($task): another model reviewed the change, and the tests and site build passed on the merged result." > /dev/null || true
+    gh api "repos/$repo/issues/$pr/comments" -f body="Merged by CATE ($task): another model reviewed the change, and the tests and site build passed on the merged result." > /dev/null || true
     record merged "review, tests and build passed"
   else
     record waiting "main changed while checking; will retry next run"
