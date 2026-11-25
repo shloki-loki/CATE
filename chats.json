@@ -258,8 +258,12 @@
         "after": [],
         "inputs": []
        }
-      ]
-     }
+      ],
+      "started": true
+     },
+     "tasks": [
+      "T0009"
+     ]
     }
    ],
    "selection": [
