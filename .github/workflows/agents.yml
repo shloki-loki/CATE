@@ -29,8 +29,8 @@ jobs:
       agents: ${{ steps.plan.outputs.agents }}
       before: ${{ steps.plan.outputs.before }}
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
+      - uses: actions/checkout@v5
         with: { ref: data, path: data }
       - name: Supervise, then choose who should run
         id: plan
@@ -56,10 +56,11 @@ jobs:
       AGENT: ${{ matrix.agent }}
       SECRET_NAME: ${{ matrix.secret }}
       AGENT_SECRET: ${{ secrets[matrix.secret] }}
+      MODEL: ${{ matrix.model }}
       CATE_DEFER_TOKENS: "1"
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
+      - uses: actions/checkout@v5
         with: { ref: data, path: data }
       - name: Check this agent is connected
         id: secret
@@ -79,9 +80,11 @@ jobs:
           CLAUDE_CODE_OAUTH_TOKEN: ${{ secrets[matrix.secret] }}
         run: |
           npm install -g @anthropic-ai/claude-code >/dev/null 2>&1
+          model_args=(); [[ "$MODEL" =~ ^[A-Za-z0-9._:/-]+$ ]] && model_args=(--model "$MODEL")
           claude -p "$(python3 -m cate agent prompt "$AGENT" --actions)" \
             --output-format stream-json --verbose --dangerously-skip-permissions --max-turns 120 \
-            ${{ matrix.model && format('--model {0}', matrix.model) || '' }} > run.jsonl || echo "::warning::claude exited with an error"
+            "${model_args[@]}" > run.jsonl || echo "::warning::claude exited with an error"
+          grep -m1 '"is_error":true' run.jsonl | head -c 600 || true
           tail -c 2000 run.jsonl | grep -o '"result":"[^"]*' | tail -1 || true
           python3 -m cate usage --agent "$AGENT" --stream run.jsonl
 
@@ -101,9 +104,11 @@ jobs:
           chmod 600 ~/.codex/auth.json
           printf 'cli_auth_credentials_store = "file"\n' > ~/.codex/config.toml
           npm install -g @openai/codex >/dev/null 2>&1
+          model_args=(); [[ "$MODEL" =~ ^[A-Za-z0-9._:/-]+$ ]] && model_args=(--model "$MODEL")
           codex exec --json --dangerously-bypass-approvals-and-sandbox --skip-git-repo-check \
-            ${{ matrix.model && format('--model {0}', matrix.model) || '' }} \
-            "$(python3 -m cate agent prompt "$AGENT" --actions)" > run.jsonl || echo "::warning::codex exited with an error"
+            "${model_args[@]}" "$(python3 -m cate agent prompt "$AGENT" --actions)" > run.jsonl 2> codex.err \
+            || { echo "::warning::codex exited with an error"; tail -c 1500 codex.err; }
+          grep -iE '"type":"(error|turn.failed)"' run.jsonl | head -c 1500 || true
           python3 -m cate usage --agent "$AGENT" --stream run.jsonl
       - name: Keep the refreshed Codex login
         if: always() && steps.secret.outputs.ok == 'true' && matrix.runner == 'codex-actions'
@@ -125,8 +130,8 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
+      - uses: actions/checkout@v5
         with: { ref: data, path: data }
       - name: Start again only if the work moved on
         env:

@@ -162,9 +162,16 @@ def plan_dispatch(agents: list[dict], tasks: list[dict], ledger: dict) -> list[d
         if candidates:
             best = min(candidates, key=lambda a: score(a, task))
             chosen[best["id"]] = {"agent": best["id"], "runner": best["runner"], "provider": best.get("provider"),
-                                  "secret": agent_secret(best), "model": best.get("model") or "",
+                                  "secret": agent_secret(best), "model": model_id(best.get("model")),
                                   "preset": best.get("preset") or "", "task": task["id"]}
     return list(chosen.values())
+
+
+def model_id(text: str | None) -> str:
+    """Only a real model id (no spaces or brackets) is passed to a CLI; descriptions like
+    "Claude (Pro plan)" mean "the account's default model"."""
+    import re
+    return text if text and re.fullmatch(r"[A-Za-z0-9._:/-]+", text) else ""
 
 
 def agent_secret(agent: dict) -> str:
