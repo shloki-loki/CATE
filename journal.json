@@ -170,6 +170,15 @@
    "title": "Cancelled T0003",
    "detail": "GitHub Models was retired in July 2026",
    "ref": "T0003"
+  },
+  {
+   "id": "J0020",
+   "at": "2026-11-26T02:42:11+05:30",
+   "by": "claude-setup",
+   "kind": "update",
+   "title": "Removed agent free-github",
+   "detail": "GitHub Models retired July 2026",
+   "ref": ""
   }
  ]
 }
