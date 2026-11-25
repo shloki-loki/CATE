@@ -53,6 +53,15 @@
    "title": "Changed agent claude-1",
    "detail": "",
    "ref": ""
+  },
+  {
+   "id": "J0007",
+   "at": "2026-11-26T02:04:24+05:30",
+   "by": "claude-1",
+   "kind": "run",
+   "title": "Idle",
+   "detail": "nothing in the queue for this agent",
+   "ref": ""
   }
  ]
 }
