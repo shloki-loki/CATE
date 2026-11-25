@@ -39,6 +39,22 @@
    "selection": [],
    "updated_at": "2026-11-26T04:15:44+05:30",
    "archived": true
+  },
+  {
+   "id": "C0002",
+   "title": "Connection check for the supervisor (safe to delete): reply in one sho",
+   "created_at": "2026-11-26T04:30:51+05:30",
+   "messages": [
+    {
+     "id": "M0001",
+     "role": "user",
+     "text": "Connection check for the supervisor (safe to delete): reply in one short sentence and do not propose a plan.",
+     "at": "2026-11-26T04:30:51+05:30",
+     "files": []
+    }
+   ],
+   "selection": [],
+   "updated_at": "2026-11-26T04:30:51+05:30"
   }
  ]
 }
