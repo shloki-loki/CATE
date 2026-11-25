@@ -20,7 +20,7 @@
    "id": "claude-2",
    "label": "Claude Pro · account 2",
    "provider": "anthropic",
-   "runner": "claude-code-scheduled",
+   "runner": "claude-actions",
    "account": "",
    "model": "Claude (Pro plan)",
    "skills": [
