@@ -530,6 +530,49 @@
     "detail": "it was already merged on GitHub",
     "at": "2026-11-26T05:08:14+05:30"
    }
+  },
+  {
+   "id": "T0010",
+   "title": "Auto-merge end-to-end test",
+   "brief": "README one-liner",
+   "kind": "code",
+   "prefer": "any",
+   "priority": 3,
+   "after": [],
+   "inputs": [],
+   "status": "done",
+   "attempts": 0,
+   "exclude": [],
+   "review": {
+    "mode": "none",
+    "pass_score": 80,
+    "checks": []
+   },
+   "parent": null,
+   "model": "",
+   "chat": "",
+   "effort": "",
+   "created_by": "claude-setup",
+   "created_at": "2026-11-26T05:08:51+05:30",
+   "queued_at": "2026-11-26T05:08:51+05:30",
+   "claimed_by": null,
+   "result": {
+    "by": "claude-setup",
+    "at": "2026-11-26T05:08:51+05:30",
+    "text": "Test PR https://github.com/shloki-loki/CATE/pull/2",
+    "tokens_in": 0,
+    "tokens_out": 0
+   },
+   "reviews": [],
+   "history": [
+    {
+     "at": "2026-11-26T05:08:51+05:30",
+     "actor": "claude-setup",
+     "event": "created",
+     "detail": ""
+    }
+   ],
+   "updated_at": "2026-11-26T05:08:51+05:30"
   }
  ]
 }
