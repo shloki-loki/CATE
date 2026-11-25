@@ -188,6 +188,15 @@
    "title": "New agent free-gemini (google, api)",
    "detail": "",
    "ref": ""
+  },
+  {
+   "id": "J0022",
+   "at": "2026-11-26T02:42:36+05:30",
+   "by": "claude-setup",
+   "kind": "update",
+   "title": "Agents waiting to be connected",
+   "detail": "claude-1, claude-2, gpt-1 need their GitHub secrets",
+   "ref": ""
   }
  ]
 }

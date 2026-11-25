@@ -11,10 +11,11 @@
     "any"
    ],
    "weekly_budget_tokens": 1500000,
-   "status": "active",
+   "status": "paused",
    "limited_until": null,
    "last_seen": "2026-11-26T02:04:24+05:30",
-   "created_at": "2026-11-26T02:02:55+05:30"
+   "created_at": "2026-11-26T02:02:55+05:30",
+   "note": "Not connected: run `claude setup-token` with Claude account 1 and save it as the GitHub secret CLAUDE_TOKEN_CLAUDE_1, then press Resume."
   },
   {
    "id": "claude-2",
@@ -27,10 +28,11 @@
     "any"
    ],
    "weekly_budget_tokens": 1500000,
-   "status": "active",
+   "status": "paused",
    "limited_until": null,
    "last_seen": "2026-11-26T02:25:33+05:30",
-   "created_at": "2026-11-26T02:02:55+05:30"
+   "created_at": "2026-11-26T02:02:55+05:30",
+   "note": "Not connected: run `claude setup-token` with Claude account 2 and save it as the GitHub secret CLAUDE_TOKEN_CLAUDE_2, then press Resume."
   },
   {
    "id": "gpt-1",
@@ -43,10 +45,11 @@
     "any"
    ],
    "weekly_budget_tokens": 3000000,
-   "status": "active",
+   "status": "paused",
    "limited_until": null,
    "last_seen": "2026-11-26T02:27:27+05:30",
-   "created_at": "2026-11-26T02:02:55+05:30"
+   "created_at": "2026-11-26T02:02:55+05:30",
+   "note": "Not connected: save your Codex login (~/.codex/auth.json) as the GitHub secret CODEX_AUTH_GPT_1, then press Resume."
   },
   {
    "id": "free-gemini",
