@@ -38,7 +38,7 @@
    "provider": "openai",
    "runner": "codex-actions",
    "account": "",
-   "model": "Codex (Pro plan)",
+   "model": "",
    "skills": [
     "any"
    ],
