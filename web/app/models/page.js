@@ -41,7 +41,7 @@ export default async function Models() {
                     <td><code className="inline">{p.model}</code></td>
                     <td>{p.key ? <a className="link" href={p.key} target="_blank" rel="noreferrer">Get a free key</a> : 'None needed'}<div className="sub">secret <code className="inline">{p.secret}</code></div></td>
                     <td>{used(key).join(', ') || '–'}</td>
-                    <td><Link className="button small" href="/agents#add">Add as agent</Link></td>
+                    <td><Link prefetch={false} className="button small" href="/agents#add">Add as agent</Link></td>
                   </tr>
                 ))}
               </tbody>

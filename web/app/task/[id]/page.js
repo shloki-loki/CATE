@@ -21,7 +21,7 @@ export default async function TaskPage({ params }) {
       <TopBar current="/tasks" />
       <main>
         <div className="page-head">
-          <p><Link className="link" href="/tasks">← Tasks</Link></p>
+          <p><Link prefetch={false} className="link" href="/tasks">← Tasks</Link></p>
           <h1>{task.id} · {task.title}</h1>
           <p>
             <span className="pill tone-ready">{task.status}</span>{' '}
@@ -40,8 +40,8 @@ export default async function TaskPage({ params }) {
             <div className="result">{task.brief}</div>
             {task.review?.checks?.length ? (<><div className="section-label" style={{ marginTop: 16 }}>Checks</div><ul>{task.review.checks.map((c) => <li key={c}>{c}</li>)}</ul></>) : null}
             {task.inputs?.length ? (<><div className="section-label" style={{ marginTop: 16 }}>Inputs</div><ul>{task.inputs.map((i) => <li key={i}><code className="inline">{i}</code></li>)}</ul></>) : null}
-            {task.after?.length ? <p>Starts after: {task.after.map((a) => <Link key={a} className="link" href={`/task/${a}`}>{a} </Link>)}</p> : null}
-            {children.length ? <p>Next: {children.map((c) => <Link key={c.id} className="link" href={`/task/${c.id}`}>{c.id} </Link>)}</p> : null}
+            {task.after?.length ? <p>Starts after: {task.after.map((a) => <Link prefetch={false} key={a} className="link" href={`/task/${a}`}>{a} </Link>)}</p> : null}
+            {children.length ? <p>Next: {children.map((c) => <Link prefetch={false} key={c.id} className="link" href={`/task/${c.id}`}>{c.id} </Link>)}</p> : null}
           </div>
           <div>
             <div className="section-label">History</div>

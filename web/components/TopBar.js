@@ -14,10 +14,10 @@ export default function TopBar({ current }) {
   return (
     <header className="topbar">
       <div className="topbar-inner">
-        <Link href="/" className="brand"><span className="mark">CATE</span> Consume All Tokens Effectively</Link>
+        <Link prefetch={false} href="/" className="brand"><span className="mark">CATE</span> Consume All Tokens Effectively</Link>
         <nav className="tabs" aria-label="Sections">
           {TABS.map((tab) => (
-            <Link key={tab.href} href={tab.href} className="tab" aria-current={current === tab.href ? 'page' : undefined}>{tab.label}</Link>
+            <Link prefetch={false} key={tab.href} href={tab.href} className="tab" aria-current={current === tab.href ? 'page' : undefined}>{tab.label}</Link>
           ))}
         </nav>
         {isOpenSite() ? null : <form action={logout}><button className="signout" type="submit">Sign out</button></form>}

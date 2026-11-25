@@ -35,9 +35,23 @@ async function gh(url, options = {}) {
   return response;
 }
 
-async function readRemote(name) {
+// Reads are cached in memory with GitHub's ETag: an unchanged file costs one conditional request that
+// GitHub answers with 304 (no body, not counted against the rate limit), and repeat reads within a couple
+// of seconds (several components rendering one page) cost nothing at all.
+const cache = new Map(); // name -> { etag, value, sha, at }
+const FRESH_MS = 2000;
+
+async function readRemote(name, { fresh = false } = {}) {
   const { name: repoName, branch } = repo();
-  const response = await gh(`/repos/${repoName}/contents/${name}.json?ref=${branch}`);
+  const hit = cache.get(name);
+  if (!fresh && hit && Date.now() - hit.at < FRESH_MS) return { value: structuredClone(hit.value), sha: hit.sha };
+  const response = await gh(`/repos/${repoName}/contents/${name}.json?ref=${branch}`, {
+    headers: hit?.etag && !fresh ? { 'If-None-Match': hit.etag } : {},
+  });
+  if (response.status === 304 && hit) {
+    hit.at = Date.now();
+    return { value: structuredClone(hit.value), sha: hit.sha };
+  }
   if (response.status === 404) return { value: structuredClone(DEFAULTS[name] ?? {}), sha: null };
   if (!response.ok) throw new Error(`GitHub read of ${name}.json failed: ${response.status} ${await response.text()}`);
   const meta = await response.json();
@@ -50,7 +64,9 @@ async function readRemote(name) {
     if (!blob.ok) throw new Error(`GitHub blob read of ${name}.json failed: ${blob.status}`);
     text = await blob.text();
   }
-  return { value: JSON.parse(text), sha: meta.sha };
+  const value = JSON.parse(text);
+  cache.set(name, { etag: response.headers.get('etag'), value, sha: meta.sha, at: Date.now() });
+  return { value: structuredClone(value), sha: meta.sha };
 }
 
 export async function read(name) {
@@ -82,7 +98,7 @@ export async function update(name, change, message) {
   const { name: repoName, branch } = repo();
   let lastError = '';
   for (let attempt = 0; attempt < 6; attempt += 1) {
-    const { value, sha } = await readRemote(name);
+    const { value, sha } = await readRemote(name, { fresh: true });
     const result = await change(value);
     const response = await gh(`/repos/${repoName}/contents/${name}.json`, {
       method: 'PUT',
@@ -94,7 +110,11 @@ export async function update(name, change, message) {
         committer: { name: 'cate site', email: 'cate@users.noreply.github.com' },
       }),
     });
-    if (response.ok) return result;
+    if (response.ok) {
+      const saved = await response.json();
+      cache.set(name, { etag: null, value: structuredClone(value), sha: saved.content?.sha, at: Date.now() });
+      return result;
+    }
     lastError = `${response.status} ${await response.text()}`;
     if (![409, 422].includes(response.status)) break; // only a sha conflict is worth retrying
     await new Promise((resolve) => setTimeout(resolve, 250 * (attempt + 1)));
@@ -103,7 +123,16 @@ export async function update(name, change, message) {
 }
 
 // A text file on main (settings, the agent prompt template), read from disk in a local preview.
+const mainCache = new Map();
 export async function mainFile(relative) {
+  const hit = mainCache.get(relative);
+  if (hit && Date.now() - hit.at < 60000) return hit.text;
+  const text = await mainFileUncached(relative);
+  mainCache.set(relative, { text, at: Date.now() });
+  return text;
+}
+
+async function mainFileUncached(relative) {
   if (localDir()) {
     return fs.readFile(path.resolve(/* turbopackIgnore: true */ process.cwd(), '..', relative), 'utf8');
   }

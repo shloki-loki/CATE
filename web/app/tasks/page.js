@@ -30,7 +30,7 @@ export default async function Tasks() {
                 <div key={key} className="column">
                   <h3>{label} · {items.length}</h3>
                   {items.slice(0, key === 'done' ? 12 : 50).map((t) => (
-                    <Link key={t.id} href={`/task/${t.id}`} className="ticket">
+                    <Link prefetch={false} key={t.id} href={`/task/${t.id}`} className="ticket">
                       <b>{t.id}</b> {t.title}
                       <span className="meta">
                         {t.kind} · P{t.priority}

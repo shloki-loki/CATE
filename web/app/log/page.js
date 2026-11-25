@@ -27,7 +27,7 @@ export default async function Log() {
                     <tr key={e.id}>
                       <td title={e.at}>{when(e.at)}</td>
                       <td>{e.by}</td>
-                      <td>{e.title}{e.ref ? <> · <Link className="link" href={`/task/${e.ref}`}>{e.ref}</Link></> : null}</td>
+                      <td>{e.title}{e.ref ? <> · <Link prefetch={false} className="link" href={`/task/${e.ref}`}>{e.ref}</Link></> : null}</td>
                       <td>{e.detail}</td>
                     </tr>
                   ))}

@@ -23,8 +23,8 @@ export default async function Overview() {
           <p>Agents start only when there is work for them, take the task that fits them best, and hand it in for review by a different model. Tokens and subscription limits are read from each run ({week}).</p>
         </div>
 
-        {!agents.length ? <div className="banner">No agents yet. <Link className="link" href="/agents">Add your Claude and ChatGPT accounts</Link> to get started.</div> : null}
-        {needsYou.length ? <div className="banner bad">{needsYou.length} task{needsYou.length > 1 ? 's need' : ' needs'} you: {needsYou.slice(0, 3).map((t) => `${t.id} ${t.title}`).join('; ')}. <Link className="link" href="/tasks">Open tasks</Link></div> : null}
+        {!agents.length ? <div className="banner">No agents yet. <Link prefetch={false} className="link" href="/agents">Add your Claude and ChatGPT accounts</Link> to get started.</div> : null}
+        {needsYou.length ? <div className="banner bad">{needsYou.length} task{needsYou.length > 1 ? 's need' : ' needs'} you: {needsYou.slice(0, 3).map((t) => `${t.id} ${t.title}`).join('; ')}. <Link prefetch={false} className="link" href="/tasks">Open tasks</Link></div> : null}
 
         <section className="section">
           <div className="section-label">Work</div>
@@ -35,7 +35,7 @@ export default async function Overview() {
             <div className="kpi good"><dt>Done</dt><dd>{count('done')}</dd><span className="hint">passed review</span></div>
             <div className="kpi"><dt>Tokens this week</dt><dd>{fmt(totalWeek)}</dd><span className="hint">all agents, estimated</span></div>
           </dl>
-          <div className="button-row" style={{ marginTop: 10 }}><Link className="button primary" href="/tasks#new">New task</Link><WakeButton /></div>
+          <div className="button-row" style={{ marginTop: 10 }}><Link prefetch={false} className="button primary" href="/tasks#new">New task</Link><WakeButton /></div>
         </section>
 
         <section className="section">
@@ -69,7 +69,7 @@ export default async function Overview() {
           {recent.length ? (
             <ul className="list">
               {recent.map((e) => (
-                <li key={e.id}><span className="when">{when(e.at)}</span> <b>{e.by}</b> {e.title}{e.ref ? <> · <Link className="link" href={`/task/${e.ref}`}>{e.ref}</Link></> : null}{e.detail ? <span className="detail">{e.detail}</span> : null}</li>
+                <li key={e.id}><span className="when">{when(e.at)}</span> <b>{e.by}</b> {e.title}{e.ref ? <> · <Link prefetch={false} className="link" href={`/task/${e.ref}`}>{e.ref}</Link></> : null}{e.detail ? <span className="detail">{e.detail}</span> : null}</li>
               ))}
             </ul>
           ) : <p className="empty">Nothing has happened yet.</p>}
