@@ -189,6 +189,9 @@ function TaskCard({ task, agents, models }) {
         <b>{task.title}</b>
         <span className="pill">{agentLabel}{model ? ` · ${models[model]?.label || model}` : ''}</span>
         <span className={`pill ${statusTone}`}>{STATUS[task.status] || task.status}{working ? ` · ${ago(task.claimed_at || task.reviewing_at)}` : ''}</span>
+        {task.merge ? <span className={`pill ${task.merge.status === 'merged' ? 'ok' : task.merge.status === 'blocked' ? 'bad' : 'warn'}`} title={task.merge.detail}>
+          {task.merge.status === 'merged' ? `✓ Merged PR #${task.merge.pr}` : task.merge.status === 'blocked' ? `Not merged: PR #${task.merge.pr}` : `Merging PR #${task.merge.pr}…`}</span> : null}
+        {(task.status === 'reviewing' ? task.review_run_url : task.run_url) ? <a className="link" style={{ fontSize: 12.5 }} href={task.status === 'reviewing' ? task.review_run_url : task.run_url} target="_blank" rel="noreferrer">View run ↗</a> : null}
       </div>
       {task.status === 'queued' ? <div className="task-body task-meta">Starting an agent… this usually takes 1–3 minutes.</div> : null}
       {task.result ? (

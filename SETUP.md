@@ -52,3 +52,17 @@ After each Claude or Codex run, CATE reads the CLI's own output for the exact to
 Add an agent on the Agents page (Gemini, Grok, DeepSeek, Ollama...). Any tool that can run a shell
 command on a schedule can be an agent: it only needs to run `python3 -m cate tick --agent <id>` and follow
 what it prints.
+
+## 5. Changing CATE from inside CATE (pull requests and auto-merge)
+
+Ask for a change in the chat. A subscription agent makes it on a branch, runs the tests and opens a pull
+request; another subscription agent reviews the real diff (`gh pr diff`) and runs the tests. When the review
+passes, the `merge` job in `.github/workflows/agents.yml` (script `scripts/automerge.sh`) merges it only if:
+
+- the branch is an agent branch (`cate/...`) targeting `main`, with no changes under `.github/`;
+- it merges cleanly, and the tests (plus the site build when `web/` changed) pass on the merged result.
+
+Merge commits are authored as the owner (`[merge] author` in `config/settings.toml`) so Vercel deploys them.
+Anything that fails a check is left open with the reason posted in the project's chat. Turn auto-merge off
+with `auto = false` under `[merge]`. GitHub setting needed once: Settings → Actions → General → "Allow
+GitHub Actions to create and approve pull requests".

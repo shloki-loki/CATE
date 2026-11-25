@@ -158,6 +158,27 @@ jobs:
           CATE_API_KEY: ${{ secrets[matrix.secret] }}
         run: python3 -m cate api --agent "$AGENT"
 
+  merge:
+    # Merge agents' pull requests that passed review, once tests and build pass on the merged result.
+    needs: [plan, run]
+    if: always()
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    concurrency:
+      group: cate-merge
+      cancel-in-progress: false
+    steps:
+      - uses: actions/checkout@v5
+        with: { fetch-depth: 0 }
+      - uses: actions/checkout@v5
+        with: { ref: data, path: data }
+      - uses: actions/setup-node@v4
+        with: { node-version: "22" }
+      - name: Merge what is ready
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: bash scripts/automerge.sh
+
   next:
     needs: [plan, run]
     if: always() && needs.plan.outputs.agents != '[]'

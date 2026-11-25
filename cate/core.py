@@ -179,6 +179,8 @@ def worker_provider(task: dict, agents: list[dict]) -> str:
 def can_review(task: dict, agent: dict, agents: list[dict]) -> bool:
     if task.get("status") != "review":
         return False
+    if task.get("kind") == "code" and agent.get("runner") == "api":
+        return False  # a code change needs a reviewer that can read the diff and run the tests
     skills = agent.get("skills") or ["any"]
     if not ("any" in skills or "review" in skills):
         return False
@@ -318,6 +320,51 @@ def supervise(actor: str = "supervisor") -> list[str]:
 
 # ---- an agent's turn ----------------------------------------------------------------------------
 
+def run_url() -> str:
+    """Link to the GitHub Actions run doing this job (empty outside Actions)."""
+    import os
+    run, repo, server = os.environ.get("GITHUB_RUN_ID"), os.environ.get("GITHUB_REPOSITORY"), os.environ.get("GITHUB_SERVER_URL")
+    return f"{server}/{repo}/actions/runs/{run}" if run and repo and server else ""
+
+
+def pr_number(text: str) -> int | None:
+    import re
+    repo = settings().get("repo", "")
+    match = re.search(rf"github\.com/{re.escape(repo)}/pull/(\d+)", text or "", re.I)
+    return int(match.group(1)) if match else None
+
+
+def merge_candidates(tasks: list[dict]) -> list[dict]:
+    """Done tasks whose result links a pull request that CATE has not merged or given up on."""
+    out = []
+    for t in tasks:
+        pr = pr_number((t.get("result") or {}).get("text", ""))
+        if t.get("status") == "done" and pr and (t.get("merge") or {}).get("status") not in ("merged", "blocked"):
+            out.append({"task": t["id"], "pr": pr, "chat": t.get("chat") or ""})
+    return out
+
+
+def record_merge(task_id: str, pr: int, status: str, detail: str) -> None:
+    tasks = store.load("tasks")
+    task = store.find(tasks["tasks"], task_id)
+    if not task:
+        raise Refused(f"No task {task_id}")
+    task["merge"] = {"pr": pr, "status": status, "detail": detail[:1000], "at": now_iso()}
+    history(task, "cate", f"pull request #{pr} {status}", detail[:300])
+    store.save("tasks", tasks)
+    if task.get("chat"):
+        chats = store.load("chats")
+        chat = store.find(chats["chats"], task["chat"])
+        if chat is not None:
+            text = (f"✓ Merged pull request #{pr} after review, tests and build passed. It goes live in about a minute."
+                    if status == "merged" else f"Auto-merge of pull request #{pr} stopped: {detail}. You can merge it by hand on GitHub.")
+            chat.setdefault("messages", []).append({"id": store.next_id(chat["messages"], "M"), "role": "system", "by": "cate",
+                                                    "text": text, "at": now_iso()})
+            chat["updated_at"] = now_iso()
+            store.save("chats", chats)
+    store.journal("cate", "update", f"PR #{pr} {status}", detail[:300], task_id)
+
+
 def heartbeat(agent_id: str) -> dict:
     agents = store.load("agents")
     agent = store.find(agents["agents"], agent_id)
@@ -355,7 +402,8 @@ def tick(agent_id: str) -> dict:
     if reviews:
         task = reviews[0]
         review_model, _ = choose_model(agent, {"kind": "review", "model": (task.get("review") or {}).get("model")})
-        task.update(status="reviewing", reviewer=agent_id, reviewing_at=now_iso(), review_model=review_model)
+        task.update(status="reviewing", reviewer=agent_id, reviewing_at=now_iso(), review_model=review_model,
+                    review_run_url=run_url())
         history(task, agent_id, "review started")
         store.save("tasks", tasks)
         store.journal(agent_id, "claim", f"Reviewing {task['id']}: {task['title']}", ref=task["id"])
@@ -367,7 +415,8 @@ def tick(agent_id: str) -> dict:
         return {"action": "idle", "task": None, "reason": "nothing in the queue for you"}
     task = work[0]
     model, effort = choose_model(agent, task)
-    task.update(status="claimed", claimed_by=agent_id, claimed_at=now_iso(), run_model=model, run_effort=effort)
+    task.update(status="claimed", claimed_by=agent_id, claimed_at=now_iso(), run_model=model, run_effort=effort,
+                run_url=run_url() or task.get("run_url", ""))
     history(task, agent_id, "claimed", model_info(model).get("label", model) if model else "")
     store.save("tasks", tasks)
     store.journal(agent_id, "claim", f"Took {task['id']}: {task['title']}", ref=task["id"])

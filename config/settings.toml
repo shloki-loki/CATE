@@ -8,3 +8,7 @@ claim_timeout_minutes = 150      # a claimed task with no result after this long
 fallback_minutes = 90            # after this wait, a task meant for one provider may go to any agent
 max_attempts = 3                 # silent agents + failed reviews before a task is marked failed
 default_pass_score = 80          # reviews must score at least this to pass
+
+[merge]
+auto = true                      # merge agents' pull requests once review, tests and build pass
+author = "shloki-loki <118765514+shloki-loki@users.noreply.github.com>"   # merge commits as the owner, so Vercel deploys them

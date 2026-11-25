@@ -72,6 +72,13 @@ def render(result: dict, agent_id: str) -> str:
         if rv.get("checks"):
             lines += ["--- Checks it must pass ---", *[f"- {c}" for c in rv["checks"]], ""]
         lines += [f"--- The work to review (by {task['result']['by']}) ---", task["result"]["text"], ""]
+        pr = core.pr_number(task["result"]["text"])
+        if pr:
+            lines += [f"--- This work is pull request #{pr}. Review the REAL change, not the description: ---",
+                      f"  gh pr diff {pr}            # read every changed line",
+                      f"  gh pr checkout {pr} && python3 -m unittest discover -s tests   (and `cd web && npm ci && npm run build` if web/ changed)",
+                      "  Fail it if the diff does not match the brief, breaks something, or the tests/build fail.",
+                      "  If it passes, CATE merges it automatically, so be strict. Go back with `git checkout main` when done.", ""]
         for path in task.get("inputs", []):
             lines += [f"--- Input: {path} ---", read_input(path), ""]
         lines.append(REVIEW_PROTOCOL.format(agent=agent_id, task=task["id"], threshold=rv.get("pass_score", 80)))
@@ -245,6 +252,22 @@ def cmd_fingerprint(a):
     print(",".join(open_tasks) or "none")
 
 
+def cmd_merge_candidates(a):
+    if store.git_enabled():
+        store.sync()
+    from .util import settings as conf
+    if not conf().get("merge", {}).get("auto", False):
+        print("[]" if a.json else "Auto-merge is off (config/settings.toml [merge] auto).")
+        return
+    found = core.merge_candidates(store.load("tasks")["tasks"])
+    print(json.dumps(found) if a.json else ("\n".join(f"{c['task']} -> PR #{c['pr']}" for c in found) or "Nothing to merge."))
+
+
+def cmd_merge_record(a):
+    store.transact(lambda: core.record_merge(a.task, a.pr, a.status, a.detail), f"merge: PR #{a.pr} {a.status}")
+    print(f"Recorded PR #{a.pr} as {a.status}.")
+
+
 def cmd_usage(a):
     from . import runs
     info = runs.parse(a.stream)
@@ -393,6 +416,17 @@ def build() -> argparse.ArgumentParser:
     s.add_argument("--agent", required=True)
     s.add_argument("--stream", required=True)
     s.set_defaults(func=cmd_usage)
+
+    s = sub.add_parser("merge-candidates", help="pull requests ready for the auto-merge checks")
+    s.add_argument("--json", action="store_true")
+    s.set_defaults(func=cmd_merge_candidates)
+
+    s = sub.add_parser("merge-record")
+    s.add_argument("--task", required=True)
+    s.add_argument("--pr", type=int, required=True)
+    s.add_argument("--status", choices=["merged", "blocked", "waiting"], required=True)
+    s.add_argument("--detail", default="")
+    s.set_defaults(func=cmd_merge_record)
 
     s = sub.add_parser("api", help="one check-in for an API agent")
     s.add_argument("--agent", required=True)

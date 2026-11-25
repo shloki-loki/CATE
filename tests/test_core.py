@@ -290,3 +290,33 @@ class Models(unittest.TestCase):
         # A run that ends without a result hands the job straight back.
         run("release", "--agent", "claude-2", "--task", "T0001", "--reason", "x", "--only-if-held")
         self.assertEqual(store.find(store.load("tasks")["tasks"], "T0001")["status"], "queued")
+
+
+class AutoMerge(unittest.TestCase):
+    def setUp(self):
+        shutil.rmtree(TMP, ignore_errors=True)
+        Path(TMP).mkdir()
+        run("agent", "add", "--id", "claude-2", "--provider", "anthropic", "--runner", "claude-actions")
+        run("agent", "add", "--id", "gpt-1", "--provider", "openai", "--runner", "codex-actions")
+        run("agent", "add", "--id", "free-gemini", "--provider", "google", "--runner", "api", "--skills", "review")
+
+    def test_code_review_needs_a_reader_and_merge_is_recorded_in_chat(self):
+        store.save("chats", {"chats": [{"id": "C0001", "title": "x", "messages": []}]})
+        store.transact(lambda: core.add_task("owner", "Search box", "b", "code", "agent:claude-2", review_mode="cross",
+                                             chat="C0001"), "t")
+        run("tick", "--agent", "claude-2")
+        from cate.util import settings
+        repo = settings()["repo"]
+        run("submit", "--agent", "claude-2", "--task", "T0001", "--text", f"Done: https://github.com/{repo}/pull/7")
+        agents = store.load("agents")["agents"]
+        task = store.find(store.load("tasks")["tasks"], "T0001")
+        self.assertFalse(core.can_review(task, store.find(agents, "free-gemini"), agents))
+        self.assertTrue(core.can_review(task, store.find(agents, "gpt-1"), agents))
+        out = Path(TMP) / "job"
+        run("tick", "--agent", "gpt-1", "--emit", str(out))
+        self.assertIn("gh pr diff 7", (out / "job.md").read_text())
+        run("review", "--agent", "gpt-1", "--task", "T0001", "--score", "90", "--verdict", "pass", "--notes", "ok")
+        self.assertEqual(core.merge_candidates(store.load("tasks")["tasks"]), [{"task": "T0001", "pr": 7, "chat": "C0001"}])
+        run("merge-record", "--task", "T0001", "--pr", "7", "--status", "merged", "--detail", "all passed")
+        self.assertEqual(core.merge_candidates(store.load("tasks")["tasks"]), [])
+        self.assertIn("Merged pull request #7", store.load("chats")["chats"][0]["messages"][-1]["text"])
