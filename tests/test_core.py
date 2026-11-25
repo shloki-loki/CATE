@@ -130,3 +130,91 @@ class Pipeline(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class Dispatch(unittest.TestCase):
+    def setUp(self):
+        shutil.rmtree(TMP, ignore_errors=True)
+        Path(TMP).mkdir()
+        run("agent", "add", "--id", "claude-1", "--provider", "anthropic", "--runner", "claude-actions")
+        run("agent", "add", "--id", "gpt-1", "--provider", "openai", "--runner", "codex-actions")
+        run("agent", "add", "--id", "free-gh", "--provider", "other", "--runner", "api", "--preset", "github-models",
+            "--secret", "GITHUB_TOKEN", "--skills", "write", "review")
+
+    def plan(self):
+        return core.plan_dispatch(store.load("agents")["agents"], store.load("tasks")["tasks"], store.load("ledger"))
+
+    def test_no_work_no_runs(self):
+        self.assertEqual(self.plan(), [])
+
+    def test_wakes_preferred_agent_only(self):
+        run("task", "add", "--title", "a", "--brief", "x", "--kind", "research", "--prefer", "openai")
+        plan = self.plan()
+        self.assertEqual([p["agent"] for p in plan], ["gpt-1"])
+        self.assertEqual(plan[0]["secret"], "CODEX_AUTH_GPT_1")
+
+    def test_limits_steer_work_away(self):
+        agents = store.load("agents")
+        store.find(agents["agents"], "gpt-1")["limits"] = {
+            "five_hour": {"used_pct": 95, "resets_at": (now() + timedelta(hours=2)).isoformat()}}
+        store.save("agents", agents)
+        run("task", "add", "--title", "a", "--brief", "x", "--kind", "research", "--prefer", "openai")
+        backdate("T0001", "queued_at", 120)
+        self.assertEqual([p["agent"] for p in self.plan()], ["claude-1"])
+
+    def test_review_goes_to_other_provider(self):
+        run("task", "add", "--title", "a", "--brief", "x", "--kind", "write", "--prefer", "anthropic", "--review", "cross")
+        run("tick", "--agent", "claude-1")
+        run("submit", "--agent", "claude-1", "--task", "T0001", "--text", "draft")
+        agents = {p["agent"] for p in self.plan()}
+        self.assertNotIn("claude-1", agents)
+        self.assertTrue(agents & {"gpt-1", "free-gh"})
+
+    def test_api_agent_round_trip(self):
+        from cate import api_agent
+        run("task", "add", "--title", "a", "--brief", "write a haiku", "--kind", "write", "--prefer", "agent:free-gh")
+        os.environ["CATE_API_KEY"] = "test"
+        original = api_agent.chat
+        api_agent.chat = lambda base, key, model, messages: ("an old silent pond", 50, 7)
+        try:
+            self.assertIn("submitted T0001", api_agent.run("free-gh"))
+        finally:
+            api_agent.chat = original
+        task = store.find(store.load("tasks")["tasks"], "T0001")
+        self.assertEqual(task["status"], "done")
+        self.assertEqual(core.tokens_used(store.load("ledger"), "free-gh"), 57)
+
+
+class Parse(unittest.TestCase):
+    def write(self, lines):
+        path = Path(TMP) / "run.jsonl"
+        Path(TMP).mkdir(exist_ok=True)
+        path.write_text("\n".join(json.dumps(x) for x in lines))
+        return path
+
+    def test_claude_stream(self):
+        from cate import runs
+        info = runs.parse(self.write([
+            {"type": "system", "subtype": "init"},
+            {"type": "rate_limit_event", "rate_limit_info": {"status": "allowed", "rateLimitType": "five_hour",
+                                                             "utilization": 0.42, "resetsAt": 1795660000}},
+            {"type": "rate_limit_event", "rate_limit_info": {"unifiedWindows": {"seven_day": {"utilization": 0.18, "resetsAt": 1796000000}}}},
+            {"type": "result", "usage": {"input_tokens": 10, "cache_creation_input_tokens": 2000,
+                                         "cache_read_input_tokens": 30000, "output_tokens": 400}, "total_cost_usd": 0.2},
+        ]))
+        self.assertEqual(info["limits"]["five_hour"]["used_pct"], 42.0)
+        self.assertEqual(info["limits"]["seven_day"]["used_pct"], 18.0)
+        self.assertEqual((info["tokens_in"], info["cached"], info["tokens_out"]), (2010, 30000, 400))
+
+    def test_codex_stream(self):
+        from cate import runs
+        info = runs.parse(self.write([
+            {"type": "thread.started"},
+            {"type": "event_msg", "payload": {"type": "token_count", "rate_limits": {
+                "primary": {"used_percent": 12.5, "window_minutes": 300, "resets_in_seconds": 3600},
+                "secondary": {"used_percent": 30, "window_minutes": 10080, "resets_in_seconds": 86400}}}},
+            {"type": "turn.completed", "usage": {"input_tokens": 9000, "cached_input_tokens": 6000, "output_tokens": 800}},
+        ]))
+        self.assertEqual(info["limits"]["five_hour"]["used_pct"], 12.5)
+        self.assertEqual(info["limits"]["seven_day"]["used_pct"], 30.0)
+        self.assertEqual((info["tokens_in"], info["cached"], info["tokens_out"]), (3000, 6000, 800))

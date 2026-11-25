@@ -144,3 +144,18 @@ export function weekKey(date = new Date()) {
   const week = Math.ceil(((d - yearStart) / 86400000 + 1) / 7);
   return `${d.getUTCFullYear()}-W${String(week).padStart(2, '0')}`;
 }
+
+// Start the Agents workflow now (needs the token to have Actions: read and write). Agents only run if
+// there is work for them, so pressing this with an empty queue costs nothing but a few seconds of CI.
+export async function wakeAgents(reason) {
+  if (localDir()) return { started: false, note: 'local preview: agents are not started' };
+  const { name: repoName } = repo();
+  const response = await gh(`/repos/${repoName}/actions/workflows/agents.yml/dispatches`, {
+    method: 'POST',
+    body: JSON.stringify({ ref: 'main', inputs: { reason: String(reason).slice(0, 100) } }),
+  });
+  if (response.ok) return { started: true };
+  return { started: false, note: response.status === 403 || response.status === 404
+    ? 'the GitHub token needs Actions: read and write to start agents (they will still start within 2 hours)'
+    : `could not start agents: ${response.status}` };
+}

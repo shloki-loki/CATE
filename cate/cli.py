@@ -164,18 +164,67 @@ def cmd_task_cancel(a):
 
 def cmd_agent_add(a):
     agent = store.transact(lambda: core.add_agent(a.by, a.id, a.provider, a.runner, a.label, a.account, a.model,
-                                                  a.skills, a.weekly_budget), f"agent: {a.id}")
+                                                  a.skills, a.weekly_budget, a.preset, a.secret), f"agent: {a.id}")
     print(f"Added agent {agent['id']}. Its scheduled-task prompt:\n")
     print(agent_prompt(agent["id"]))
 
 
-def agent_prompt(agent_id: str) -> str:
-    template = (ROOT / "config" / "prompts" / "agent_tick.md").read_text(encoding="utf-8")
+def agent_prompt(agent_id: str, actions: bool = False) -> str:
+    name = "agent_actions.md" if actions else "agent_tick.md"
+    template = (ROOT / "config" / "prompts" / name).read_text(encoding="utf-8")
     return template.replace("{{agent}}", agent_id).replace("{{repo}}", settings().get("repo", "OWNER/CATE"))
 
 
 def cmd_agent_prompt(a):
-    print(agent_prompt(a.id))
+    print(agent_prompt(a.id, a.actions))
+
+
+def cmd_dispatch(a):
+    """Which agents to start now (used by the GitHub Actions workflow)."""
+    if store.git_enabled():
+        store.sync()
+    plan = core.plan_dispatch(store.load("agents")["agents"], store.load("tasks")["tasks"], store.load("ledger"))
+    if a.json:
+        print(json.dumps(plan))
+    else:
+        print("\n".join(f"{p['agent']} ({p['runner']}) -> {p['task']}" for p in plan) or "Nobody needs to run.")
+
+
+def cmd_fingerprint(a):
+    """A short summary of open work; the workflow only chains another run when this changed."""
+    if store.git_enabled():
+        store.sync()
+    open_tasks = sorted(f"{t['id']}:{t['status']}:{t.get('attempts', 0)}" for t in store.load("tasks")["tasks"]
+                        if t["status"] not in ("done", "cancelled", "failed"))
+    print(",".join(open_tasks) or "none")
+
+
+def cmd_usage(a):
+    from . import runs
+    info = runs.parse(a.stream)
+    store.transact(lambda: core.record_run(a.agent, info["tokens_in"], info["tokens_out"], info["cached"], info["limits"]),
+                   f"usage: {a.agent}")
+    lims = ", ".join(f"{k} {v['used_pct']}% (resets {v.get('resets_at') or '?'})" for k, v in info["limits"].items())
+    print(f"{a.agent}: {info['tokens_in']:,} in, {info['tokens_out']:,} out, {info['cached']:,} cached"
+          + (f"; limits: {lims}" if lims else "; no limit readings in the output"))
+
+
+def cmd_api(a):
+    from . import api_agent
+    print(api_agent.run(a.agent))
+
+
+def cmd_disconnected(a):
+    """The workflow found no login/key for this agent: pause it so it is not started again and again."""
+    def change():
+        agents = store.load("agents")
+        agent = store.find(agents["agents"], a.agent)
+        if agent:
+            agent["status"] = "paused"
+            agent["note"] = f"Not connected: GitHub secret {a.secret} is missing. Add it, then press Resume."
+            store.save("agents", agents)
+            store.journal("github-actions", "fail", f"{a.agent} is not connected", agent["note"])
+    store.transact(change, f"disconnected: {a.agent}")
 
 
 def cmd_agent_list(a):
@@ -203,6 +252,14 @@ def cmd_agent_set(a):
             agent["weekly_budget_tokens"] = a.weekly_budget
         if a.skills:
             agent["skills"] = a.skills
+        for field in ("runner", "model", "secret", "preset", "label"):
+            value = getattr(a, field, None)
+            if value is not None:
+                if field == "runner" and value not in core.RUNNERS:
+                    raise core.Refused(f"runner must be one of {', '.join(core.RUNNERS)}")
+                agent[field] = value
+        if a.status == "active":
+            agent.pop("note", None)
         store.save("agents", agents)
         store.journal(a.by, "update", f"Changed agent {a.id}")
     store.transact(change, f"agent set: {a.id}")
@@ -265,6 +322,27 @@ def build() -> argparse.ArgumentParser:
     s.add_argument("--by", default="supervisor")
     s.set_defaults(func=cmd_supervise)
 
+    s = sub.add_parser("dispatch", help="which agents GitHub Actions should start now")
+    s.add_argument("--json", action="store_true")
+    s.set_defaults(func=cmd_dispatch)
+
+    s = sub.add_parser("fingerprint")
+    s.set_defaults(func=cmd_fingerprint)
+
+    s = sub.add_parser("usage", help="record exact tokens and limits from a CLI's JSON output")
+    s.add_argument("--agent", required=True)
+    s.add_argument("--stream", required=True)
+    s.set_defaults(func=cmd_usage)
+
+    s = sub.add_parser("api", help="one check-in for an API agent")
+    s.add_argument("--agent", required=True)
+    s.set_defaults(func=cmd_api)
+
+    s = sub.add_parser("disconnected")
+    s.add_argument("--agent", required=True)
+    s.add_argument("--secret", required=True)
+    s.set_defaults(func=cmd_disconnected)
+
     s = sub.add_parser("status")
     s.set_defaults(func=cmd_status)
 
@@ -315,11 +393,14 @@ def build() -> argparse.ArgumentParser:
     s.add_argument("--model", default="")
     s.add_argument("--skills", nargs="*", default=["any"])
     s.add_argument("--weekly-budget", type=int, default=0)
+    s.add_argument("--preset", default="")
+    s.add_argument("--secret", default="")
     s.set_defaults(func=cmd_agent_add)
     s = agent.add_parser("list")
     s.set_defaults(func=cmd_agent_list)
     s = agent.add_parser("prompt")
     s.add_argument("id")
+    s.add_argument("--actions", action="store_true")
     s.set_defaults(func=cmd_agent_prompt)
     s = agent.add_parser("set")
     s.add_argument("id")
@@ -327,6 +408,11 @@ def build() -> argparse.ArgumentParser:
     s.add_argument("--status", choices=["active", "paused"])
     s.add_argument("--weekly-budget", type=int)
     s.add_argument("--skills", nargs="*")
+    s.add_argument("--runner")
+    s.add_argument("--model")
+    s.add_argument("--secret")
+    s.add_argument("--preset")
+    s.add_argument("--label")
     s.set_defaults(func=cmd_agent_set)
     return p
 

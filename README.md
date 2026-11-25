@@ -6,24 +6,25 @@ official app on its own subscription**, so the tokens come from plans you alread
 in on your behalf and no private endpoints are used.
 
 ```
-   You ── dashboard (Vercel, free) ──► tasks.json on the `data` branch ◄── python3 -m cate tick
-                                                                          ▲        ▲        ▲
-                                     Claude Code scheduled task (claude-1)  (claude-2)  Codex automation (gpt-1)
+   You ── dashboard (Vercel) ──► tasks on the `data` branch ──► GitHub Actions starts ONLY the agents with work
+                                                               ├─ Claude Code on Claude Pro (claude-1, claude-2)
+                                                               ├─ Codex on ChatGPT Pro (gpt-1)
+                                                               └─ free API models (GitHub Models, Gemini, Groq…)
 ```
 
 ## How it works
 
 1. **You add a task** on the dashboard: a brief, who should do it first, checks it must pass.
-2. **Agents check in on their own schedule** (hourly scheduled tasks in Claude Code and Codex). Each runs
-   `python3 -m cate tick --agent <id>`: it gets one job that fits it, or NOTHING TO DO and stops (cheap).
+2. **The right agents start, only when there is work** (GitHub Actions; no timers burning tokens). Each
+   runs `python3 -m cate tick --agent <id>` and gets the one job that fits it best.
 3. **The agent does the work** with its own tools (web search, code, browsing) and runs `cate submit`.
 4. **A different model reviews it** (`cross` review) against your checks and a pass score. Failures go
    back with the reviewer's notes; three strikes and the task is marked failed for you to look at.
 5. **The supervisor** (every check-in, and hourly on GitHub Actions) takes work back from silent agents,
    rests agents that hit their usage limit, and lets a task meant for one provider go to anyone after 90
    minutes. That is the automatic switch when a model runs out of tokens.
-6. **Tokens** are counted per agent per week (the agents' own estimates; subscriptions do not publish
-   exact numbers) against a weekly budget you set. An agent over budget stops taking work.
+6. **Tokens and limits** are read from each run's own CLI output: exact tokens, plus the plan's 5-hour and
+   weekly limits as "% left". Agents near a limit, or over the weekly budget you set, get no new work.
 
 ## Day-one test
 

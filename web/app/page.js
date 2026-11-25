@@ -1,7 +1,8 @@
 import Link from 'next/link';
 import TopBar from '@/components/TopBar';
 import { requireSignIn } from '@/lib/auth';
-import { PROVIDERS, agentState, fmt, loadAll, usage, when } from '@/lib/data';
+import { PROVIDERS, agentState, fmt, limitRows, loadAll, usage, when } from '@/lib/data';
+import { WakeButton } from '@/components/Forms';
 
 export const dynamic = 'force-dynamic';
 
@@ -19,7 +20,7 @@ export default async function Overview() {
       <main>
         <div className="page-head">
           <h1>Your AI team</h1>
-          <p>Agents check in on their own schedule, take the next task that fits them, and hand it in for review by a different model. Tokens are counted per agent each week ({week}).</p>
+          <p>Agents start only when there is work for them, take the task that fits them best, and hand it in for review by a different model. Tokens and subscription limits are read from each run ({week}).</p>
         </div>
 
         {!agents.length ? <div className="banner">No agents yet. <Link className="link" href="/agents">Add your Claude and ChatGPT accounts</Link> to get started.</div> : null}
@@ -34,7 +35,7 @@ export default async function Overview() {
             <div className="kpi good"><dt>Done</dt><dd>{count('done')}</dd><span className="hint">passed review</span></div>
             <div className="kpi"><dt>Tokens this week</dt><dd>{fmt(totalWeek)}</dd><span className="hint">all agents, estimated</span></div>
           </dl>
-          <div className="button-row" style={{ marginTop: 10 }}><Link className="button primary" href="/tasks#new">New task</Link></div>
+          <div className="button-row" style={{ marginTop: 10 }}><Link className="button primary" href="/tasks#new">New task</Link><WakeButton /></div>
         </section>
 
         <section className="section">
@@ -49,8 +50,13 @@ export default async function Overview() {
                   <div key={a.id} className="agent">
                     <h3>{a.label || a.id}<span className="prov">{PROVIDERS[a.provider] || a.provider}</span></h3>
                     <div className="sub"><span className={`dot ${state.tone}`} />{state.label}</div>
-                    {budget ? <div className="meter" title={`${fmt(u.used)} of ${fmt(budget)}`}><span style={{ width: `${Math.min(100, (u.used / budget) * 100)}%` }} /></div> : null}
-                    <div className="sub">{fmt(u.used)} tokens this week{budget ? ` of ${fmt(budget)} (${fmt(Math.max(0, budget - u.used))} left)` : ''} · {u.tasks} jobs</div>
+                    {limitRows(a).map((r) => (
+                      <div key={r.label} className="sub" style={{ marginTop: 6 }}>
+                        <div className="meter" style={{ marginTop: 2 }}><span style={{ width: `${Math.min(100, r.used)}%` }} /></div>
+                        {r.label}: {r.left.toFixed(0)}% left{r.resets ? ` · resets ${when(r.resets)}` : ''}
+                      </div>
+                    ))}
+                    <div className="sub" style={{ marginTop: 6 }}>{fmt(u.used)} tokens this week{u.cached ? ` (+${fmt(u.cached)} cached)` : ''}{budget ? ` of ${fmt(budget)} budget` : ''} · {u.tasks} jobs</div>
                   </div>
                 );
               })}

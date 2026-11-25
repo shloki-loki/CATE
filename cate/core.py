@@ -12,7 +12,9 @@ from . import store
 from .util import estimate_tokens, later, minutes_since, now_iso, parse_iso, settings, week_key, day_key
 
 PROVIDERS = ("anthropic", "openai", "google", "xai", "deepseek", "perplexity", "local", "other")
-RUNNERS = ("claude-code-scheduled", "codex-automation", "chatgpt-scheduled", "api", "manual")
+# Runners that GitHub Actions starts on demand (only when there is work), and older/manual ones.
+ACTIONS_RUNNERS = ("claude-actions", "codex-actions", "api")
+RUNNERS = ACTIONS_RUNNERS + ("claude-code-scheduled", "codex-automation", "chatgpt-scheduled", "manual")
 KINDS = ("plan", "research", "write", "code", "review", "data", "other")
 OPEN = ("queued", "claimed", "review", "reviewing")
 
@@ -31,6 +33,12 @@ def history(task: dict, actor: str, event: str, detail: str = "") -> None:
 
 
 # ---- tokens -------------------------------------------------------------------------------------
+
+def deferred() -> bool:
+    """True inside a GitHub Actions run that measures tokens exactly (charged afterwards by `cate usage`)."""
+    import os
+    return os.environ.get("CATE_DEFER_TOKENS") == "1"
+
 
 def tokens_used(ledger: dict, agent_id: str, week: str | None = None) -> int:
     row = ledger.get("weeks", {}).get(week or week_key(), {}).get(agent_id, {})
@@ -60,6 +68,13 @@ def availability(agent: dict, ledger: dict) -> tuple[bool, str]:
     budget = int(agent.get("weekly_budget_tokens") or 0)
     if budget and tokens_used(ledger, agent["id"]) >= budget:
         return False, f"weekly budget of {budget:,} tokens used up"
+    # The subscription's own limits, as last reported by the CLI after a run.
+    for window, ceiling in (("five_hour", cfg("five_hour_stop_pct", 90)), ("seven_day", cfg("seven_day_stop_pct", 97))):
+        info = (agent.get("limits") or {}).get(window) or {}
+        used = info.get("used_pct")
+        if used is not None and used >= ceiling and minutes_since(info.get("resets_at")) < 0:
+            label = "5-hour" if window == "five_hour" else "weekly"
+            return False, f"{label} limit {used:.0f}% used; resets {info.get('resets_at')}"
     return True, ""
 
 
@@ -118,6 +133,64 @@ def can_review(task: dict, agent: dict, agents: list[dict]) -> bool:
 
 def order(task: dict) -> tuple:
     return (int(task.get("priority", 3)), task.get("queued_at") or task.get("created_at") or "")
+
+
+def limit_pct(agent: dict, window: str) -> float:
+    return float(((agent.get("limits") or {}).get(window) or {}).get("used_pct") or 0)
+
+
+def plan_dispatch(agents: list[dict], tasks: list[dict], ledger: dict) -> list[dict]:
+    """Which agents GitHub Actions should start right now: one per piece of available work, the best fit
+    for each (preferred provider first, then the one with most of its limits left). No work, no runs."""
+    ready = [a for a in agents if a.get("runner") in ACTIONS_RUNNERS and availability(a, ledger)[0]]
+    busy = {t.get("claimed_by") for t in tasks if t.get("status") == "claimed"} | \
+           {t.get("reviewer") for t in tasks if t.get("status") == "reviewing"}
+    chosen: dict[str, dict] = {}
+
+    def score(agent: dict, task: dict) -> tuple:
+        prefer = task.get("prefer") or "any"
+        match = agent["id"] == prefer[6:] if prefer.startswith("agent:") else agent.get("provider") == prefer
+        return (0 if match else 1, limit_pct(agent, "seven_day"), limit_pct(agent, "five_hour"),
+                tokens_used(ledger, agent["id"]))
+
+    reviews = sorted((t for t in tasks if t.get("status") == "review"), key=order)
+    work = sorted((t for t in tasks if t.get("status") == "queued"), key=order)
+    for task in reviews + work:
+        candidates = [a for a in ready if a["id"] not in chosen and a["id"] not in busy and (
+            (task["status"] == "review" and can_review(task, a, agents) and a["id"] not in task.get("review_exclude", []))
+            or (task["status"] == "queued" and can_work(task, a, tasks)))]
+        if candidates:
+            best = min(candidates, key=lambda a: score(a, task))
+            chosen[best["id"]] = {"agent": best["id"], "runner": best["runner"], "provider": best.get("provider"),
+                                  "secret": agent_secret(best), "model": best.get("model") or "",
+                                  "preset": best.get("preset") or "", "task": task["id"]}
+    return list(chosen.values())
+
+
+def agent_secret(agent: dict) -> str:
+    """The GitHub Actions secret that holds this agent's login or key."""
+    if agent.get("secret"):
+        return agent["secret"]
+    tag = agent["id"].upper().replace("-", "_")
+    return {"claude-actions": f"CLAUDE_TOKEN_{tag}", "codex-actions": f"CODEX_AUTH_{tag}"}.get(
+        agent.get("runner", ""), f"API_KEY_{tag}")
+
+
+def record_run(agent_id: str, tokens_in: int, tokens_out: int, cached: int, limits: dict) -> None:
+    """After a run: charge the exact tokens the CLI reported and keep its latest limit readings."""
+    ledger = store.load("ledger")
+    if tokens_in or tokens_out:
+        charge(ledger, agent_id, tokens_in, tokens_out)
+        row = ledger["weeks"][week_key()][agent_id]
+        row["cached"] = int(row.get("cached", 0)) + cached
+        row["tasks"] -= 1  # charge() counts a job; a run is not a job
+        store.save("ledger", ledger)
+    if limits:
+        agents = store.load("agents")
+        agent = store.find(agents["agents"], agent_id)
+        if agent:
+            agent["limits"] = {**(agent.get("limits") or {}), **limits, "at": now_iso()}
+            store.save("agents", agents)
 
 
 # ---- the supervisor -----------------------------------------------------------------------------
@@ -259,7 +332,7 @@ def submit(agent_id: str, task_id: str, text: str, tokens_in: int | None = None,
         history(task, agent_id, "submitted for review", f"{t_in + t_out:,} tokens")
     store.save("tasks", tasks)
     ledger = store.load("ledger")
-    charge(ledger, agent_id, t_in, t_out)
+    charge(ledger, agent_id, 0 if deferred() else t_in, 0 if deferred() else t_out)
     store.save("ledger", ledger)
     store.journal(agent_id, "submit", f"Finished {task_id}: {task['title']}",
                   f"{t_in + t_out:,} tokens; now {task['status']}", task_id)
@@ -296,8 +369,9 @@ def review(agent_id: str, task_id: str, score: int, verdict: str, notes: str,
             history(task, agent_id, "review failed; sent back with feedback", f"score {score} (needs {threshold})")
     store.save("tasks", tasks)
     ledger = store.load("ledger")
-    charge(ledger, agent_id, tokens_in if tokens_in is not None else estimate_tokens(task["result"]["text"]) + 2000,
-           tokens_out if tokens_out is not None else estimate_tokens(notes))
+    charge(ledger, agent_id,
+           0 if deferred() else (tokens_in if tokens_in is not None else estimate_tokens(task["result"]["text"]) + 2000),
+           0 if deferred() else (tokens_out if tokens_out is not None else estimate_tokens(notes)))
     store.save("ledger", ledger)
     store.journal(agent_id, "review", f"Reviewed {task_id}: {'pass' if passed else 'fail'} ({score})", ref=task_id)
     return task
@@ -359,7 +433,8 @@ def add_task(by: str, title: str, brief: str, kind: str = "other", prefer: str =
 
 
 def add_agent(by: str, ident: str, provider: str, runner: str, label: str = "", account: str = "",
-              model: str = "", skills: list[str] | None = None, weekly_budget_tokens: int = 0) -> dict:
+              model: str = "", skills: list[str] | None = None, weekly_budget_tokens: int = 0,
+              preset: str = "", secret: str = "") -> dict:
     if provider not in PROVIDERS:
         raise Refused(f"provider must be one of {', '.join(PROVIDERS)}")
     if runner not in RUNNERS:
@@ -371,7 +446,8 @@ def add_agent(by: str, ident: str, provider: str, runner: str, label: str = "", 
         raise Refused(f"agent {ident} already exists")
     agent = {"id": ident, "label": label or ident, "provider": provider, "runner": runner, "account": account,
              "model": model, "skills": skills or ["any"], "weekly_budget_tokens": int(weekly_budget_tokens),
-             "status": "active", "limited_until": None, "last_seen": None, "created_at": now_iso()}
+             "status": "active", "limited_until": None, "last_seen": None, "created_at": now_iso(),
+             "preset": preset, "secret": secret, "limits": {}}
     agents["agents"].append(agent)
     store.save("agents", agents)
     store.journal(by, "update", f"New agent {ident} ({provider}, {runner})")

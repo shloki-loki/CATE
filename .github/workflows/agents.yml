@@ -1,0 +1,142 @@
+name: Agents
+
+# Starts agents ONLY when there is work for them: no task, no run, no tokens.
+#   * the dashboard starts this when you add a task (or press "Wake agents")
+#   * after each run it starts itself again if the work moved on (e.g. a review is now due)
+#   * every 2 hours a cheap check (no AI) takes back stuck work and starts agents if anything waits
+on:
+  workflow_dispatch:
+    inputs:
+      reason:
+        description: "Why this run was started"
+        required: false
+  schedule:
+    - cron: "23 */2 * * *"
+
+permissions:
+  contents: write
+  actions: write
+  models: read
+
+concurrency:
+  group: cate-plan
+  cancel-in-progress: false
+
+jobs:
+  plan:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      agents: ${{ steps.plan.outputs.agents }}
+      before: ${{ steps.plan.outputs.before }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/checkout@v4
+        with: { ref: data, path: data }
+      - name: Supervise, then choose who should run
+        id: plan
+        run: |
+          python3 -m cate supervise --by github-actions
+          echo "agents=$(python3 -m cate dispatch --json)" >> "$GITHUB_OUTPUT"
+          echo "before=$(python3 -m cate fingerprint)" >> "$GITHUB_OUTPUT"
+          python3 -m cate dispatch
+
+  run:
+    needs: plan
+    if: needs.plan.outputs.agents != '[]'
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    strategy:
+      fail-fast: false
+      matrix:
+        include: ${{ fromJSON(needs.plan.outputs.agents) }}
+    concurrency:
+      group: cate-agent-${{ matrix.agent }}
+      cancel-in-progress: false
+    env:
+      AGENT: ${{ matrix.agent }}
+      SECRET_NAME: ${{ matrix.secret }}
+      AGENT_SECRET: ${{ secrets[matrix.secret] }}
+      CATE_DEFER_TOKENS: "1"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/checkout@v4
+        with: { ref: data, path: data }
+      - name: Check this agent is connected
+        id: secret
+        run: |
+          if [ -z "$AGENT_SECRET" ]; then
+            echo "::warning::$AGENT has no GitHub secret $SECRET_NAME; pausing it until you add one"
+            python3 -m cate disconnected --agent "$AGENT" --secret "$SECRET_NAME"
+            echo "ok=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "ok=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      # ---- Claude Code on the account's own subscription (token from `claude setup-token`) ----
+      - name: Run Claude Code
+        if: steps.secret.outputs.ok == 'true' && matrix.runner == 'claude-actions'
+        env:
+          CLAUDE_CODE_OAUTH_TOKEN: ${{ secrets[matrix.secret] }}
+        run: |
+          npm install -g @anthropic-ai/claude-code >/dev/null 2>&1
+          claude -p "$(python3 -m cate agent prompt "$AGENT" --actions)" \
+            --output-format stream-json --verbose --dangerously-skip-permissions --max-turns 120 \
+            ${{ matrix.model && format('--model {0}', matrix.model) || '' }} > run.jsonl || echo "::warning::claude exited with an error"
+          tail -c 2000 run.jsonl | grep -o '"result":"[^"]*' | tail -1 || true
+          python3 -m cate usage --agent "$AGENT" --stream run.jsonl
+
+      # ---- Codex on the ChatGPT plan (auth.json from `codex login`, refreshed copy kept in the cache) ----
+      - name: Restore Codex login
+        if: steps.secret.outputs.ok == 'true' && matrix.runner == 'codex-actions'
+        uses: actions/cache/restore@v4
+        with:
+          path: ~/.codex/auth.json
+          key: codex-auth-${{ matrix.agent }}-${{ github.run_id }}
+          restore-keys: codex-auth-${{ matrix.agent }}-
+      - name: Run Codex
+        if: steps.secret.outputs.ok == 'true' && matrix.runner == 'codex-actions'
+        run: |
+          mkdir -p ~/.codex
+          [ -s ~/.codex/auth.json ] || printf '%s' "$AGENT_SECRET" > ~/.codex/auth.json
+          chmod 600 ~/.codex/auth.json
+          printf 'cli_auth_credentials_store = "file"\n' > ~/.codex/config.toml
+          npm install -g @openai/codex >/dev/null 2>&1
+          codex exec --json --dangerously-bypass-approvals-and-sandbox --skip-git-repo-check \
+            ${{ matrix.model && format('--model {0}', matrix.model) || '' }} \
+            "$(python3 -m cate agent prompt "$AGENT" --actions)" > run.jsonl || echo "::warning::codex exited with an error"
+          python3 -m cate usage --agent "$AGENT" --stream run.jsonl
+      - name: Keep the refreshed Codex login
+        if: always() && steps.secret.outputs.ok == 'true' && matrix.runner == 'codex-actions'
+        uses: actions/cache/save@v4
+        with:
+          path: ~/.codex/auth.json
+          key: codex-auth-${{ matrix.agent }}-${{ github.run_id }}
+
+      # ---- Free / paid API models (no tools) ----
+      - name: Run API agent
+        if: steps.secret.outputs.ok == 'true' && matrix.runner == 'api'
+        env:
+          CATE_API_KEY: ${{ secrets[matrix.secret] }}
+        run: python3 -m cate api --agent "$AGENT"
+
+  next:
+    needs: [plan, run]
+    if: always() && needs.plan.outputs.agents != '[]'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/checkout@v4
+        with: { ref: data, path: data }
+      - name: Start again only if the work moved on
+        env:
+          GH_TOKEN: ${{ github.token }}
+          BEFORE: ${{ needs.plan.outputs.before }}
+        run: |
+          after=$(python3 -m cate fingerprint)
+          plan=$(python3 -m cate dispatch --json)
+          echo "before: $BEFORE"; echo "after:  $after"; echo "next:   $plan"
+          if [ "$plan" != "[]" ] && [ "$after" != "$BEFORE" ]; then
+            gh workflow run agents.yml -f reason="chain after ${{ github.run_id }}"
+          fi

@@ -6,8 +6,8 @@
 import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
 import { assertSignedIn, endSession, passwordIsSet, passwordMatches, startSession } from '@/lib/auth';
-import { KINDS, PROVIDERS, RUNNERS } from '@/lib/data';
-import { Abort, nowIso, settings, update } from '@/lib/store';
+import { KINDS, PRESETS, PROVIDERS, RUNNERS } from '@/lib/data';
+import { Abort, nowIso, settings, update, wakeAgents } from '@/lib/store';
 
 const clean = (value, max) => String(value ?? '').replace(/\r\n/g, '\n').trim().slice(0, max);
 const list = (value) => clean(value, 2000).split(/[\n,]+/).map((s) => s.trim()).filter(Boolean);
@@ -94,7 +94,8 @@ export async function addTask(_previous, formData) {
       });
     }, `task: ${title.slice(0, 50)}`);
     await journal('owner', 'update', `New task ${id}: ${title}`, '', id);
-    return { ok: true, message: `Added ${id}. The next agent to check in picks it up.` };
+    const woke = await wakeAgents(`new task ${id}`);
+    return { ok: true, message: woke.started ? `Added ${id}. Agents are starting now (about a minute).` : `Added ${id}. Note: ${woke.note}.` };
   });
 }
 
@@ -116,10 +117,20 @@ export async function cancelTask(id) {
 }
 
 export async function requeueTask(id) {
-  return guarded(() => changeTask(id, (t, now) => {
-    t.status = 'queued'; t.claimed_by = null; t.reviewer = null; t.queued_at = now; t.exclude = [];
-    if (t.attempts >= 3) t.attempts = 0;
-  }, 'sent back to the queue'));
+  return guarded(async () => {
+    await changeTask(id, (t, now) => {
+      t.status = 'queued'; t.claimed_by = null; t.reviewer = null; t.queued_at = now; t.exclude = [];
+      if (t.attempts >= 3) t.attempts = 0;
+    }, 'sent back to the queue');
+    await wakeAgents(`requeued ${id}`);
+  });
+}
+
+export async function wakeNow() {
+  return guarded(async () => {
+    const woke = await wakeAgents('dashboard button');
+    return woke.started ? { ok: true, message: 'Started. Agents with work run in about a minute; the rest stay asleep.' } : { ok: false, error: woke.note };
+  });
 }
 
 export async function approveTask(id) {
@@ -145,15 +156,22 @@ export async function addAgent(_previous, formData) {
     if (!PROVIDERS[provider]) throw new Abort('Choose a provider.');
     if (!RUNNERS[runner]) throw new Abort('Choose how it runs.');
     const skills = list(formData.get('skills'));
+    const preset = clean(formData.get('preset'), 40);
+    if (preset && !PRESETS[preset]) throw new Abort('Unknown free model.');
+    if (runner === 'api' && !preset && !clean(formData.get('api_base'), 300)) throw new Abort('An API agent needs a free model choice or a base URL.');
     await update('agents', (data) => {
       data.agents = data.agents || [];
       if (data.agents.some((a) => a.id === id)) throw new Abort(`There is already an agent called ${id}.`);
       data.agents.push({
         id, label: clean(formData.get('label'), 80) || id, provider, runner,
-        account: clean(formData.get('account'), 120), model: clean(formData.get('model'), 80),
+        account: clean(formData.get('account'), 120),
+        model: clean(formData.get('model'), 80) || (preset ? PRESETS[preset].model : ''),
+        preset, secret: clean(formData.get('secret'), 80).toUpperCase() || (preset ? PRESETS[preset].secret : ''),
+        api_base: clean(formData.get('api_base'), 300), limits: {},
         skills: skills.length ? skills : ['any'], weekly_budget_tokens: Number(formData.get('budget')) || 0,
         status: 'active', limited_until: null, last_seen: null, created_at: nowIso(timezone),
       });
+      if (runner === 'api' && !skills.length) data.agents[data.agents.length - 1].skills = ['write', 'review', 'plan'];
     }, `agent: ${id}`);
     await journal('owner', 'update', `New agent ${id} (${provider}, ${runner})`);
     return { ok: true, message: `Added ${id}. Open it below to copy its one-time setup prompt.` };
@@ -168,7 +186,7 @@ export async function setAgent(id, changes) {
       if (changes.status) {
         if (!['active', 'paused'].includes(changes.status)) throw new Abort('Unknown status.');
         agent.status = changes.status;
-        if (changes.status === 'active') agent.limited_until = null;
+        if (changes.status === 'active') { agent.limited_until = null; delete agent.note; }
       }
       if (changes.budget !== undefined) agent.weekly_budget_tokens = Math.max(0, Number(changes.budget) || 0);
     }, `agent set: ${id}`);

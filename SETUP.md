@@ -20,21 +20,32 @@ automatically on its first visit.
 
 The Hobby plan is free for personal use; move to a paid plan before selling CATE to others.
 
-## 3. Agents (one message per account, once)
+## 3. Agents (connect each once; they then run only when there is work)
 
-Open the dashboard's **Agents** page. Each agent has a **One-time setup** box with the exact message.
+Agents are GitHub Actions jobs (`.github/workflows/agents.yml`). Adding a task on the dashboard starts the
+workflow; it picks the best agent for each piece of work and starts only those. **No task, no run, no
+tokens.** After each run the workflow starts itself again only if the work moved on (e.g. a review is due),
+and a cheap check with no AI runs every 2 hours to take back stuck work.
 
-- **Claude accounts (claude-1, claude-2)**: sign in to claude.ai with that account, open Claude Code
-  (claude.ai/code), start a session on `shloki-loki/CATE`, paste the setup message. It creates a
-  dedicated agent session with the repo attached and an hourly scheduled task (08:07–23:07 IST) that
-  wakes it. (A scheduled task that starts a *fresh* session gets no repository, so it must wake a
-  session that already has one.) The CATE repo must be reachable from that Claude account's GitHub
-  connection (claude.ai/connect-github).
-- **ChatGPT Pro (gpt-1)**: in the Codex app, open your local checkout of CATE
-  (`git clone https://github.com/shloki-loki/CATE`), create an automation that runs hourly with the
-  prompt shown. This is the same kind of automation you already use for Outreach HQ.
+The dashboard's GitHub token needs **Actions: Read and write** (as well as Contents) to start agents.
 
-From then on everything is hands-free: add tasks on the dashboard and the agents pick them up.
+Each agent's login lives in a GitHub secret (repo → Settings → Secrets and variables → Actions). The
+dashboard's Agents page shows the exact steps and secret name for each one:
+
+- **Claude accounts** (`claude-1`, `claude-2`): on your Mac, `npm install -g @anthropic-ai/claude-code`,
+  then `claude setup-token` and sign in with that account. Save the printed token as
+  `CLAUDE_TOKEN_CLAUDE_1` (or `_2`). Anthropic documents this token for Pro/Max plans in GitHub Actions.
+- **ChatGPT Pro** (`gpt-1`): on your Mac, add `cli_auth_credentials_store = "file"` to
+  `~/.codex/config.toml`, run `codex login`, and save the contents of `~/.codex/auth.json` as
+  `CODEX_AUTH_GPT_1`. This follows OpenAI's guide for Codex with ChatGPT login in CI. The refreshed
+  login is kept in the Actions cache between runs. Treat it like a password.
+- **Free API models**: `free-github` (GitHub Models) needs nothing. Gemini, OpenRouter, Groq, Mistral and
+  Cerebras need a free key saved under the secret name shown on the Models page.
+
+An agent whose secret is missing is paused with a "Not connected" note instead of being retried.
+
+After each Claude or Codex run, CATE reads the CLI's own output for the exact tokens used and the plan's
+5-hour and weekly limits, and shows "% left" on the dashboard. Routing avoids an agent near its limit.
 
 ## 4. Adding more models later
 

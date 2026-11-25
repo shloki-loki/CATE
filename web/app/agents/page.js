@@ -1,39 +1,55 @@
 import TopBar from '@/components/TopBar';
 import { AgentButtons, AgentForm, CopyBox } from '@/components/Forms';
 import { requireSignIn } from '@/lib/auth';
-import { PROVIDERS, RUNNERS, agentState, fmt, loadAll, usage } from '@/lib/data';
-import { mainFile } from '@/lib/store';
+import { PRESETS, PROVIDERS, RUNNERS, agentState, fmt, limitRows, loadAll, secretFor, usage, when } from '@/lib/data';
 
 export const dynamic = 'force-dynamic';
 
-// The one-time setup message for each kind of runner. After this, the agent runs by itself.
-function setup(agent, tick, repo) {
-  const name = `CATE agent ${agent.id}`;
-  if (agent.runner === 'claude-code-scheduled') {
-    return {
-      where: `Sign in to claude.ai with ${agent.account || 'this Claude account'}, open Claude Code (claude.ai/code), start a session on the ${repo} repository, and send this message once:`,
-      text: `Set me up as CATE agent ${agent.id}, hands-free:\n1. Create a new Claude Code session titled "${name}" with the GitHub repository https://github.com/${repo} attached (create_session with source_url), and give it these standing instructions (append_system_prompt):\n\n---\n${tick}---\n\n2. Create a recurring scheduled task named "${name} (hourly check-in)" with cron "CRON_TZ=Asia/Kolkata 7 8-23 * * *" that wakes THAT session (persistent_session_id), with the prompt: "CATE wake-up: do one check-in now, following your CATE agent instructions."\n3. Fire it once now and tell me what it replied.`,
-    };
+// One-time connection steps per kind of agent. After this the agent starts by itself whenever there is work.
+function Setup({ agent, repo }) {
+  const secret = secretFor(agent);
+  const secretsUrl = `https://github.com/${repo}/settings/secrets/actions/new`;
+  const addSecret = (
+    <li>Open <a className="link" href={secretsUrl} target="_blank" rel="noreferrer">GitHub → CATE → Settings → Secrets → New repository secret</a>, name it <code className="inline">{secret}</code>, paste the value, save. Never paste it into a chat.</li>
+  );
+  if (agent.runner === 'claude-actions') {
+    return (
+      <ol className="sub">
+        <li>On your Mac, open Terminal and install Claude Code once: <code className="inline">npm install -g @anthropic-ai/claude-code</code></li>
+        <li>Run <code className="inline">claude setup-token</code>. A browser opens: sign in with <b>{agent.account || 'this Claude account'}</b>. It prints a long token starting <code className="inline">sk-ant-oat</code>.</li>
+        {addSecret}
+        <li>Press <b>Resume</b> above if this agent shows “Not connected”. Done: it now runs on that account&apos;s subscription, only when there is work.</li>
+        <li className="faint">For your second Claude account, run <code className="inline">claude setup-token</code> again and sign in with the other account (log out in the browser first).</li>
+      </ol>
+    );
   }
-  if (agent.runner === 'codex-automation') {
-    return {
-      where: `In the ChatGPT/Codex app signed in to ${agent.account || 'this ChatGPT account'}, open your local checkout of ${repo} (clone it first if needed), and create an automation (Automations → New) that runs hourly with this prompt:`,
-      text: tick,
-    };
+  if (agent.runner === 'codex-actions') {
+    return (
+      <ol className="sub">
+        <li>On your Mac, in Terminal: <code className="inline">mkdir -p ~/.codex &amp;&amp; echo &apos;cli_auth_credentials_store = &quot;file&quot;&apos; &gt;&gt; ~/.codex/config.toml</code></li>
+        <li>Run <code className="inline">codex login</code> and sign in with <b>{agent.account || 'your ChatGPT account'}</b> (install with <code className="inline">npm install -g @openai/codex</code> if needed).</li>
+        <li>Copy the file’s contents: <code className="inline">cat ~/.codex/auth.json | pbcopy</code></li>
+        {addSecret}
+        <li>Press <b>Resume</b> if it shows “Not connected”. CATE keeps the refreshed login between runs, as OpenAI’s CI guide describes. Treat that file like a password.</li>
+      </ol>
+    );
   }
-  if (agent.runner === 'chatgpt-scheduled') {
-    return {
-      where: 'In ChatGPT (with Developer mode and a GitHub connector able to run commands), create a scheduled task that runs hourly with this prompt:',
-      text: tick,
-    };
+  if (agent.runner === 'api') {
+    const preset = PRESETS[agent.preset];
+    if (agent.preset === 'github-models') return <p className="sub">Nothing to do: GitHub Models uses the repository’s own token. It is free and rate-limited.</p>;
+    return (
+      <ol className="sub">
+        <li>Get a {preset ? `free ${preset.label}` : ''} API key{preset?.key ? <> at <a className="link" href={preset.key} target="_blank" rel="noreferrer">{preset.key.replace('https://', '')}</a></> : ''}.</li>
+        {addSecret}
+      </ol>
+    );
   }
-  return { where: 'Paste this into the model whenever you want it to take a job:', text: tick };
+  return <p className="sub">Timer-based agent: it checks in on a schedule even when there is no work, which costs tokens. Switch it to an on-demand runner to save them.</p>;
 }
 
 export default async function Agents() {
   await requireSignIn();
   const { agents, ledger, week, conf } = await loadAll();
-  const template = await mainFile('config/prompts/agent_tick.md').catch(() => 'Run: python3 -m cate tick --agent {{agent}}');
 
   return (
     <>
@@ -41,7 +57,7 @@ export default async function Agents() {
       <main>
         <div className="page-head">
           <h1>Agents</h1>
-          <p>Each agent is one AI account on one schedule. It runs on that account&apos;s own subscription, so its tokens come from the plan you already pay for. Add an agent, then send its setup message once in that account; from then on it checks in by itself.</p>
+          <p>Each agent is one AI account or one free model. Claude and ChatGPT agents run on the plan you already pay for, through their official command-line tools, and only start when there is work for them. Connect each one once with the steps under it.</p>
         </div>
 
         <section className="section">
@@ -50,19 +66,20 @@ export default async function Agents() {
               {agents.map((a) => {
                 const u = usage(ledger, week, a.id);
                 const state = agentState(a, ledger, week);
-                const tick = template.replaceAll('{{agent}}', a.id).replaceAll('{{repo}}', conf.repo);
-                const how = setup(a, tick, conf.repo);
                 return (
                   <div key={a.id} className="agent">
                     <h3>{a.label || a.id} <span className="prov">{PROVIDERS[a.provider] || a.provider}</span></h3>
                     <div className="sub">id <code className="inline">{a.id}</code> · {RUNNERS[a.runner] || a.runner}{a.model ? ` · ${a.model}` : ''}{a.account ? ` · ${a.account}` : ''} · good at: {(a.skills || ['any']).join(', ')}</div>
                     <div className="sub" style={{ marginTop: 4 }}><span className={`dot ${state.tone}`} />{state.label}</div>
-                    <div className="sub">{fmt(u.used)} tokens this week{a.weekly_budget_tokens ? ` of ${fmt(a.weekly_budget_tokens)}` : ' (no cap)'} · {u.tasks} jobs</div>
+                    {limitRows(a).map((r) => (
+                      <div key={r.label} className="sub">{r.label}: <b>{r.left.toFixed(0)}% left</b> ({r.used}% used){r.resets ? `, resets ${when(r.resets)}` : ''}</div>
+                    ))}
+                    {!limitRows(a).length && ['claude-actions', 'codex-actions'].includes(a.runner) ? <div className="sub">Subscription limits appear after its first run.</div> : null}
+                    <div className="sub">{fmt(u.used)} tokens this week{u.cached ? ` + ${fmt(u.cached)} cached` : ''}{a.weekly_budget_tokens ? ` of ${fmt(a.weekly_budget_tokens)} budget` : ' (no budget cap)'} · {u.tasks} jobs</div>
                     <AgentButtons id={a.id} status={a.status} budget={a.weekly_budget_tokens} />
-                    <details className="box">
-                      <summary>One-time setup</summary>
-                      <p className="sub">{how.where}</p>
-                      <CopyBox text={how.text} label="Copy setup message" />
+                    <details className="box" open={a.status === 'paused' && Boolean(a.note)}>
+                      <summary>Connect (one time)</summary>
+                      <Setup agent={a} repo={conf.repo} />
                     </details>
                   </div>
                 );
@@ -71,9 +88,9 @@ export default async function Agents() {
           ) : <p className="empty">No agents yet. Add your first one below.</p>}
         </section>
 
-        <section className="section">
+        <section className="section" id="add">
           <div className="section-label">Add an agent</div>
-          <AgentForm providers={PROVIDERS} runners={RUNNERS} />
+          <AgentForm providers={PROVIDERS} runners={RUNNERS} presets={PRESETS} />
         </section>
       </main>
     </>

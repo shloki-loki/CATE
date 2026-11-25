@@ -1,7 +1,7 @@
 'use client';
 
 import { useActionState, useState, useTransition } from 'react';
-import { addAgent, addTask, approveTask, cancelTask, requeueTask, setAgent } from '@/app/actions';
+import { addAgent, addTask, approveTask, cancelTask, requeueTask, setAgent, wakeNow } from '@/app/actions';
 
 function Feedback({ state }) {
   if (!state) return null;
@@ -50,22 +50,30 @@ export function TaskForm({ providers, agents, kinds, passScore }) {
   );
 }
 
-export function AgentForm({ providers, runners }) {
+export function AgentForm({ providers, runners, presets, initial = {} }) {
   const [state, action, pending] = useActionState(addAgent, null);
+  const [runner, setRunner] = useState(initial.runner || 'claude-actions');
   return (
     <form action={action} className="stack">
       <div className="row">
-        <label>Agent id<input name="id" required placeholder="claude-1" pattern="[a-z0-9-]+" /></label>
-        <label>Provider<select name="provider" defaultValue="anthropic">{Object.entries(providers).map(([k, v]) => <option key={k} value={k}>{v}</option>)}</select></label>
-        <label>How it runs<select name="runner" defaultValue="claude-code-scheduled">{Object.entries(runners).map(([k, v]) => <option key={k} value={k}>{v}</option>)}</select></label>
+        <label>Agent id<input name="id" required placeholder="claude-1" pattern="[a-z0-9-]+" defaultValue={initial.id || ''} /></label>
+        <label>Provider<select name="provider" defaultValue={initial.provider || 'anthropic'}>{Object.entries(providers).map(([k, v]) => <option key={k} value={k}>{v}</option>)}</select></label>
+        <label>How it runs<select name="runner" value={runner} onChange={(e) => setRunner(e.target.value)}>{Object.entries(runners).map(([k, v]) => <option key={k} value={k}>{v}</option>)}</select></label>
       </div>
+      {runner === 'api' ? (
+        <div className="row">
+          <label>Free model<select name="preset" defaultValue={initial.preset || 'github-models'}>{Object.entries(presets).map(([k, v]) => <option key={k} value={k}>{v.label} · {v.free}</option>)}<option value="">Other (enter a base URL)</option></select></label>
+          <label>Base URL (only for “Other”)<input name="api_base" placeholder="https://…/v1" /></label>
+          <label>GitHub secret holding the key (blank = default)<input name="secret" placeholder="e.g. GEMINI_API_KEY" /></label>
+        </div>
+      ) : null}
       <div className="row">
         <label>Name<input name="label" placeholder="Claude Pro · account 1" /></label>
         <label>Account (for you)<input name="account" placeholder="which login this is" /></label>
         <label>Model<input name="model" placeholder="e.g. Claude Opus, GPT-5 Codex" /></label>
       </div>
       <div className="row">
-        <label>Good at (comma separated, or "any")<input name="skills" defaultValue="any" /></label>
+        <label>Good at (comma separated, or "any")<input name="skills" defaultValue={runner === 'api' ? 'write, review, plan' : 'any'} key={runner} /></label>
         <label>Weekly token budget (0 = no cap)<input name="budget" type="number" min="0" step="10000" defaultValue="0" /></label>
       </div>
       <div className="button-row"><button className="button primary" disabled={pending}>{pending ? 'Adding…' : 'Add agent'}</button><Feedback state={state} /></div>
@@ -110,6 +118,17 @@ export function CopyBox({ text, label = 'Copy' }) {
     <div>
       <pre className="result" style={{ maxHeight: 260 }}>{text}</pre>
       <button className="button small" type="button" onClick={async () => { await navigator.clipboard.writeText(text); setCopied(true); setTimeout(() => setCopied(false), 1500); }}>{copied ? 'Copied' : label}</button>
+    </div>
+  );
+}
+
+export function WakeButton() {
+  const [pending, start] = useTransition();
+  const [state, setState] = useState(null);
+  return (
+    <div className="button-row">
+      <button className="button" disabled={pending} onClick={() => start(async () => setState(await wakeNow()))}>{pending ? 'Starting…' : 'Wake agents now'}</button>
+      <Feedback state={state} />
     </div>
   );
 }
