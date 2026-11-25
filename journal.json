@@ -278,6 +278,15 @@
    "title": "Took T0004: Connection test: claude-1",
    "detail": "",
    "ref": "T0004"
+  },
+  {
+   "id": "J0032",
+   "at": "2026-11-26T03:13:16+05:30",
+   "by": "claude-2",
+   "kind": "submit",
+   "title": "Finished T0005: Connection test: claude-2",
+   "detail": "2,031 tokens; now done",
+   "ref": "T0005"
   }
  ]
 }

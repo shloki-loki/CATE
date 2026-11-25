@@ -212,7 +212,7 @@
    "priority": 1,
    "after": [],
    "inputs": [],
-   "status": "claimed",
+   "status": "done",
    "attempts": 0,
    "exclude": [],
    "review": {
@@ -224,8 +224,15 @@
    "created_by": "claude-setup",
    "created_at": "2026-11-26T03:11:26+05:30",
    "queued_at": "2026-11-26T03:11:26+05:30",
-   "claimed_by": "claude-2",
-   "result": null,
+   "claimed_by": null,
+   "result": {
+    "by": "claude-2",
+    "at": "2026-11-26T03:13:16+05:30",
+    "file": "outputs/T0005.md",
+    "text": "claude-2 connected\n",
+    "tokens_in": 2027,
+    "tokens_out": 4
+   },
    "reviews": [],
    "history": [
     {
@@ -239,9 +246,15 @@
      "actor": "claude-2",
      "event": "claimed",
      "detail": ""
+    },
+    {
+     "at": "2026-11-26T03:13:16+05:30",
+     "actor": "claude-2",
+     "event": "done",
+     "detail": "2,031 tokens"
     }
    ],
-   "updated_at": "2026-11-26T03:13:13+05:30",
+   "updated_at": "2026-11-26T03:13:16+05:30",
    "claimed_at": "2026-11-26T03:13:13+05:30"
   }
  ]
