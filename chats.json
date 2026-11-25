@@ -89,6 +89,22 @@
    "selection": [],
    "updated_at": "2026-11-26T04:31:10+05:30",
    "archived": true
+  },
+  {
+   "id": "C0004",
+   "title": "Plan check (safe to delete): add a search box at the top of the sideba",
+   "created_at": "2026-11-26T04:31:56+05:30",
+   "messages": [
+    {
+     "id": "M0001",
+     "role": "user",
+     "text": "Plan check (safe to delete): add a search box at the top of the sidebar that filters my projects by title as I type.",
+     "at": "2026-11-26T04:31:56+05:30",
+     "files": []
+    }
+   ],
+   "selection": [],
+   "updated_at": "2026-11-26T04:31:56+05:30"
   }
  ],
  "usage": {
