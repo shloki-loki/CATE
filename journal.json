@@ -152,6 +152,15 @@
    "title": "Took T0003: Smoke test: free model connection",
    "detail": "",
    "ref": "T0003"
+  },
+  {
+   "id": "J0018",
+   "at": "2026-11-26T02:40:29+05:30",
+   "by": "free-github",
+   "kind": "fail",
+   "title": "Handed work back",
+   "detail": "API error: Expecting value: line 1 column 1 (char 0); resting 60 min",
+   "ref": "T0003"
   }
  ]
 }
