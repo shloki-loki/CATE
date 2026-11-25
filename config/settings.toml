@@ -1,0 +1,10 @@
+# CATE settings. Changes here take effect on the next agent visit.
+
+repo = "shloki-loki/CATE"        # owner/name on GitHub (fix the owner if your username differs)
+timezone = "Asia/Kolkata"
+
+[supervisor]
+claim_timeout_minutes = 150      # a claimed task with no result after this long is taken back
+fallback_minutes = 90            # after this wait, a task meant for one provider may go to any agent
+max_attempts = 3                 # silent agents + failed reviews before a task is marked failed
+default_pass_score = 80          # reviews must score at least this to pass

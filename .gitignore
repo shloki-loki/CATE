@@ -1,0 +1,15 @@
+.env
+.env.*
+!.env.example
+/data/
+/.data.lock
+/.*.lock
+/data.local.*/
+__pycache__/
+*.pyc
+web/node_modules/
+web/.next/
+web/.env*.local
+.vercel
+.DS_Store
+/.preview-data/

@@ -1,0 +1,33 @@
+{
+ "about": "Day-one test: ChatGPT finds a real job opening, Claude tailors the resume to it, a different provider scores it like an ATS. Import with: python3 -m cate task import examples/resume_tailor.json",
+ "tasks": [
+  {
+   "key": "find-job",
+   "title": "Find one current job opening that fits Shlok's resume",
+   "kind": "research",
+   "prefer": "openai",
+   "priority": 2,
+   "inputs": ["workspace/inputs/resume.md"],
+   "brief": "Search the web for ONE currently open job posting (posted in the last 30 days) that fits this resume well: Founder's Office, Strategy & Operations, Supply Chain / S&OP, or Business Strategy roles, in Bengaluru or remote-India, 0-3 years of experience. Prefer well-known startups or scale-ups. Output in Markdown: the company, the role title, the location, the posting URL, the date posted, and then the FULL job description copied faithfully (responsibilities, requirements, nice-to-haves). Finish with a list of the 15-25 most important ATS keywords from the posting. Do not invent anything: if you cannot open a real posting, say so plainly."
+  },
+  {
+   "key": "tailor",
+   "title": "Tailor the resume to the job found",
+   "kind": "write",
+   "prefer": "anthropic",
+   "priority": 2,
+   "after": ["find-job"],
+   "inputs": ["workspace/inputs/resume.md", "outputs/{find-job}.md"],
+   "review": "cross",
+   "pass_score": 80,
+   "checks": [
+    "Every fact, number, employer, date and title comes from the base resume; nothing is invented or inflated",
+    "The most important ATS keywords from the job description appear naturally (at least 70% of them where truthful)",
+    "Bullets are reordered and reworded to lead with what this job asks for; less relevant bullets are cut or shortened",
+    "Fits one page: roughly 450-650 words, same section structure as the base resume",
+    "An ATS match score (0-100) against the job description is given, with the missing keywords listed honestly"
+   ],
+   "brief": "Tailor Shlok's base resume to the job description in the second input. Keep every fact true: you may reorder, reword, emphasise, shorten and drop content, but you may not invent employers, numbers, dates, tools or results. Mirror the job's language and ATS keywords where the experience genuinely supports them. Output in Markdown: (1) the complete tailored resume, ready to paste, one page; (2) a short change log (what you emphasised, cut and reworded, and why); (3) your own ATS match estimate (0-100) with the job keywords covered and the ones still missing."
+  }
+ ]
+}
