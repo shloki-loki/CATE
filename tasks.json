@@ -279,7 +279,7 @@
    "priority": 1,
    "after": [],
    "inputs": [],
-   "status": "queued",
+   "status": "cancelled",
    "attempts": 0,
    "exclude": [],
    "review": {
@@ -300,9 +300,16 @@
      "actor": "claude-setup",
      "event": "created",
      "detail": ""
+    },
+    {
+     "at": "2026-11-26T03:15:12+05:30",
+     "actor": "claude-setup",
+     "event": "cancelled",
+     "detail": "gpt-1 not connected yet; rerun after the Codex secret is added"
     }
    ],
-   "updated_at": "2026-11-26T03:14:04+05:30"
+   "updated_at": "2026-11-26T03:15:12+05:30",
+   "reviewer": null
   }
  ]
 }
