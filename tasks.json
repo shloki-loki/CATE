@@ -11,7 +11,7 @@
    "inputs": [
     "workspace/inputs/resume.md"
    ],
-   "status": "queued",
+   "status": "claimed",
    "attempts": 0,
    "exclude": [],
    "review": {
@@ -23,7 +23,7 @@
    "created_by": "owner",
    "created_at": "2026-11-26T02:02:55+05:30",
    "queued_at": "2026-11-26T02:02:55+05:30",
-   "claimed_by": null,
+   "claimed_by": "gpt-1",
    "result": null,
    "reviews": [],
    "history": [
@@ -32,9 +32,16 @@
      "actor": "owner",
      "event": "created",
      "detail": ""
+    },
+    {
+     "at": "2026-11-26T02:27:27+05:30",
+     "actor": "gpt-1",
+     "event": "claimed",
+     "detail": ""
     }
    ],
-   "updated_at": "2026-11-26T02:02:55+05:30"
+   "updated_at": "2026-11-26T02:27:27+05:30",
+   "claimed_at": "2026-11-26T02:27:27+05:30"
   },
   {
    "id": "T0002",
