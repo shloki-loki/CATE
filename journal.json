@@ -512,6 +512,15 @@
    "title": "New task T0010: Auto-merge end-to-end test",
    "detail": "",
    "ref": "T0010"
+  },
+  {
+   "id": "J0058",
+   "at": "2026-11-26T05:09:13+05:30",
+   "by": "cate",
+   "kind": "update",
+   "title": "PR #2 merged",
+   "detail": "review, tests and build passed",
+   "ref": "T0010"
   }
  ]
 }

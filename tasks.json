@@ -570,9 +570,21 @@
      "actor": "claude-setup",
      "event": "created",
      "detail": ""
+    },
+    {
+     "at": "2026-11-26T05:09:13+05:30",
+     "actor": "cate",
+     "event": "pull request #2 merged",
+     "detail": "review, tests and build passed"
     }
    ],
-   "updated_at": "2026-11-26T05:08:51+05:30"
+   "updated_at": "2026-11-26T05:09:13+05:30",
+   "merge": {
+    "pr": 2,
+    "status": "merged",
+    "detail": "review, tests and build passed",
+    "at": "2026-11-26T05:09:13+05:30"
+   }
   }
  ]
 }
