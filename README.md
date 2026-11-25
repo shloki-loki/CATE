@@ -48,5 +48,7 @@ python3 -m cate supervise
 python3 -m cate log
 ```
 
+Changing CATE from inside CATE: agents open pull requests that CATE merges after review, tests and build pass (SETUP.md section 5).
+
 Setup: [SETUP.md](SETUP.md). Agent rules: [AGENTS.md](AGENTS.md). Python standard library only; the
 data store and dashboard are adapted from Outreach HQ.
