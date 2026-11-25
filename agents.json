@@ -83,8 +83,8 @@
     "plan"
    ],
    "weekly_budget_tokens": 0,
-   "status": "active",
-   "limited_until": null,
+   "status": "limited",
+   "limited_until": "2026-11-26T06:03:13+05:30",
    "last_seen": "2026-11-26T04:58:11+05:30",
    "created_at": "2026-11-26T02:42:13+05:30",
    "preset": "gemini",
