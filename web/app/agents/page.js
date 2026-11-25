@@ -12,7 +12,7 @@ function setup(agent, tick, repo) {
   if (agent.runner === 'claude-code-scheduled') {
     return {
       where: `Sign in to claude.ai with ${agent.account || 'this Claude account'}, open Claude Code (claude.ai/code), start a session on the ${repo} repository, and send this message once:`,
-      text: `Create a recurring scheduled task named "${name}" that runs every hour from 08:00 to 23:00 Asia/Kolkata, and starts a fresh session on the ${repo} repository each time. Use exactly this as its prompt:\n\n---\n${tick}---\n\nThen run that prompt once now to check it works, and tell me the result.`,
+      text: `Set me up as CATE agent ${agent.id}, hands-free:\n1. Create a new Claude Code session titled "${name}" with the GitHub repository https://github.com/${repo} attached (create_session with source_url), and give it these standing instructions (append_system_prompt):\n\n---\n${tick}---\n\n2. Create a recurring scheduled task named "${name} (hourly check-in)" with cron "CRON_TZ=Asia/Kolkata 7 8-23 * * *" that wakes THAT session (persistent_session_id), with the prompt: "CATE wake-up: do one check-in now, following your CATE agent instructions."\n3. Fire it once now and tell me what it replied.`,
     };
   }
   if (agent.runner === 'codex-automation') {
