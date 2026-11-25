@@ -41,6 +41,7 @@ while read -r task pr; do
   fi
   if git push -q origin automerge:main; then
     gh api "repos/$repo/issues/$pr/comments" -f body="Merged by CATE ($task): another model reviewed the change, and the tests and site build passed on the merged result." > /dev/null || true
+    gh api -X DELETE "repos/$repo/git/refs/heads/$head" > /dev/null 2>&1 || true   # tidy: the branch is merged
     record merged "review, tests and build passed"
   else
     record waiting "main changed while checking; will retry next run"
