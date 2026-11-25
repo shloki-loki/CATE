@@ -161,15 +161,44 @@
      "text": "Plan check (safe to delete): add a search box at the top of the sidebar that filters my projects by title as I type.",
      "at": "2026-11-26T04:32:49+05:30",
      "files": []
+    },
+    {
+     "id": "M0002",
+     "at": "2026-11-26T04:32:51+05:30",
+     "role": "supervisor",
+     "by": "supervisor (openai/gpt-oss-120b)",
+     "text": "Sure, I’ll add a search box to the sidebar that filters projects by title as you type.",
+     "plan": {
+      "summary": "Add searchable project list to sidebar",
+      "steps": [
+       {
+        "title": "Implement search box and filtering in sidebar",
+        "kind": "code",
+        "agent": "gpt-1",
+        "model": "gpt-6.2-astra",
+        "modelLabel": "GPT-6.2 Astra",
+        "brief": "Create a new branch (e.g., feature/sidebar-search). In the sidebar component (web/components/Sidebar.jsx or similar), add a text input at the top. Use React state to store the query and filter the projects list (from store.js) by title matching the query (case‑insensitive). Update the rendered list to reflect the filtered results. Add unit tests (e.g., using Jest/React Testing Library) to verify the input renders, typing updates state, and the displayed project titles match the filter. Run the test suite and ensure all existing tests still pass. Open a pull request for the owner to merge.",
+        "review": "cross",
+        "checks": [
+         "Search input renders in the sidebar",
+         "Typing into the input updates the filtered project list correctly",
+         "No console errors or broken UI after change",
+         "All existing and new tests pass"
+        ],
+        "after": [],
+        "inputs": []
+       }
+      ]
+     }
     }
    ],
    "selection": [],
-   "updated_at": "2026-11-26T04:32:49+05:30"
+   "updated_at": "2026-11-26T04:32:51+05:30"
   }
  ],
  "usage": {
   "2026-11-26": {
-   "groq": 3
+   "groq": 4
   }
  }
 }
