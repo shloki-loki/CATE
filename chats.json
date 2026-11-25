@@ -101,15 +101,58 @@
      "text": "Plan check (safe to delete): add a search box at the top of the sidebar that filters my projects by title as I type.",
      "at": "2026-11-26T04:31:56+05:30",
      "files": []
+    },
+    {
+     "id": "M0002",
+     "at": "2026-11-26T04:31:59+05:30",
+     "role": "supervisor",
+     "by": "supervisor (openai/gpt-oss-120b)",
+     "text": "Added a plan to implement a searchable sidebar: a new search input at the top that filters projects by title in real‑time, with tests and a PR.",
+     "plan": {
+      "summary": "Add live project search to sidebar",
+      "steps": [
+       {
+        "title": "Implement search box and filtering",
+        "kind": "code",
+        "agent": "gpt-1",
+        "model": "gpt-6.2-astra",
+        "modelLabel": "GPT-6.2 Astra",
+        "brief": "Create a new branch (feature/sidebar-search). In the sidebar component, add a text input at the top. Use React state to store the query and filter the projects list by title as the user types. Update the rendering logic to show only matching projects. Add or update unit/integration tests to cover the new UI and filtering behavior. Run the test suite and, if all pass, open a pull request for the owner to merge.",
+        "review": "none",
+        "checks": [],
+        "after": [],
+        "inputs": []
+       },
+       {
+        "title": "Review search implementation",
+        "kind": "review",
+        "agent": "gpt-1",
+        "model": "gpt-6.2-astra",
+        "modelLabel": "GPT-6.2 Astra",
+        "brief": "Review the changes on the feature/sidebar-search branch. Verify that the search input appears, typing filters the project list correctly, existing functionality is unchanged, and all tests pass.",
+        "review": "cross",
+        "checks": [
+         "Search box renders at top of sidebar",
+         "Typing filters projects by title in real‑time",
+         "No existing tests fail",
+         "UI remains responsive and layout unchanged"
+        ],
+        "after": [
+         0
+        ],
+        "inputs": []
+       }
+      ]
+     }
     }
    ],
    "selection": [],
-   "updated_at": "2026-11-26T04:31:56+05:30"
+   "updated_at": "2026-11-26T04:31:59+05:30"
   }
  ],
  "usage": {
   "2026-11-26": {
-   "groq": 2
+   "groq": 3
   }
  }
 }
