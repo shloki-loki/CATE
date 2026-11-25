@@ -269,6 +269,15 @@
    "title": "Took T0005: Connection test: claude-2",
    "detail": "",
    "ref": "T0005"
+  },
+  {
+   "id": "J0031",
+   "at": "2026-11-26T03:13:15+05:30",
+   "by": "claude-1",
+   "kind": "claim",
+   "title": "Took T0004: Connection test: claude-1",
+   "detail": "",
+   "ref": "T0004"
   }
  ]
 }
