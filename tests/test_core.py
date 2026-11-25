@@ -138,8 +138,8 @@ class Dispatch(unittest.TestCase):
         Path(TMP).mkdir()
         run("agent", "add", "--id", "claude-1", "--provider", "anthropic", "--runner", "claude-actions")
         run("agent", "add", "--id", "gpt-1", "--provider", "openai", "--runner", "codex-actions")
-        run("agent", "add", "--id", "free-gh", "--provider", "other", "--runner", "api", "--preset", "github-models",
-            "--secret", "GITHUB_TOKEN", "--skills", "write", "review")
+        run("agent", "add", "--id", "free-gh", "--provider", "other", "--runner", "api", "--preset", "gemini",
+            "--secret", "GEMINI_API_KEY", "--skills", "write", "review")
 
     def plan(self):
         return core.plan_dispatch(store.load("agents")["agents"], store.load("tasks")["tasks"], store.load("ledger"))

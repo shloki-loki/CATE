@@ -39,8 +39,8 @@ dashboard's Agents page shows the exact steps and secret name for each one:
   `~/.codex/config.toml`, run `codex login`, and save the contents of `~/.codex/auth.json` as
   `CODEX_AUTH_GPT_1`. This follows OpenAI's guide for Codex with ChatGPT login in CI. The refreshed
   login is kept in the Actions cache between runs. Treat it like a password.
-- **Free API models**: `free-github` (GitHub Models) needs nothing. Gemini, OpenRouter, Groq, Mistral and
-  Cerebras need a free key saved under the secret name shown on the Models page.
+- **Free API models**: Gemini (`free-gemini`), OpenRouter, Groq, Mistral and Cerebras each need a free key
+  saved under the secret name shown on the Models page. (GitHub Models was retired by GitHub in July 2026.)
 
 An agent whose secret is missing is paused with a "Not connected" note instead of being retried.
 

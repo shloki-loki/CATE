@@ -25,7 +25,7 @@ export default async function Models() {
       <main>
         <div className="page-head">
           <h1>Models &amp; connections</h1>
-          <p>Free API models handle writing, planning and reviewing, so your Claude and ChatGPT limits are kept for the work that needs tools. API models cannot browse or run code.</p>
+          <p>Each free model needs a free key saved as a GitHub secret (GitHub Models, which needed none, was shut down by GitHub in July 2026). Free API models handle writing, planning and reviewing, so your Claude and ChatGPT limits are kept for the work that needs tools. API models cannot browse or run code.</p>
         </div>
 
         <section className="section">

@@ -1,5 +1,5 @@
-"""Agents that are plain API calls: free tiers (GitHub Models, Gemini, OpenRouter, Groq, Mistral, Cerebras)
-or any OpenAI-compatible endpoint. They have no tools (no browsing, no shell), so they suit writing,
+"""Agents that are plain API calls: free tiers (Gemini, OpenRouter, Groq, Mistral, Cerebras)
+or any OpenAI-compatible endpoint (GitHub Models was retired by GitHub in July 2026). They have no tools (no browsing, no shell), so they suit writing,
 planning and reviewing, which saves subscription tokens for the work that needs tools."""
 
 from __future__ import annotations
@@ -15,8 +15,6 @@ from .cli import read_input
 
 # name: (label, base URL, default model, secret holding the key, where to get a free key, note)
 PRESETS = {
-    "github-models": ("GitHub Models (free)", "https://models.github.ai/inference", "openai/gpt-4.1-mini",
-                      "GITHUB_TOKEN", "", "No key needed: uses the repository's own GitHub token. Rate-limited."),
     "gemini": ("Google Gemini (free tier)", "https://generativelanguage.googleapis.com/v1beta/openai", "gemini-2.5-flash",
                "GEMINI_API_KEY", "https://aistudio.google.com/apikey", "Free tier: Flash models, daily request cap."),
     "openrouter": ("OpenRouter free models", "https://openrouter.ai/api/v1", "openrouter/free",

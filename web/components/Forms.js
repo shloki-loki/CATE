@@ -62,7 +62,7 @@ export function AgentForm({ providers, runners, presets, initial = {} }) {
       </div>
       {runner === 'api' ? (
         <div className="row">
-          <label>Free model<select name="preset" defaultValue={initial.preset || 'github-models'}>{Object.entries(presets).map(([k, v]) => <option key={k} value={k}>{v.label} · {v.free}</option>)}<option value="">Other (enter a base URL)</option></select></label>
+          <label>Free model<select name="preset" defaultValue={initial.preset || 'gemini'}>{Object.entries(presets).map(([k, v]) => <option key={k} value={k}>{v.label} · {v.free}</option>)}<option value="">Other (enter a base URL)</option></select></label>
           <label>Base URL (only for “Other”)<input name="api_base" placeholder="https://…/v1" /></label>
           <label>GitHub secret holding the key (blank = default)<input name="secret" placeholder="e.g. GEMINI_API_KEY" /></label>
         </div>

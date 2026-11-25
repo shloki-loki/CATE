@@ -266,6 +266,18 @@ def cmd_agent_set(a):
     print(f"Updated {a.id}")
 
 
+def cmd_agent_remove(a):
+    def change():
+        agents = store.load("agents")
+        if not store.find(agents["agents"], a.id):
+            raise core.Refused(f"No agent {a.id}")
+        agents["agents"] = [g for g in agents["agents"] if g["id"] != a.id]
+        store.save("agents", agents)
+        store.journal(a.by, "update", f"Removed agent {a.id}", a.reason or "")
+    store.transact(change, f"agent remove: {a.id}")
+    print(f"Removed {a.id}")
+
+
 def cmd_status(a):
     store.sync() if store.git_enabled() else None
     tasks = store.load("tasks")["tasks"]
@@ -402,6 +414,11 @@ def build() -> argparse.ArgumentParser:
     s.add_argument("id")
     s.add_argument("--actions", action="store_true")
     s.set_defaults(func=cmd_agent_prompt)
+    s = agent.add_parser("remove")
+    s.add_argument("id")
+    s.add_argument("--reason")
+    s.add_argument("--by", default="owner")
+    s.set_defaults(func=cmd_agent_remove)
     s = agent.add_parser("set")
     s.add_argument("id")
     s.add_argument("--by", default="owner")

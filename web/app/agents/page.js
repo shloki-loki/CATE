@@ -36,7 +36,6 @@ function Setup({ agent, repo }) {
   }
   if (agent.runner === 'api') {
     const preset = PRESETS[agent.preset];
-    if (agent.preset === 'github-models') return <p className="sub">Nothing to do: GitHub Models uses the repository’s own token. It is free and rate-limited.</p>;
     return (
       <ol className="sub">
         <li>Get a {preset ? `free ${preset.label}` : ''} API key{preset?.key ? <> at <a className="link" href={preset.key} target="_blank" rel="noreferrer">{preset.key.replace('https://', '')}</a></> : ''}.</li>
