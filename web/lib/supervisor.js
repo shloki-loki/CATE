@@ -50,6 +50,8 @@ Rules:
 - Prefer the recommended model per job, and accounts with more limit left. Put "review":"cross" on steps whose
   output matters, with 2-4 concrete checks the reviewer scores against.
 - Steps may depend on earlier ones with "after": [index of earlier step, 0-based].
+- Requests to change CATE itself (this dashboard, its agents, its code) are "code" steps on a subscription
+  agent; their brief must say: work on a branch, run the tests, open a pull request for the owner to merge.
 - Use the agent ids and model ids exactly as listed. Never invent facts about the user.
 
 Reply with ONLY this JSON object:

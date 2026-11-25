@@ -16,6 +16,7 @@ on:
 permissions:
   contents: write
   actions: write
+  pull-requests: write
 
 concurrency:
   group: cate-plan
@@ -62,6 +63,8 @@ jobs:
       - uses: actions/checkout@v5
       - uses: actions/checkout@v5
         with: { ref: data, path: data }
+      - name: Git identity for code changes
+        run: git config --global user.name "cate-agent-${{ matrix.agent }}" && git config --global user.email "cate-agent@users.noreply.github.com"
       - name: Check this agent is connected
         id: secret
         run: |
@@ -89,6 +92,7 @@ jobs:
           JOB_MODEL: ${{ steps.job.outputs.MODEL }}
           JOB_EFFORT: ${{ steps.job.outputs.EFFORT }}
           RUNNER: ${{ matrix.runner }}
+          GH_TOKEN: ${{ github.token }}
         run: |
           [ "$RUNNER" = claude-actions ] || exit 0
           npm install -g @anthropic-ai/claude-code >/dev/null 2>&1
@@ -116,6 +120,7 @@ jobs:
         env:
           JOB_MODEL: ${{ steps.job.outputs.MODEL }}
           JOB_EFFORT: ${{ steps.job.outputs.EFFORT }}
+          GH_TOKEN: ${{ github.token }}
         run: |
           mkdir -p ~/.codex
           [ -s ~/.codex/auth.json ] || printf '%s' "$AGENT_SECRET" > ~/.codex/auth.json
