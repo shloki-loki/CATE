@@ -117,7 +117,7 @@
    "priority": 1,
    "after": [],
    "inputs": [],
-   "status": "queued",
+   "status": "cancelled",
    "attempts": 0,
    "exclude": [],
    "review": {
@@ -150,10 +150,17 @@
      "actor": "free-github",
      "event": "released",
      "detail": "API error: Expecting value: line 1 column 1 (char 0)"
+    },
+    {
+     "at": "2026-11-26T02:42:09+05:30",
+     "actor": "claude-setup",
+     "event": "cancelled",
+     "detail": "GitHub Models was retired in July 2026"
     }
    ],
-   "updated_at": "2026-11-26T02:40:29+05:30",
-   "claimed_at": "2026-11-26T02:40:27+05:30"
+   "updated_at": "2026-11-26T02:42:09+05:30",
+   "claimed_at": "2026-11-26T02:40:27+05:30",
+   "reviewer": null
   }
  ]
 }
