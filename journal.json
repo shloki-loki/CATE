@@ -359,6 +359,15 @@
    "title": "Took T0007: Connection test: free-gemini",
    "detail": "",
    "ref": "T0007"
+  },
+  {
+   "id": "J0041",
+   "at": "2026-11-26T03:22:46+05:30",
+   "by": "free-gemini",
+   "kind": "fail",
+   "title": "Handed work back",
+   "detail": "API error: 404 from https://generativelanguage.googleapis.com/v1beta/openai: [{\n  \"error\": {\n    \"code\": 404,\n    \"message\": \"This model models/gemini-2.5-flash is no longer available to new users. Please update your code to use models/gemini-3.8-flash for the latest features and improvements. We re; resting 60 min",
+   "ref": "T0007"
   }
  ]
 }
