@@ -22,7 +22,7 @@
    "provider": "anthropic",
    "runner": "claude-actions",
    "account": "",
-   "model": "Claude (Pro plan)",
+   "model": "",
    "skills": [
     "any"
    ],
