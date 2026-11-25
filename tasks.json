@@ -11,7 +11,7 @@
    "inputs": [
     "workspace/inputs/resume.md"
    ],
-   "status": "claimed",
+   "status": "done",
    "attempts": 0,
    "exclude": [],
    "review": {
@@ -23,8 +23,15 @@
    "created_by": "owner",
    "created_at": "2026-11-26T02:02:55+05:30",
    "queued_at": "2026-11-26T02:02:55+05:30",
-   "claimed_by": "gpt-1",
-   "result": null,
+   "claimed_by": null,
+   "result": {
+    "by": "gpt-1",
+    "at": "2026-11-26T02:29:54+05:30",
+    "file": "outputs/T0001.md",
+    "text": "# T0001 — One current job opportunity for Shlok Agrawal\n\nResearched on 26 November 2026 (India time).\n\n## Company, role, location and posting\n\n- **Company:** Enterpret.\n- **Role:** Founder’s Office: Revenue Operations & Systems (RevOps).\n- **Location:** Bengaluru, onsite.\n- **Posting URL:** [Employer’s Greenhouse posting and application form](https://job-boards.greenhouse.io/enterpret/jobs/8194486003).\n- **Open status:** The employer’s [current openings board](https://job-boards.greenhouse.io/enterpret) lists this role, and the individual posting has an application form. Both opened successfully during this research.\n- **Date posted:** **5 November 2026**, according to [GTM Daily](https://gtmdaily.com/jobs/founder-s-office-revenue-operations-systems-revops-enterpret-c3ab1a7a)—21 days before this research, within the requested 30-day window. The employer page does not display a posting date, so this is secondary-source evidence, not an employer-verified original publication date. GTM Daily’s outbound redirect failed to resolve in the browsing tool; the employer URL above was independently opened from its own job board.\n- **Experience:** [Placement Baba](https://placementbaba.com/job/founder-s-office-revenue-operations-systems-revops-at-enterpret-in-bengaluru-141270) explicitly labels this opening **0–3 years**. The employer specifies relevant experience without a numeric range. Eligibility for that range is therefore not independently confirmed by the employer.\n\n## Job description — summary, not a verbatim reproduction\n\nI cannot reproduce the full copyrighted job description. The complete original is available at the employer link above; the following is a concise paraphrase. This submission does **not** satisfy the brief’s full-copy requirement.\n\n**Responsibilities:** Diagnose revenue-process failures; improve lead assignment, deals, renewals and departmental transfers. Repair CRM problems, reconcile records and produce decision-useful metrics. Assist forecasts and planning. Align commercial records with Finance without independently committing policy or money. Develop, validate and monitor AI-enabled automation; coordinate delivery and document maintainable processes.\n\n**Requirements:** Demonstrated operational ownership; practical CRM knowledge; spreadsheet and SQL analysis; API or low-code integration skills; evaluated AI use; judgment, learning ability, communication and dependable execution.\n\n**Nice-to-haves:** No separate preferred-qualifications list appears. Salesforce/HubSpot and n8n/Zapier are examples within requirements.\n\n**Source inconsistency:** The benefits section includes database-engineering/L6 language seemingly unrelated to this role; clarify with recruiting. [Source: employer posting](https://job-boards.greenhouse.io/enterpret/jobs/8194486003).\n\n## Fit against the supplied resume\n\nMy assessment: a promising operations-and-automation match, with a material CRM gap to establish before applying. Shlok’s founder-facing execution at Ola and Beltech, quantified process improvements, SQL/Excel skills, Flask API project and six-agent Outreach HQ project provide relevant evidence. His resume does not establish Salesforce/HubSpot administration or subscription billing experience. The experience band remains a secondary-source claim, so this should not be treated as an unqualified eligibility match.\n\nEnterpret’s employer board names Kleiner Perkins and Sequoia as backers, supporting the preference for an established venture-backed startup. [Source: employer careers board](https://job-boards.greenhouse.io/enterpret).\n\n## ATS keywords from the posting\n\nSelected for relevance to the work; no ATS ranking was available. [Source: employer posting](https://job-boards.greenhouse.io/enterpret/jobs/8194486003).\n\n1. CRM\n2. Salesforce\n3. HubSpot\n4. SQL\n5. APIs\n6. n8n\n7. Zapier\n8. forecasting\n9. renewals\n10. spreadsheets\n11. integrations\n12. automations\n13. documentation\n14. GTM\n15. BizOps\n",
+    "tokens_in": 37000,
+    "tokens_out": 5000
+   },
    "reviews": [],
    "history": [
     {
@@ -38,9 +45,15 @@
      "actor": "gpt-1",
      "event": "claimed",
      "detail": ""
+    },
+    {
+     "at": "2026-11-26T02:29:54+05:30",
+     "actor": "gpt-1",
+     "event": "done",
+     "detail": "42,000 tokens"
     }
    ],
-   "updated_at": "2026-11-26T02:27:27+05:30",
+   "updated_at": "2026-11-26T02:29:54+05:30",
    "claimed_at": "2026-11-26T02:27:27+05:30"
   },
   {
