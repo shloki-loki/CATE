@@ -353,9 +353,15 @@
      "actor": "free-gemini",
      "event": "released",
      "detail": "API error: 404 from https://generativelanguage.googleapis.com/v1beta/openai: [{\n  \"error\": {\n    \"code\": 404,\n    \"message\": \"This model models/gemini-2.5-flash is no longer available to new users. Please update your code to use models/gemini-3.8-flash for the latest features and improvements. We re"
+    },
+    {
+     "at": "2026-11-26T03:23:24+05:30",
+     "actor": "claude-setup",
+     "event": "requeued",
+     "detail": "model fixed"
     }
    ],
-   "updated_at": "2026-11-26T03:22:46+05:30",
+   "updated_at": "2026-11-26T03:23:24+05:30",
    "claimed_at": "2026-11-26T03:22:45+05:30"
   }
  ]
