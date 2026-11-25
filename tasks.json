@@ -310,6 +310,40 @@
    ],
    "updated_at": "2026-11-26T03:15:12+05:30",
    "reviewer": null
+  },
+  {
+   "id": "T0007",
+   "title": "Connection test: free-gemini",
+   "brief": "Connection test only. Reply with the single sentence: free-gemini connected.",
+   "kind": "write",
+   "prefer": "agent:free-gemini",
+   "priority": 1,
+   "after": [],
+   "inputs": [],
+   "status": "queued",
+   "attempts": 0,
+   "exclude": [],
+   "review": {
+    "mode": "none",
+    "pass_score": 80,
+    "checks": []
+   },
+   "parent": null,
+   "created_by": "claude-setup",
+   "created_at": "2026-11-26T03:22:25+05:30",
+   "queued_at": "2026-11-26T03:22:25+05:30",
+   "claimed_by": null,
+   "result": null,
+   "reviews": [],
+   "history": [
+    {
+     "at": "2026-11-26T03:22:25+05:30",
+     "actor": "claude-setup",
+     "event": "created",
+     "detail": ""
+    }
+   ],
+   "updated_at": "2026-11-26T03:22:25+05:30"
   }
  ]
 }
