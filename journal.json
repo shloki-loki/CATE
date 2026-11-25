@@ -305,6 +305,15 @@
    "title": "Changed agent gpt-1",
    "detail": "",
    "ref": ""
+  },
+  {
+   "id": "J0035",
+   "at": "2026-11-26T03:14:04+05:30",
+   "by": "claude-setup",
+   "kind": "update",
+   "title": "New task T0006: Connection test: gpt-1",
+   "detail": "",
+   "ref": "T0006"
   }
  ]
 }

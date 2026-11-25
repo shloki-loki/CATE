@@ -269,6 +269,40 @@
    ],
    "updated_at": "2026-11-26T03:13:16+05:30",
    "claimed_at": "2026-11-26T03:13:13+05:30"
+  },
+  {
+   "id": "T0006",
+   "title": "Connection test: gpt-1",
+   "brief": "Connection test only. Write the single sentence 'gpt-1 connected' to a file and submit it. Do nothing else.",
+   "kind": "other",
+   "prefer": "agent:gpt-1",
+   "priority": 1,
+   "after": [],
+   "inputs": [],
+   "status": "queued",
+   "attempts": 0,
+   "exclude": [],
+   "review": {
+    "mode": "none",
+    "pass_score": 80,
+    "checks": []
+   },
+   "parent": null,
+   "created_by": "claude-setup",
+   "created_at": "2026-11-26T03:14:04+05:30",
+   "queued_at": "2026-11-26T03:14:04+05:30",
+   "claimed_by": null,
+   "result": null,
+   "reviews": [],
+   "history": [
+    {
+     "at": "2026-11-26T03:14:04+05:30",
+     "actor": "claude-setup",
+     "event": "created",
+     "detail": ""
+    }
+   ],
+   "updated_at": "2026-11-26T03:14:04+05:30"
   }
  ]
 }
