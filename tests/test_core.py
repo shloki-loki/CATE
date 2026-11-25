@@ -11,6 +11,7 @@ from pathlib import Path
 TMP = tempfile.mkdtemp(prefix="cate-test-")
 os.environ["CATE_DATA_DIR"] = TMP
 os.environ["CATE_NO_GIT"] = "1"
+os.environ.pop("CATE_DEFER_TOKENS", None)  # set inside agent runs; these tests expect tokens charged at once
 
 from cate import core, store  # noqa: E402
 from cate.cli import main  # noqa: E402
