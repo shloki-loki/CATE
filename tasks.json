@@ -508,9 +508,15 @@
      "actor": "cate",
      "event": "pull request #1 waiting",
      "detail": "could not read the pull request"
+    },
+    {
+     "at": "2026-11-26T05:08:14+05:30",
+     "actor": "cate",
+     "event": "pull request #1 merged",
+     "detail": "it was already merged on GitHub"
     }
    ],
-   "updated_at": "2026-11-26T05:07:59+05:30",
+   "updated_at": "2026-11-26T05:08:14+05:30",
    "claimed_at": "2026-11-26T04:55:57+05:30",
    "run_model": "claude-opus-5-5",
    "run_effort": "high",
@@ -520,9 +526,9 @@
    "review_model": "gemini-3.8-flash",
    "merge": {
     "pr": 1,
-    "status": "waiting",
-    "detail": "could not read the pull request",
-    "at": "2026-11-26T05:07:59+05:30"
+    "status": "merged",
+    "detail": "it was already merged on GitHub",
+    "at": "2026-11-26T05:08:14+05:30"
    }
   }
  ]

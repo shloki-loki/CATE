@@ -494,6 +494,15 @@
    "title": "PR #1 waiting",
    "detail": "could not read the pull request",
    "ref": "T0009"
+  },
+  {
+   "id": "J0056",
+   "at": "2026-11-26T05:08:14+05:30",
+   "by": "cate",
+   "kind": "update",
+   "title": "PR #1 merged",
+   "detail": "it was already merged on GitHub",
+   "ref": "T0009"
   }
  ]
 }

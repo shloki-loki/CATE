@@ -271,6 +271,13 @@
      "by": "cate",
      "text": "Auto-merge of pull request #1 stopped: could not read the pull request. You can merge it by hand on GitHub.",
      "at": "2026-11-26T05:07:59+05:30"
+    },
+    {
+     "id": "M0008",
+     "role": "system",
+     "by": "cate",
+     "text": "✓ Merged pull request #1 after review, tests and build passed. It goes live in about a minute.",
+     "at": "2026-11-26T05:08:14+05:30"
     }
    ],
    "selection": [
@@ -285,7 +292,7 @@
      "kind": ""
     }
    ],
-   "updated_at": "2026-11-26T05:07:59+05:30"
+   "updated_at": "2026-11-26T05:08:14+05:30"
   }
  ],
  "usage": {
