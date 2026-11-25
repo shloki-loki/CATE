@@ -2,9 +2,9 @@
 
 import { useRouter } from 'next/navigation';
 import { useCallback, useEffect, useMemo, useRef, useState, useTransition } from 'react';
-import { approveTask, cancelTask, retryTask, runPlan, sendMessage } from '@/app/actions';
+import { approveTask, archiveChat, cancelTask, retryTask, runPlan, sendMessage } from '@/app/actions';
 import { MenuButton } from '@/components/AppFrame';
-import { Arrow, Clip, Spark, Split, X } from '@/components/Icons';
+import { Archive, Arrow, Clip, Spark, Split, X } from '@/components/Icons';
 import Markdown from '@/components/Markdown';
 
 const KIND_LABELS = { plan: 'Planning', research: 'Research', write: 'Writing', code: 'Development', review: 'Review', data: 'Data', other: 'Other' };
@@ -269,6 +269,12 @@ export default function Chat({ chatId, initial, agents, models, recommended, sup
         <MenuButton />
         <h2>{chat?.title || 'New project'}</h2>
         {active ? <span className="pill accent"><span className="spinner" aria-hidden="true" /> Agents working</span> : null}
+        {chatId ? (
+          <button className="icon-btn" title={chat?.archived ? 'Move back to projects' : 'Archive project'} onClick={() => start(async () => {
+            await archiveChat(chatId, !chat?.archived);
+            if (!chat?.archived) router.push('/'); else router.refresh();
+          })}><Archive /></button>
+        ) : null}
       </div>
 
       <div className="messages">
