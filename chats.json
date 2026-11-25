@@ -51,10 +51,23 @@
      "text": "Connection check for the supervisor (safe to delete): reply in one short sentence and do not propose a plan.",
      "at": "2026-11-26T04:30:51+05:30",
      "files": []
+    },
+    {
+     "id": "M0002",
+     "at": "2026-11-26T04:30:53+05:30",
+     "role": "supervisor",
+     "by": "supervisor (openai/gpt-oss-120b)",
+     "text": "Supervisor connection confirmed.",
+     "plan": null
     }
    ],
    "selection": [],
-   "updated_at": "2026-11-26T04:30:51+05:30"
+   "updated_at": "2026-11-26T04:30:53+05:30"
   }
- ]
+ ],
+ "usage": {
+  "2026-11-26": {
+   "groq": 1
+  }
+ }
 }
