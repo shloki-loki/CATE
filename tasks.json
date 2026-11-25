@@ -447,7 +447,7 @@
    "priority": 2,
    "after": [],
    "inputs": [],
-   "status": "review",
+   "status": "reviewing",
    "attempts": 0,
    "exclude": [],
    "chat": "C0006",
@@ -490,13 +490,22 @@
      "actor": "claude-2",
      "event": "submitted for review",
      "detail": "51,000 tokens"
+    },
+    {
+     "at": "2026-11-26T04:58:11+05:30",
+     "actor": "free-gemini",
+     "event": "review started",
+     "detail": ""
     }
    ],
-   "updated_at": "2026-11-26T04:57:32+05:30",
+   "updated_at": "2026-11-26T04:58:11+05:30",
    "claimed_at": "2026-11-26T04:55:57+05:30",
    "run_model": "claude-opus-5-5",
    "run_effort": "high",
-   "review_queued_at": "2026-11-26T04:57:32+05:30"
+   "review_queued_at": "2026-11-26T04:57:32+05:30",
+   "reviewer": "free-gemini",
+   "reviewing_at": "2026-11-26T04:58:11+05:30",
+   "review_model": "gemini-3.8-flash"
   }
  ]
 }
