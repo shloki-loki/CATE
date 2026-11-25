@@ -314,6 +314,15 @@
    "title": "New task T0006: Connection test: gpt-1",
    "detail": "",
    "ref": "T0006"
+  },
+  {
+   "id": "J0036",
+   "at": "2026-11-26T03:14:24+05:30",
+   "by": "github-actions",
+   "kind": "fail",
+   "title": "gpt-1 is not connected",
+   "detail": "Not connected: GitHub secret CODEX_AUTH_GPT_1 is missing. Add it, then press Resume.",
+   "ref": ""
   }
  ]
 }
