@@ -6,7 +6,7 @@
 import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
 import { assertSignedIn, endSession, passwordIsSet, passwordMatches, startSession } from '@/lib/auth';
-import { KIND_LABELS, chooseModel, enabledModels, loadCatalog } from '@/lib/catalog';
+import { KIND_LABELS, bestFor, chooseModel, enabledModels, loadCatalog } from '@/lib/catalog';
 import { PRESETS, PROVIDERS, RUNNERS } from '@/lib/data';
 import { Abort, nowIso, read, settings, update, uploadFile, wakeAgents } from '@/lib/store';
 import { supervise, supervisorAvailable } from '@/lib/supervisor';
@@ -158,9 +158,9 @@ export async function sendMessage(formData) {
     }
     if (!answer) {
       // No supervisor key (or it failed): offer a one-step plan with the picked or recommended model.
-      const pick = selection[0];
+      const kind = selection[0]?.kind || 'other';
+      const pick = selection[0] || bestFor(catalog, agents, kind);
       const agent = agents.find((a) => a.id === pick?.agent) || agents.find((a) => a.runner !== 'api' && a.status !== 'paused');
-      const kind = pick?.kind || 'other';
       const model = agent ? chooseModel(catalog, agent, kind, pick?.model) : '';
       answer = {
         reply: failure
