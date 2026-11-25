@@ -233,6 +233,15 @@
    "title": "New task T0005: Connection test: claude-2",
    "detail": "",
    "ref": "T0005"
+  },
+  {
+   "id": "J0027",
+   "at": "2026-11-26T03:12:42+05:30",
+   "by": "claude-setup",
+   "kind": "update",
+   "title": "Changed agent claude-1",
+   "detail": "",
+   "ref": ""
   }
  ]
 }
