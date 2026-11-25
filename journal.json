@@ -197,6 +197,15 @@
    "title": "Agents waiting to be connected",
    "detail": "claude-1, claude-2, gpt-1 need their GitHub secrets",
    "ref": ""
+  },
+  {
+   "id": "J0023",
+   "at": "2026-11-26T03:11:20+05:30",
+   "by": "claude-setup",
+   "kind": "update",
+   "title": "Changed agent claude-1",
+   "detail": "",
+   "ref": ""
   }
  ]
 }
