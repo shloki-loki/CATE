@@ -11,10 +11,33 @@
      "text": "CATE connection check: please just reply OK (safe to delete).",
      "at": "2026-11-26T04:15:43+05:30",
      "files": []
+    },
+    {
+     "id": "M0002",
+     "at": "2026-11-26T04:15:44+05:30",
+     "role": "supervisor",
+     "by": "cate",
+     "text": "The instant supervisor is off (add a free **GROQ_API_KEY** in Vercel to turn it on). Here is a one-step plan you can run as is or adjust:",
+     "plan": {
+      "summary": "Run the request as one step",
+      "steps": [
+       {
+        "title": "CATE connection check: please just reply OK (safe to delete).",
+        "kind": "other",
+        "agent": "claude-1",
+        "model": "claude-sonnet-5-5",
+        "brief": "CATE connection check: please just reply OK (safe to delete).",
+        "review": "cross",
+        "checks": [],
+        "after": [],
+        "inputs": []
+       }
+      ]
+     }
     }
    ],
    "selection": [],
-   "updated_at": "2026-11-26T04:15:43+05:30"
+   "updated_at": "2026-11-26T04:15:44+05:30"
   }
  ]
 }
