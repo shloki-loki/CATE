@@ -30,7 +30,18 @@
    "status": "active",
    "limited_until": null,
    "last_seen": "2026-11-26T03:13:13+05:30",
-   "created_at": "2026-11-26T02:02:55+05:30"
+   "created_at": "2026-11-26T02:02:55+05:30",
+   "limits": {
+    "five_hour": {
+     "used_pct": 30.0,
+     "resets_at": "2026-11-26T05:40:00+05:30"
+    },
+    "seven_day": {
+     "used_pct": 18.0,
+     "resets_at": "2026-11-29T18:30:00+05:30"
+    },
+    "at": "2026-11-26T03:13:20+05:30"
+   }
   },
   {
    "id": "gpt-1",
