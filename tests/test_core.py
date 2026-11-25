@@ -218,3 +218,21 @@ class Parse(unittest.TestCase):
         self.assertEqual(info["limits"]["five_hour"]["used_pct"], 12.5)
         self.assertEqual(info["limits"]["seven_day"]["used_pct"], 30.0)
         self.assertEqual((info["tokens_in"], info["cached"], info["tokens_out"]), (3000, 6000, 800))
+
+
+class CodexRollout(unittest.TestCase):
+    def test_rollout_limits_without_double_counting(self):
+        from cate import runs
+        Path(TMP).mkdir(exist_ok=True)
+        path = Path(TMP) / "usage.jsonl"
+        path.write_text("\n".join(json.dumps(x) for x in [
+            {"type": "turn.completed", "usage": {"input_tokens": 51596, "cached_input_tokens": 44672, "output_tokens": 132}},
+            {"timestamp": "2026-11-26T03:31:44Z", "type": "event_msg", "payload": {"type": "token_count",
+             "info": {"total_token_usage": {"input_tokens": 51596, "output_tokens": 132}},
+             "rate_limits": {"primary": {"used_percent": 8.0, "window_minutes": 300, "resets_at": 1795660000},
+                             "secondary": {"used_percent": 21.0, "window_minutes": 10080, "resets_at": 1796100000}}}},
+        ]))
+        info = runs.parse(path)
+        self.assertEqual((info["tokens_in"], info["tokens_out"]), (6924, 132))
+        self.assertEqual(info["limits"]["five_hour"]["used_pct"], 8.0)
+        self.assertEqual(info["limits"]["seven_day"]["used_pct"], 21.0)

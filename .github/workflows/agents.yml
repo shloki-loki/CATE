@@ -109,7 +109,10 @@ jobs:
             "${model_args[@]}" "$(python3 -m cate agent prompt "$AGENT" --actions)" > run.jsonl 2> codex.err \
             || { echo "::warning::codex exited with an error"; tail -c 1500 codex.err; }
           grep -iE '"type":"(error|turn.failed)"' run.jsonl | head -c 1500 || true
-          python3 -m cate usage --agent "$AGENT" --stream run.jsonl
+          # Codex writes the plan's 5-hour / weekly limits to its session log, not to --json output.
+          rollout=$(ls -t ~/.codex/sessions/*/*/*/rollout-*.jsonl 2>/dev/null | head -1)
+          cat run.jsonl ${rollout:+"$rollout"} > usage.jsonl
+          python3 -m cate usage --agent "$AGENT" --stream usage.jsonl
       - name: Keep the refreshed Codex login
         if: always() && steps.secret.outputs.ok == 'true' && matrix.runner == 'codex-actions'
         uses: actions/cache/save@v4
