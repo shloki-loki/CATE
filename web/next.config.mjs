@@ -1,7 +1,15 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   poweredByHeader: false,
-  experimental: { serverActions: { bodySizeLimit: '1mb' } },
+  experimental: { serverActions: { bodySizeLimit: '20mb' } },
+  async redirects() {
+    return [
+      { source: '/log', destination: '/logs', permanent: false },
+      { source: '/tasks', destination: '/', permanent: false },
+      { source: '/agents', destination: '/models', permanent: false },
+      { source: '/task/:id', destination: '/logs', permanent: false },
+    ];
+  },
   async headers() {
     // Private tool: keep it out of search engines and other sites' frames.
     return [{ source: '/(.*)', headers: [

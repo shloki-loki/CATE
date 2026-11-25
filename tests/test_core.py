@@ -236,3 +236,56 @@ class CodexRollout(unittest.TestCase):
         self.assertEqual((info["tokens_in"], info["tokens_out"]), (6924, 132))
         self.assertEqual(info["limits"]["five_hour"]["used_pct"], 8.0)
         self.assertEqual(info["limits"]["seven_day"]["used_pct"], 21.0)
+
+
+class Models(unittest.TestCase):
+    def setUp(self):
+        shutil.rmtree(TMP, ignore_errors=True)
+        Path(TMP).mkdir()
+        run("agent", "add", "--id", "claude-1", "--provider", "anthropic", "--runner", "claude-actions")
+        run("agent", "add", "--id", "claude-2", "--provider", "anthropic", "--runner", "claude-actions")
+        run("agent", "add", "--id", "gpt-1", "--provider", "openai", "--runner", "codex-actions")
+
+    def agent(self, ident):
+        return store.find(store.load("agents")["agents"], ident)
+
+    def test_defaults_follow_catalog(self):
+        self.assertEqual(core.choose_model(self.agent("claude-1"), {"kind": "code"})[0], "claude-opus-5-5")
+        self.assertEqual(core.choose_model(self.agent("gpt-1"), {"kind": "code"})[0], "gpt-6.2-astra")
+        self.assertNotIn("claude-fable-5-2", core.enabled_models(self.agent("claude-1")))  # paid credits
+
+    def test_user_choice_and_low_limits(self):
+        self.assertEqual(core.choose_model(self.agent("claude-1"), {"kind": "code", "model": "claude-haiku-5-5"})[0],
+                         "claude-haiku-5-5")
+        agents = store.load("agents")
+        store.find(agents["agents"], "claude-1")["limits"] = {"seven_day": {"used_pct": 85}}
+        store.save("agents", agents)
+        self.assertEqual(core.choose_model(self.agent("claude-1"), {"kind": "write"})[0], "claude-sonnet-5-5")
+
+    def test_next_agent_takes_over_at_once_when_chosen_one_is_out(self):
+        agents = store.load("agents")
+        store.find(agents["agents"], "claude-1")["limits"] = {
+            "five_hour": {"used_pct": 99, "resets_at": (now() + timedelta(hours=3)).isoformat()}}
+        store.save("agents", agents)
+        core_task = store.transact(lambda: core.add_task("owner", "t", "b", "code", "agent:claude-1",
+                                                         model="claude-opus-5-5"), "t")
+        plan = core.plan_dispatch(store.load("agents")["agents"], store.load("tasks")["tasks"], store.load("ledger"))
+        self.assertEqual([(p["agent"], p["model"]) for p in plan], [("claude-2", "claude-opus-5-5")])
+
+    def test_emit_and_conversation(self):
+        chats = {"chats": [{"id": "C0001", "title": "Resume", "messages": [
+            {"role": "user", "text": "Tailor my resume for Razorpay", "at": "x"},
+            {"role": "user", "text": "Actually keep it to one page", "at": "y"}]}]}
+        store.save("chats", chats)
+        store.transact(lambda: core.add_task("owner", "Tailor", "Do it", "write", "agent:claude-2",
+                                             model="claude-sonnet-5-5", chat="C0001"), "t")
+        out = Path(TMP) / "job"
+        code, text = run("tick", "--agent", "claude-2", "--emit", str(out))
+        self.assertEqual(code, 0, text)
+        env = (out / "job.env").read_text()
+        self.assertIn("MODEL=claude-sonnet-5-5", env)
+        self.assertIn("ACTION=work", env)
+        self.assertIn("keep it to one page", (out / "job.md").read_text())
+        # A run that ends without a result hands the job straight back.
+        run("release", "--agent", "claude-2", "--task", "T0001", "--reason", "x", "--only-if-held")
+        self.assertEqual(store.find(store.load("tasks")["tasks"], "T0001")["status"], "queued")

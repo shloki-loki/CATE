@@ -1,0 +1,243 @@
+{
+ "about": "Models CATE can use, and what each is best at. Scores 1-5 per kind of job, from public benchmarks and vendor guidance as of November 2026 (sources below). 'weight' is roughly how fast a model uses a subscription's limits (Haiku = 1). Defaults per job pick the best score among enabled models on accounts with the most limit left; the user can override any choice.",
+ "updated": "2026-11-26",
+ "kinds": {
+  "plan": "Framing the project, clarifying, splitting work",
+  "research": "Finding and checking information on the web",
+  "write": "Drafting documents, emails, resumes",
+  "code": "Building and fixing software",
+  "review": "Checking another model's work against requirements",
+  "data": "Summarising, extracting, formatting, spreadsheets",
+  "other": "Anything else"
+ },
+ "providers": {
+  "anthropic": {
+   "label": "Claude",
+   "plan": "Claude Pro",
+   "models": [
+    {
+     "id": "claude-opus-5-5",
+     "label": "Opus 5.5",
+     "weight": 5,
+     "effort": "high",
+     "scores": {
+      "plan": 5,
+      "research": 5,
+      "write": 5,
+      "code": 5,
+      "review": 5,
+      "data": 4,
+      "other": 5
+     },
+     "note": "Strongest model included in Pro: 89.9% SWE-bench Pro, top-3 on LMArena text. Uses limits fastest."
+    },
+    {
+     "id": "claude-sonnet-5-5",
+     "label": "Sonnet 5.5",
+     "weight": 2.5,
+     "effort": "medium",
+     "scores": {
+      "plan": 4,
+      "research": 4,
+      "write": 5,
+      "code": 4,
+      "review": 4,
+      "data": 4,
+      "other": 4
+     },
+     "note": "About 95% of Opus on most suites at half the cost; 81.3% SWE-bench Pro. Best everyday default."
+    },
+    {
+     "id": "claude-haiku-5-5",
+     "label": "Haiku 5.5",
+     "weight": 1,
+     "effort": "low",
+     "scores": {
+      "plan": 3,
+      "research": 3,
+      "write": 3,
+      "code": 3,
+      "review": 3,
+      "data": 4,
+      "other": 3
+     },
+     "note": "Fastest and lightest on limits; good for summaries, extraction and quick checks."
+    },
+    {
+     "id": "claude-fable-5-2",
+     "label": "Fable 5.2",
+     "weight": 8,
+     "effort": "high",
+     "paid_credits": true,
+     "scores": {
+      "plan": 5,
+      "research": 5,
+      "write": 5,
+      "code": 5,
+      "review": 5,
+      "data": 4,
+      "other": 5
+     },
+     "note": "Tops SWE-bench Pro (93%), but on Pro it is paid through usage credits. Off by default."
+    }
+   ]
+  },
+  "openai": {
+   "label": "ChatGPT",
+   "plan": "ChatGPT Pro",
+   "models": [
+    {
+     "id": "gpt-6.2-astra",
+     "label": "GPT-6.2 Astra",
+     "weight": 5,
+     "effort": "high",
+     "scores": {
+      "plan": 5,
+      "research": 5,
+      "write": 4,
+      "code": 5,
+      "review": 5,
+      "data": 4,
+      "other": 5
+     },
+     "note": "OpenAI's model for demanding work across code, apps and research."
+    },
+    {
+     "id": "gpt-6.2-sol",
+     "label": "GPT-6.2 Sol",
+     "weight": 2.5,
+     "effort": "medium",
+     "scores": {
+      "plan": 4,
+      "research": 4,
+      "write": 4,
+      "code": 4,
+      "review": 4,
+      "data": 4,
+      "other": 4
+     },
+     "note": "Everyday coding, writing and turning notes into plans; cheaper than Astra; 500k context."
+    },
+    {
+     "id": "gpt-6.1-sol",
+     "label": "GPT-6.1 Sol",
+     "weight": 2,
+     "effort": "medium",
+     "scores": {
+      "plan": 4,
+      "research": 4,
+      "write": 4,
+      "code": 4,
+      "review": 4,
+      "data": 4,
+      "other": 4
+     },
+     "note": "Long-running, repeated work at lower cost."
+    },
+    {
+     "id": "gpt-6.1-terra",
+     "label": "GPT-6.1 Terra",
+     "weight": 1.5,
+     "effort": "low",
+     "scores": {
+      "plan": 3,
+      "research": 3,
+      "write": 4,
+      "code": 3,
+      "review": 3,
+      "data": 4,
+      "other": 3
+     },
+     "note": "Fast, efficient writing and visual tasks."
+    },
+    {
+     "id": "gpt-6-luna",
+     "label": "GPT-6 Luna",
+     "weight": 1,
+     "effort": "low",
+     "scores": {
+      "plan": 3,
+      "research": 3,
+      "write": 3,
+      "code": 3,
+      "review": 3,
+      "data": 4,
+      "other": 3
+     },
+     "note": "Focused, high-volume work: summaries, extraction, focused coding."
+    },
+    {
+     "id": "gpt-6-astra",
+     "label": "GPT-6 Astra",
+     "weight": 4,
+     "effort": "medium",
+     "scores": {
+      "plan": 4,
+      "research": 4,
+      "write": 4,
+      "code": 4,
+      "review": 4,
+      "data": 4,
+      "other": 4
+     },
+     "note": "Reasoning plus computer use; included in Pro."
+    }
+   ]
+  },
+  "groq": {
+   "label": "Groq (free)",
+   "plan": "Free API",
+   "models": [
+    {
+     "id": "openai/gpt-oss-120b",
+     "label": "gpt-oss-120b",
+     "weight": 0,
+     "daily_requests": 1000,
+     "scores": {
+      "plan": 4,
+      "research": 1,
+      "write": 3,
+      "code": 2,
+      "review": 3,
+      "data": 3,
+      "other": 3
+     },
+     "note": "Very fast; about 1,000 free requests a day. CATE's default supervisor for instant chat replies."
+    }
+   ]
+  },
+  "google": {
+   "label": "Gemini (free)",
+   "plan": "Free API",
+   "models": [
+    {
+     "id": "gemini-3.8-flash",
+     "label": "Gemini 3.8 Flash",
+     "weight": 0,
+     "daily_requests": 20,
+     "scores": {
+      "plan": 4,
+      "research": 1,
+      "write": 3,
+      "code": 2,
+      "review": 3,
+      "data": 4,
+      "other": 3
+     },
+     "note": "Fast and capable, but the free tier may allow only ~20 requests a day; used as backup supervisor and for light reviews."
+    }
+   ]
+  }
+ },
+ "sources": [
+  "https://benchlm.ai/benchmarks/swe-bench-pro",
+  "https://www.morphllm.com/swe-bench-pro",
+  "https://llmbenchmark.ai/benchmarks/lmarena-text",
+  "https://tech-insider.org/claude-opus-vs-sonnet-vs-haiku-5-5-2026/",
+  "https://learn.chatgpt.com/docs/models",
+  "https://help.openai.com/en/articles/20001275-chatgpt-work-and-codex",
+  "https://www.nxcode.io/resources/news/claude-code-pricing-2026-free-api-costs-max-plan",
+  "https://discuss.ai.google.dev/t/gemini-3-8-flash-free-tier-20-rpd-is-too-limited-for-practical-evaluation/180609",
+  "https://benchlm.ai/free-tier/groq"
+ ]
+}

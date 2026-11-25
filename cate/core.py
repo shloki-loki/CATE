@@ -9,9 +9,9 @@ from __future__ import annotations
 from typing import Any
 
 from . import store
-from .util import estimate_tokens, later, minutes_since, now_iso, parse_iso, settings, week_key, day_key
+from .util import catalog, estimate_tokens, later, minutes_since, now_iso, parse_iso, settings, week_key, day_key
 
-PROVIDERS = ("anthropic", "openai", "google", "xai", "deepseek", "perplexity", "local", "other")
+PROVIDERS = ("anthropic", "openai", "google", "groq", "xai", "deepseek", "perplexity", "local", "other")
 # Runners that GitHub Actions starts on demand (only when there is work), and older/manual ones.
 ACTIONS_RUNNERS = ("claude-actions", "codex-actions", "api")
 RUNNERS = ACTIONS_RUNNERS + ("claude-code-scheduled", "codex-automation", "chatgpt-scheduled", "manual")
@@ -78,6 +78,58 @@ def availability(agent: dict, ledger: dict) -> tuple[bool, str]:
     return True, ""
 
 
+# ---- models -------------------------------------------------------------------------------------
+
+def provider_models(provider: str) -> list[dict]:
+    return catalog().get("providers", {}).get(provider, {}).get("models", [])
+
+
+def model_info(model_id: str) -> dict:
+    for prov in catalog().get("providers", {}).values():
+        for m in prov.get("models", []):
+            if m["id"] == model_id:
+                return m
+    return {}
+
+
+def enabled_models(agent: dict) -> list[str]:
+    """The models this agent may use: chosen on the Models page, else every model of its provider that
+    does not cost extra credits."""
+    if agent.get("models"):
+        return list(agent["models"])
+    known = [m["id"] for m in provider_models(agent.get("provider", "")) if not m.get("paid_credits")]
+    return known or ([agent["model"]] if agent.get("model") else [])
+
+
+def lowest_left(agent: dict) -> float:
+    lim = agent.get("limits") or {}
+    return min([100 - float((lim.get(w) or {}).get("used_pct") or 0) for w in ("five_hour", "seven_day")] or [100])
+
+
+def choose_model(agent: dict, task: dict) -> tuple[str, str]:
+    """(model id, effort) for this agent doing this task. The task's own choice wins if this agent has that
+    model; then the agent's per-job default; then the best-scoring enabled model for the job, picking a
+    lighter one when the account is low on limits."""
+    allowed = enabled_models(agent)
+    kind = task.get("kind", "other")
+    wanted = task.get("model")
+    if wanted and wanted in allowed:
+        pick = wanted
+    elif (agent.get("roles") or {}).get(kind) in allowed:
+        pick = agent["roles"][kind]
+    else:
+        scored = [(model_info(m).get("scores", {}).get(kind, 3), -model_info(m).get("weight", 1), m) for m in allowed]
+        if not scored:
+            return model_id(agent.get("model")), task.get("effort") or ""
+        if lowest_left(agent) < 30:  # running low: prefer the lightest model that is still good enough
+            good = [x for x in scored if x[0] >= max(s for s, _, _ in scored) - 1]
+            pick = max(good, key=lambda x: (x[1], x[0]))[2]
+        else:
+            pick = max(scored)[2]
+    effort = task.get("effort") or model_info(pick).get("effort", "")
+    return pick, effort
+
+
 # ---- routing ------------------------------------------------------------------------------------
 
 def deps_done(task: dict, tasks: list[dict]) -> bool:
@@ -92,23 +144,31 @@ def waited(task: dict) -> float:
     return minutes_since(task.get("queued_at") or task.get("created_at"))
 
 
-def preference_ok(task: dict, agent: dict) -> bool:
+def preference_ok(task: dict, agent: dict, agents: list[dict] | None = None, ledger: dict | None = None) -> bool:
     """The task's preferred provider or agent gets it first; anyone suitable gets it once it has waited
-    longer than `fallback_minutes`. That is the automatic switch when a model is out of tokens or silent."""
+    longer than `fallback_minutes`. If the chosen agent is out of limits (or paused) right now, the next
+    agent of the same provider gets it at once: the automatic switch the user agreed to."""
     prefer = task.get("prefer") or "any"
     if prefer == "any":
         return True
     matches = agent["id"] == prefer[6:] if prefer.startswith("agent:") else agent.get("provider") == prefer
-    return matches or waited(task) >= cfg("fallback_minutes", 90)
+    if matches or waited(task) >= cfg("fallback_minutes", 90):
+        return True
+    if prefer.startswith("agent:") and agents is not None and ledger is not None:
+        chosen = store.find(agents, prefer[6:])
+        if chosen and not availability(chosen, ledger)[0] and agent.get("provider") == chosen.get("provider"):
+            return not task.get("model") or task["model"] in enabled_models(agent)
+    return False
 
 
-def can_work(task: dict, agent: dict, tasks: list[dict]) -> bool:
+def can_work(task: dict, agent: dict, tasks: list[dict], agents: list[dict] | None = None,
+             ledger: dict | None = None) -> bool:
     skills = agent.get("skills") or ["any"]
     return (task.get("status") == "queued"
             and agent["id"] not in task.get("exclude", [])
-            and ("any" in skills or task.get("kind") in skills)
+            and ("any" in skills or task.get("kind") in skills or task.get("prefer") == f"agent:{agent['id']}")
             and deps_done(task, tasks)
-            and preference_ok(task, agent))
+            and preference_ok(task, agent, agents, ledger))
 
 
 def worker_provider(task: dict, agents: list[dict]) -> str:
@@ -158,11 +218,12 @@ def plan_dispatch(agents: list[dict], tasks: list[dict], ledger: dict) -> list[d
     for task in reviews + work:
         candidates = [a for a in ready if a["id"] not in chosen and a["id"] not in busy and (
             (task["status"] == "review" and can_review(task, a, agents) and a["id"] not in task.get("review_exclude", []))
-            or (task["status"] == "queued" and can_work(task, a, tasks)))]
+            or (task["status"] == "queued" and can_work(task, a, tasks, agents, ledger)))]
         if candidates:
             best = min(candidates, key=lambda a: score(a, task))
+            model, effort = choose_model(best, task)
             chosen[best["id"]] = {"agent": best["id"], "runner": best["runner"], "provider": best.get("provider"),
-                                  "secret": agent_secret(best), "model": model_id(best.get("model")),
+                                  "secret": agent_secret(best), "model": model_id(model), "effort": effort,
                                   "preset": best.get("preset") or "", "task": task["id"]}
     return list(chosen.values())
 
@@ -293,19 +354,21 @@ def tick(agent_id: str) -> dict:
                       and agent_id not in t.get("review_exclude", [])), key=order)
     if reviews:
         task = reviews[0]
-        task.update(status="reviewing", reviewer=agent_id, reviewing_at=now_iso())
+        review_model, _ = choose_model(agent, {"kind": "review", "model": (task.get("review") or {}).get("model")})
+        task.update(status="reviewing", reviewer=agent_id, reviewing_at=now_iso(), review_model=review_model)
         history(task, agent_id, "review started")
         store.save("tasks", tasks)
         store.journal(agent_id, "claim", f"Reviewing {task['id']}: {task['title']}", ref=task["id"])
         return {"action": "review", "task": task, "reason": "review needed"}
 
-    work = sorted((t for t in tasks["tasks"] if can_work(t, agent, tasks["tasks"])), key=order)
+    work = sorted((t for t in tasks["tasks"] if can_work(t, agent, tasks["tasks"], agents, ledger)), key=order)
     if not work:
         store.journal(agent_id, "run", "Idle", "nothing in the queue for this agent")
         return {"action": "idle", "task": None, "reason": "nothing in the queue for you"}
     task = work[0]
-    task.update(status="claimed", claimed_by=agent_id, claimed_at=now_iso())
-    history(task, agent_id, "claimed")
+    model, effort = choose_model(agent, task)
+    task.update(status="claimed", claimed_by=agent_id, claimed_at=now_iso(), run_model=model, run_effort=effort)
+    history(task, agent_id, "claimed", model_info(model).get("label", model) if model else "")
     store.save("tasks", tasks)
     store.journal(agent_id, "claim", f"Took {task['id']}: {task['title']}", ref=task["id"])
     return {"action": "work", "task": task, "reason": "next in the queue"}
@@ -327,7 +390,7 @@ def submit(agent_id: str, task_id: str, text: str, tokens_in: int | None = None,
     output = f"outputs/{task_id}.md"
     store.write_text(output, text)
     task["result"] = {"by": agent_id, "at": now_iso(), "file": output, "text": text[:60000],
-                      "tokens_in": t_in, "tokens_out": t_out}
+                      "tokens_in": t_in, "tokens_out": t_out, "model": task.get("run_model") or ""}
     task["claimed_by"] = None
     review = task.get("review") or {"mode": "none"}
     if review.get("mode", "none") == "none":
@@ -358,7 +421,7 @@ def review(agent_id: str, task_id: str, score: int, verdict: str, notes: str,
         raise Refused("verdict must be pass or fail")
     threshold = int((task.get("review") or {}).get("pass_score") or cfg("default_pass_score", 80))
     passed = verdict == "pass" and score >= threshold
-    task.setdefault("reviews", []).append({"by": agent_id, "at": now_iso(), "score": score,
+    task.setdefault("reviews", []).append({"by": agent_id, "model": task.get("review_model") or "", "at": now_iso(), "score": score,
                                            "verdict": "pass" if passed else "fail", "notes": notes[:20000]})
     task["reviewer"] = None
     if passed:
@@ -412,7 +475,8 @@ def release(agent_id: str, task_id: str | None, reason: str, rest_minutes: int |
 
 def add_task(by: str, title: str, brief: str, kind: str = "other", prefer: str = "any", priority: int = 3,
              after: list[str] | None = None, inputs: list[str] | None = None, review_mode: str = "none",
-             pass_score: int | None = None, checks: list[str] | None = None, parent: str | None = None) -> dict:
+             pass_score: int | None = None, checks: list[str] | None = None, parent: str | None = None,
+             model: str = "", chat: str = "", effort: str = "") -> dict:
     if kind not in KINDS:
         raise Refused(f"kind must be one of {', '.join(KINDS)}")
     if not (prefer == "any" or prefer in PROVIDERS or prefer.startswith("agent:")):
@@ -429,7 +493,8 @@ def add_task(by: str, title: str, brief: str, kind: str = "other", prefer: str =
         "inputs": inputs or [], "status": "queued", "attempts": 0, "exclude": [],
         "review": {"mode": review_mode, "pass_score": pass_score or cfg("default_pass_score", 80),
                    "checks": checks or []},
-        "parent": parent, "created_by": by, "created_at": now_iso(), "queued_at": now_iso(),
+        "parent": parent, "model": model, "chat": chat, "effort": effort,
+        "created_by": by, "created_at": now_iso(), "queued_at": now_iso(),
         "claimed_by": None, "result": None, "reviews": [], "history": [],
     }
     history(task, by, "created")

@@ -17,6 +17,13 @@ def settings() -> dict[str, Any]:
         return tomllib.load(handle)
 
 
+def catalog() -> dict[str, Any]:
+    """config/models.json: every model CATE knows, with what it is good at."""
+    import json
+    with open(CONFIG_DIR / "models.json", encoding="utf-8") as handle:
+        return json.load(handle)
+
+
 def tz() -> ZoneInfo:
     return ZoneInfo(settings().get("timezone", "Asia/Kolkata"))
 

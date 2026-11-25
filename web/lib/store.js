@@ -8,7 +8,7 @@ import { promises as fs } from 'fs';
 import path from 'path';
 
 const API = 'https://api.github.com';
-const DEFAULTS = { agents: { agents: [] }, tasks: { tasks: [] }, ledger: { weeks: {} }, journal: { entries: [] } };
+const DEFAULTS = { agents: { agents: [] }, tasks: { tasks: [] }, ledger: { weeks: {} }, journal: { entries: [] }, chats: { chats: [] } };
 
 function localDir() {
   return process.env.DATA_DIR ? path.resolve(/* turbopackIgnore: true */ process.cwd(), process.env.DATA_DIR) : null;
@@ -187,4 +187,24 @@ export async function wakeAgents(reason) {
   return { started: false, note: response.status === 403 || response.status === 404
     ? 'the GitHub token needs Actions: read and write to start agents (they will still start within 2 hours)'
     : `could not start agents: ${response.status}` };
+}
+
+// Save an uploaded file to the data branch (uploads/...), where agents can open it.
+export async function uploadFile(relative, buffer, message) {
+  const dir = localDir();
+  if (dir) {
+    const file = path.join(dir, relative);
+    await fs.mkdir(path.dirname(file), { recursive: true });
+    await fs.writeFile(file, buffer);
+    return;
+  }
+  const { name: repoName, branch } = repo();
+  const existing = await gh(`/repos/${repoName}/contents/${relative}?ref=${branch}`);
+  const sha = existing.ok ? (await existing.json()).sha : undefined;
+  const response = await gh(`/repos/${repoName}/contents/${relative}`, {
+    method: 'PUT',
+    body: JSON.stringify({ message, branch, sha, content: Buffer.from(buffer).toString('base64'),
+      committer: { name: 'cate site', email: 'cate@users.noreply.github.com' } }),
+  });
+  if (!response.ok) throw new Error(`Upload failed: ${response.status} ${(await response.text()).slice(0, 200)}`);
 }

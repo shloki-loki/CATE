@@ -1,0 +1,15 @@
+const P = { fill: 'none', stroke: 'currentColor', strokeWidth: 1.8, strokeLinecap: 'round', strokeLinejoin: 'round', viewBox: '0 0 24 24', 'aria-hidden': true };
+export const Plus = () => <svg {...P}><path d="M12 5v14M5 12h14" /></svg>;
+export const ChatIcon = () => <svg {...P}><path d="M21 12a8 8 0 0 1-11.6 7.1L4 20l1-4.6A8 8 0 1 1 21 12Z" /></svg>;
+export const Cube = () => <svg {...P}><path d="m12 3 8 4.5v9L12 21l-8-4.5v-9L12 3Z" /><path d="m4 7.5 8 4.5 8-4.5M12 12v9" /></svg>;
+export const List = () => <svg {...P}><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01" /></svg>;
+export const Sun = () => <svg {...P}><circle cx="12" cy="12" r="4" /><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4" /></svg>;
+export const Moon = () => <svg {...P}><path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5Z" /></svg>;
+export const Out = () => <svg {...P}><path d="M15 4h4v16h-4M10 17l5-5-5-5M15 12H3" /></svg>;
+export const Menu = () => <svg {...P}><path d="M4 6h16M4 12h16M4 18h16" /></svg>;
+export const Clip = () => <svg {...P}><path d="m21 11-8.5 8.5a5 5 0 0 1-7-7L14 4a3.5 3.5 0 0 1 5 5l-8.5 8.5a2 2 0 0 1-3-3L15 7" /></svg>;
+export const Arrow = () => <svg {...P}><path d="M12 19V5M5 12l7-7 7 7" /></svg>;
+export const Split = () => <svg {...P}><rect x="3" y="4" width="18" height="16" rx="2" /><path d="M12 4v16" /></svg>;
+export const Spark = () => <svg {...P}><path d="M12 3v4M12 17v4M3 12h4M17 12h4M6 6l2.5 2.5M15.5 15.5 18 18M6 18l2.5-2.5M15.5 8.5 18 6" /></svg>;
+export const X = () => <svg {...P}><path d="M6 6l12 12M18 6 6 18" /></svg>;
+export const Archive = () => <svg {...P}><path d="M3 5h18v4H3zM5 9v10h14V9M10 13h4" /></svg>;

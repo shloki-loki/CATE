@@ -36,6 +36,7 @@ DEFAULTS: dict[str, Any] = {
     "tasks": {"tasks": []},       # the work queue
     "ledger": {"weeks": {}},      # tokens used per agent per ISO week
     "journal": {"entries": []},   # one line per thing that happened
+    "chats": {"chats": []},       # dashboard conversations (one chat = one project)
 }
 
 

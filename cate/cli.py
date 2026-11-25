@@ -28,14 +28,35 @@ How to report back (run from the repository root):
 Then stop."""
 
 
+BINARY = (".pdf", ".png", ".jpg", ".jpeg", ".gif", ".webp", ".docx", ".doc", ".xlsx", ".xls", ".pptx", ".zip")
+
+
 def read_input(relative: str) -> str:
-    """Inputs are files in the repo (main branch, e.g. workspace/inputs/...) or earlier outputs
-    (outputs/T0001.md, kept on the data branch at ./data/outputs/...)."""
+    """Inputs are files in the repo (main branch, e.g. workspace/inputs/...), earlier outputs
+    (outputs/T0001.md) or chat uploads (uploads/...), the last two on the data branch at ./data/..."""
     candidates = [store.DATA_DIR / relative, ROOT / relative]
     for path in candidates:
         if path.is_file():
+            if path.suffix.lower() in BINARY:
+                return f"(file: {path.relative_to(ROOT)} — open it with your own tools; it is not text)"
             return path.read_text(encoding="utf-8", errors="replace")
     return f"(missing input: {relative})"
+
+
+def conversation(chat_id: str, limit: int = 24) -> str:
+    """The project's chat so far, so agents see every follow-up the user wrote."""
+    chat = store.find(store.load("chats")["chats"], chat_id) if chat_id else None
+    if not chat:
+        return ""
+    lines = []
+    for m in chat.get("messages", [])[-limit:]:
+        who = "USER" if m.get("role") == "user" else (m.get("by") or m.get("role", "")).upper()
+        text = (m.get("text") or "").strip()
+        if len(text) > 2500:
+            text = text[:2500] + " …(cut)"
+        files = ", ".join(m.get("files") or [])
+        lines.append(f"[{who}] {text}" + (f"  (attached: {files})" if files else ""))
+    return "\n".join(lines)
 
 
 def render(result: dict, agent_id: str) -> str:
@@ -55,7 +76,11 @@ def render(result: dict, agent_id: str) -> str:
             lines += [f"--- Input: {path} ---", read_input(path), ""]
         lines.append(REVIEW_PROTOCOL.format(agent=agent_id, task=task["id"], threshold=rv.get("pass_score", 80)))
         return "\n".join(lines)
-    lines += ["--- Brief ---", task["brief"], ""]
+    if task.get("chat"):
+        talk = conversation(task["chat"])
+        if talk:
+            lines += ["--- The project conversation so far (follow the user's latest wishes) ---", talk, ""]
+    lines += ["--- Your job ---", task["brief"], ""]
     checks = (task.get("review") or {}).get("checks") or []
     if checks:
         lines += ["--- It will be checked against ---", *[f"- {c}" for c in checks], ""]
@@ -77,6 +102,18 @@ def text_from(args_text: str | None, file: str | None) -> str:
 
 def cmd_tick(a):
     result = store.transact(lambda: core.tick(a.agent), f"tick: {a.agent}")
+    if a.emit:
+        # For GitHub Actions: write the job and the chosen model, so the CLI starts with the right model.
+        out = Path(a.emit)
+        out.mkdir(parents=True, exist_ok=True)
+        task = result.get("task") or {}
+        model = task.get("review_model") if result["action"] == "review" else task.get("run_model")
+        effort = "medium" if result["action"] == "review" else task.get("run_effort")
+        (out / "job.md").write_text(render(result, a.agent), encoding="utf-8")
+        (out / "job.env").write_text(f"ACTION={result['action']}\nTASK={task.get('id', '')}\n"
+                                     f"MODEL={core.model_id(model) or ''}\nEFFORT={effort or ''}\n", encoding="utf-8")
+        print(f"{result['action']} {task.get('id', '')} model={model or 'default'} effort={effort or 'default'}")
+        return
     print(json.dumps(result, indent=1) if a.json else render(result, a.agent))
 
 
@@ -95,6 +132,15 @@ def cmd_review(a):
 
 
 def cmd_release(a):
+    if a.only_if_held:
+        if store.git_enabled():
+            store.sync()
+        task = store.find(store.load("tasks")["tasks"], a.task or "")
+        held = task and ((task.get("status") == "claimed" and task.get("claimed_by") == a.agent)
+                         or (task.get("status") == "reviewing" and task.get("reviewer") == a.agent))
+        if not held:
+            print("Nothing to hand back.")
+            return
     store.transact(lambda: core.release(a.agent, a.task, a.reason, a.rest_minutes), f"release: {a.agent}")
     print("Handed back. Another agent will pick it up.")
 
@@ -301,6 +347,7 @@ def build() -> argparse.ArgumentParser:
     s = sub.add_parser("tick", help="an agent's scheduled visit: get the next job")
     s.add_argument("--agent", required=True)
     s.add_argument("--json", action="store_true")
+    s.add_argument("--emit", help="write job.md and job.env into this folder (GitHub Actions)")
     s.set_defaults(func=cmd_tick)
 
     s = sub.add_parser("submit", help="hand in a finished task")
@@ -328,6 +375,7 @@ def build() -> argparse.ArgumentParser:
     s.add_argument("--task")
     s.add_argument("--reason", required=True)
     s.add_argument("--rest-minutes", type=int)
+    s.add_argument("--only-if-held", action="store_true")
     s.set_defaults(func=cmd_release)
 
     s = sub.add_parser("supervise", help="fix stuck work (safe any time)")

@@ -19,7 +19,7 @@ PRESETS = {
                "GEMINI_API_KEY", "https://aistudio.google.com/apikey", "Free tier: Flash models, daily request cap."),
     "openrouter": ("OpenRouter free models", "https://openrouter.ai/api/v1", "openrouter/free",
                    "OPENROUTER_API_KEY", "https://openrouter.ai/keys", "25+ free models; rate-limited."),
-    "groq": ("Groq (free tier)", "https://api.groq.com/openai/v1", "llama-3.3-70b-versatile",
+    "groq": ("Groq (free tier)", "https://api.groq.com/openai/v1", "openai/gpt-oss-120b",
              "GROQ_API_KEY", "https://console.groq.com/keys", "Very fast open models; free daily limits."),
     "mistral": ("Mistral (free tier)", "https://api.mistral.ai/v1", "mistral-small-latest",
                 "MISTRAL_API_KEY", "https://console.mistral.ai/api-keys", "Free experiment tier."),
@@ -74,7 +74,8 @@ def run(agent_id: str) -> str:
     agent = store.find(store.load("agents")["agents"], agent_id) or {}
     preset = PRESETS.get(agent.get("preset") or "", None)
     base = agent.get("api_base") or (preset[1] if preset else "")
-    model = agent.get("model") or (preset[2] if preset else "")
+    run_model = (result["task"] or {}).get("review_model" if result["action"] == "review" else "run_model")
+    model = run_model or agent.get("model") or (preset[2] if preset else "")
     key = os.environ.get("CATE_API_KEY", "")
     task = result["task"]
     try:

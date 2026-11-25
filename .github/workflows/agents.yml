@@ -73,40 +73,61 @@ jobs:
             echo "ok=true" >> "$GITHUB_OUTPUT"
           fi
 
+      # ---- Hand out the job first, so the CLI starts with the model chosen for it ----
+      - name: Take the job
+        id: job
+        if: steps.secret.outputs.ok == 'true' && matrix.runner != 'api'
+        run: |
+          python3 -m cate tick --agent "$AGENT" --emit job
+          cat job/job.env >> "$GITHUB_OUTPUT"
+
       # ---- Claude Code on the account's own subscription (token from `claude setup-token`) ----
       - name: Run Claude Code
-        if: steps.secret.outputs.ok == 'true' && matrix.runner == 'claude-actions'
+        if: steps.job.outputs.ACTION == 'work' || steps.job.outputs.ACTION == 'review'
         env:
-          CLAUDE_CODE_OAUTH_TOKEN: ${{ secrets[matrix.secret] }}
+          CLAUDE_CODE_OAUTH_TOKEN: ${{ matrix.runner == 'claude-actions' && secrets[matrix.secret] || '' }}
+          JOB_MODEL: ${{ steps.job.outputs.MODEL }}
+          JOB_EFFORT: ${{ steps.job.outputs.EFFORT }}
+          RUNNER: ${{ matrix.runner }}
         run: |
+          [ "$RUNNER" = claude-actions ] || exit 0
           npm install -g @anthropic-ai/claude-code >/dev/null 2>&1
-          model_args=(); [[ "$MODEL" =~ ^[A-Za-z0-9._:/-]+$ ]] && model_args=(--model "$MODEL")
-          claude -p "$(python3 -m cate agent prompt "$AGENT" --actions)" \
-            --output-format stream-json --verbose --dangerously-skip-permissions --max-turns 120 \
-            "${model_args[@]}" > run.jsonl || echo "::warning::claude exited with an error"
+          # Only the tools CATE needs, no plugins or slash commands: a smaller start-up prompt per run.
+          args=(--output-format stream-json --verbose --dangerously-skip-permissions --max-turns 120
+                --tools "Bash,Read,Write,Edit,Glob,Grep,WebSearch,WebFetch" --disable-slash-commands --strict-mcp-config)
+          [[ "$JOB_MODEL" =~ ^[A-Za-z0-9._:/-]+$ ]] && args+=(--model "$JOB_MODEL")
+          [[ "$JOB_EFFORT" =~ ^(low|medium|high|xhigh|max)$ ]] && args+=(--effort "$JOB_EFFORT")
+          prompt="$(python3 -m cate agent prompt "$AGENT" --actions)"$'\n\n'"$(cat job/job.md)"
+          echo "model=${JOB_MODEL:-default} effort=${JOB_EFFORT:-default}"
+          claude -p "$prompt" "${args[@]}" > run.jsonl || echo "::warning::claude exited with an error"
           grep -m1 '"is_error":true' run.jsonl | head -c 600 || true
-          tail -c 2000 run.jsonl | grep -o '"result":"[^"]*' | tail -1 || true
           python3 -m cate usage --agent "$AGENT" --stream run.jsonl
 
       # ---- Codex on the ChatGPT plan (auth.json from `codex login`, refreshed copy kept in the cache) ----
       - name: Restore Codex login
-        if: steps.secret.outputs.ok == 'true' && matrix.runner == 'codex-actions'
+        if: (steps.job.outputs.ACTION == 'work' || steps.job.outputs.ACTION == 'review') && matrix.runner == 'codex-actions'
         uses: actions/cache/restore@v4
         with:
           path: ~/.codex/auth.json
           key: codex-auth-${{ matrix.agent }}-${{ github.run_id }}
           restore-keys: codex-auth-${{ matrix.agent }}-
       - name: Run Codex
-        if: steps.secret.outputs.ok == 'true' && matrix.runner == 'codex-actions'
+        if: (steps.job.outputs.ACTION == 'work' || steps.job.outputs.ACTION == 'review') && matrix.runner == 'codex-actions'
+        env:
+          JOB_MODEL: ${{ steps.job.outputs.MODEL }}
+          JOB_EFFORT: ${{ steps.job.outputs.EFFORT }}
         run: |
           mkdir -p ~/.codex
           [ -s ~/.codex/auth.json ] || printf '%s' "$AGENT_SECRET" > ~/.codex/auth.json
           chmod 600 ~/.codex/auth.json
           printf 'cli_auth_credentials_store = "file"\n' > ~/.codex/config.toml
           npm install -g @openai/codex >/dev/null 2>&1
-          model_args=(); [[ "$MODEL" =~ ^[A-Za-z0-9._:/-]+$ ]] && model_args=(--model "$MODEL")
-          codex exec --json --dangerously-bypass-approvals-and-sandbox --skip-git-repo-check \
-            "${model_args[@]}" "$(python3 -m cate agent prompt "$AGENT" --actions)" > run.jsonl 2> codex.err \
+          args=(--json --dangerously-bypass-approvals-and-sandbox --skip-git-repo-check)
+          [[ "$JOB_MODEL" =~ ^[A-Za-z0-9._:/-]+$ ]] && args+=(--model "$JOB_MODEL")
+          [[ "$JOB_EFFORT" =~ ^(low|medium|high)$ ]] && args+=(-c "model_reasoning_effort=\"$JOB_EFFORT\"")
+          prompt="$(python3 -m cate agent prompt "$AGENT" --actions)"$'\n\n'"$(cat job/job.md)"
+          echo "model=${JOB_MODEL:-default} effort=${JOB_EFFORT:-default}"
+          codex exec "${args[@]}" "$prompt" > run.jsonl 2> codex.err \
             || { echo "::warning::codex exited with an error"; tail -c 1500 codex.err; }
           grep -iE '"type":"(error|turn.failed)"' run.jsonl | head -c 1500 || true
           # Codex writes the plan's 5-hour / weekly limits to its session log, not to --json output.
@@ -114,11 +135,16 @@ jobs:
           cat run.jsonl ${rollout:+"$rollout"} > usage.jsonl
           python3 -m cate usage --agent "$AGENT" --stream usage.jsonl
       - name: Keep the refreshed Codex login
-        if: always() && steps.secret.outputs.ok == 'true' && matrix.runner == 'codex-actions'
+        if: always() && (steps.job.outputs.ACTION == 'work' || steps.job.outputs.ACTION == 'review') && matrix.runner == 'codex-actions'
         uses: actions/cache/save@v4
         with:
           path: ~/.codex/auth.json
           key: codex-auth-${{ matrix.agent }}-${{ github.run_id }}
+
+      # ---- If the run ended without handing anything in, give the job back at once ----
+      - name: Hand back unfinished work
+        if: always() && steps.job.outputs.TASK != ''
+        run: python3 -m cate release --agent "$AGENT" --task "${{ steps.job.outputs.TASK }}" --reason "the run ended without a result" --only-if-held
 
       # ---- Free / paid API models (no tools) ----
       - name: Run API agent
