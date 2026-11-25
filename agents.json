@@ -1,0 +1,52 @@
+{
+ "agents": [
+  {
+   "id": "claude-1",
+   "label": "Claude Pro · account 1",
+   "provider": "anthropic",
+   "runner": "claude-code-scheduled",
+   "account": "",
+   "model": "Claude (Pro plan)",
+   "skills": [
+    "any"
+   ],
+   "weekly_budget_tokens": 1500000,
+   "status": "active",
+   "limited_until": null,
+   "last_seen": null,
+   "created_at": "2026-11-26T02:02:55+05:30"
+  },
+  {
+   "id": "claude-2",
+   "label": "Claude Pro · account 2",
+   "provider": "anthropic",
+   "runner": "claude-code-scheduled",
+   "account": "",
+   "model": "Claude (Pro plan)",
+   "skills": [
+    "any"
+   ],
+   "weekly_budget_tokens": 1500000,
+   "status": "active",
+   "limited_until": null,
+   "last_seen": null,
+   "created_at": "2026-11-26T02:02:55+05:30"
+  },
+  {
+   "id": "gpt-1",
+   "label": "ChatGPT Pro",
+   "provider": "openai",
+   "runner": "codex-automation",
+   "account": "",
+   "model": "Codex (Pro plan)",
+   "skills": [
+    "any"
+   ],
+   "weekly_budget_tokens": 3000000,
+   "status": "active",
+   "limited_until": null,
+   "last_seen": null,
+   "created_at": "2026-11-26T02:02:55+05:30"
+  }
+ ]
+}
