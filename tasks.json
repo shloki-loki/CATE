@@ -107,6 +107,40 @@
    ],
    "updated_at": "2026-11-26T02:39:37+05:30",
    "reviewer": null
+  },
+  {
+   "id": "T0003",
+   "title": "Smoke test: free model connection",
+   "brief": "Reply with one sentence confirming you received this task, and name the model you are.",
+   "kind": "write",
+   "prefer": "agent:free-github",
+   "priority": 1,
+   "after": [],
+   "inputs": [],
+   "status": "queued",
+   "attempts": 0,
+   "exclude": [],
+   "review": {
+    "mode": "none",
+    "pass_score": 80,
+    "checks": []
+   },
+   "parent": null,
+   "created_by": "claude-setup",
+   "created_at": "2026-11-26T02:40:07+05:30",
+   "queued_at": "2026-11-26T02:40:07+05:30",
+   "claimed_by": null,
+   "result": null,
+   "reviews": [],
+   "history": [
+    {
+     "at": "2026-11-26T02:40:07+05:30",
+     "actor": "claude-setup",
+     "event": "created",
+     "detail": ""
+    }
+   ],
+   "updated_at": "2026-11-26T02:40:07+05:30"
   }
  ]
 }
