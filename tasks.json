@@ -161,6 +161,40 @@
    "updated_at": "2026-11-26T02:42:09+05:30",
    "claimed_at": "2026-11-26T02:40:27+05:30",
    "reviewer": null
+  },
+  {
+   "id": "T0004",
+   "title": "Connection test: claude-1",
+   "brief": "Connection test only. Write the single sentence 'claude-1 connected' to a file and submit it. Do nothing else.",
+   "kind": "other",
+   "prefer": "agent:claude-1",
+   "priority": 1,
+   "after": [],
+   "inputs": [],
+   "status": "queued",
+   "attempts": 0,
+   "exclude": [],
+   "review": {
+    "mode": "none",
+    "pass_score": 80,
+    "checks": []
+   },
+   "parent": null,
+   "created_by": "claude-setup",
+   "created_at": "2026-11-26T03:11:24+05:30",
+   "queued_at": "2026-11-26T03:11:24+05:30",
+   "claimed_by": null,
+   "result": null,
+   "reviews": [],
+   "history": [
+    {
+     "at": "2026-11-26T03:11:24+05:30",
+     "actor": "claude-setup",
+     "event": "created",
+     "detail": ""
+    }
+   ],
+   "updated_at": "2026-11-26T03:11:24+05:30"
   }
  ]
 }

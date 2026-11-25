@@ -215,6 +215,15 @@
    "title": "Changed agent claude-2",
    "detail": "",
    "ref": ""
+  },
+  {
+   "id": "J0025",
+   "at": "2026-11-26T03:11:24+05:30",
+   "by": "claude-setup",
+   "kind": "update",
+   "title": "New task T0004: Connection test: claude-1",
+   "detail": "",
+   "ref": "T0004"
   }
  ]
 }
