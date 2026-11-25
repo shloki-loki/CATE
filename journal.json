@@ -44,6 +44,15 @@
    "title": "New task T0002: Tailor the resume to the job found",
    "detail": "",
    "ref": "T0002"
+  },
+  {
+   "id": "J0006",
+   "at": "2026-11-26T02:03:04+05:30",
+   "by": "claude-setup",
+   "kind": "update",
+   "title": "Changed agent claude-1",
+   "detail": "",
+   "ref": ""
   }
  ]
 }
