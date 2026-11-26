@@ -1019,7 +1019,7 @@
    "priority": 2,
    "after": [],
    "inputs": [],
-   "status": "queued",
+   "status": "cancelled",
    "attempts": 0,
    "exclude": [],
    "chat": "C0008",
@@ -1042,9 +1042,16 @@
      "actor": "owner",
      "event": "created",
      "detail": "claude-opus-5-5"
+    },
+    {
+     "at": "2026-11-27T02:01:42+05:30",
+     "actor": "owner",
+     "event": "cancelled",
+     "detail": ""
     }
    ],
-   "updated_at": "2026-11-27T02:01:14+05:30"
+   "updated_at": "2026-11-27T02:01:42+05:30",
+   "reviewer": null
   }
  ]
 }
