@@ -13,14 +13,15 @@ export const RUNNERS = {
   manual: 'Manual (you paste the prompt)',
 };
 
-// Free (or nearly free) API models. Mirrors cate/api_agent.py PRESETS.
+// Free (or nearly free) API models. Mirrors cate/api_agent.py PRESETS. `paid: true` marks a preset with
+// no free tier, so the dashboard never labels it "(free)".
 export const PRESETS = {
   groq: { label: 'Groq', provider: 'groq', free: '~1,000 requests/day', model: 'openai/gpt-oss-120b', secret: 'GROQ_API_KEY', key: 'https://console.groq.com/keys', note: 'Very fast. Best free choice for the instant supervisor.' },
   gemini: { label: 'Google Gemini', provider: 'google', free: '~20 requests/day (3.8 Flash)', model: 'gemini-3.8-flash', secret: 'GEMINI_API_KEY', key: 'https://aistudio.google.com/apikey', note: 'Capable, but a small free daily allowance.' },
   openrouter: { label: 'OpenRouter', provider: 'other', free: '25+ free models', model: 'openrouter/free', secret: 'OPENROUTER_API_KEY', key: 'https://openrouter.ai/keys', note: 'One key, many free open models; rate-limited.' },
   mistral: { label: 'Mistral', provider: 'other', free: 'Free experiment tier', model: 'mistral-small-latest', secret: 'MISTRAL_API_KEY', key: 'https://console.mistral.ai/api-keys', note: 'Free tier for experimenting.' },
   cerebras: { label: 'Cerebras', provider: 'other', free: 'Free daily tokens', model: 'llama-3.3-70b', secret: 'CEREBRAS_API_KEY', key: 'https://cloud.cerebras.ai', note: 'Very fast open models.' },
-  deepseek: { label: 'DeepSeek', provider: 'deepseek', free: 'Paid, cents per task', model: 'deepseek-chat', secret: 'DEEPSEEK_API_KEY', key: 'https://platform.deepseek.com/api_keys', note: 'Not free, but very cheap.' },
+  deepseek: { label: 'DeepSeek', provider: 'deepseek', free: 'Paid, cents per task', paid: true, model: 'deepseek-chat', secret: 'DEEPSEEK_API_KEY', key: 'https://platform.deepseek.com/api_keys', note: 'Not free, but very cheap.' },
 };
 
 export function secretFor(agent) {
