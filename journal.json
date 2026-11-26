@@ -557,6 +557,15 @@
    "title": "Started 3 step(s) in C0007",
    "detail": "T0011, T0012, T0013",
    "ref": ""
+  },
+  {
+   "id": "J0063",
+   "at": "2026-11-26T14:20:03+05:30",
+   "by": "claude-2",
+   "kind": "claim",
+   "title": "Took T0011: Research modern UI designs for dashboards",
+   "detail": "",
+   "ref": "T0011"
   }
  ]
 }
