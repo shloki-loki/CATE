@@ -738,6 +738,168 @@
      "text": "where are we stuck?",
      "at": "2026-11-27T04:15:09+05:30",
      "files": []
+    },
+    {
+     "id": "M0012",
+     "at": "2026-11-27T04:15:17+05:30",
+     "role": "supervisor",
+     "by": "supervisor (openai/gpt-oss-120b)",
+     "text": "Here’s a compact, token‑aware roadmap that breaks the browser‑based GTA‑Vice‑City‑style demo into small, reviewable pieces and assigns each piece to one of your selected models. Follow the steps in order; each step includes clear success checks and cross‑reviews where needed.",
+     "plan": {
+      "summary": "Build a minimal browser GTA‑Vice‑City‑style demo in incremental steps, using all selected models.",
+      "steps": [
+       {
+        "title": "Project Architecture Planning",
+        "kind": "plan",
+        "agent": "claude-2",
+        "model": "claude-opus-5-5",
+        "modelLabel": "Opus 5.5",
+        "brief": "Create a high‑level architecture doc: tech stack (WebGL/Three.js), module layout, data flow, and deployment approach for a browser game.",
+        "review": "cross",
+        "checks": [
+         "Architecture diagram included",
+         "Tech stack list with versions",
+         "Module responsibilities defined",
+         "Deployment steps outlined"
+        ],
+        "after": [],
+        "inputs": []
+       },
+       {
+        "title": "WebGL Engine Research",
+        "kind": "research",
+        "agent": "claude-1",
+        "model": "claude-opus-5-5",
+        "modelLabel": "Opus 5.5",
+        "brief": "Evaluate open‑source WebGL/Three.js‑based engines suitable for an open‑world city (e.g., Three.js, Babylon.js, PlayCanvas). Recommend one with licensing, performance, and community support notes.",
+        "review": "cross",
+        "checks": [
+         "Engine options compared in a table",
+         "Pros/cons for each engine",
+         "License compatibility confirmed",
+         "Integration plan drafted"
+        ],
+        "after": [
+         0
+        ],
+        "inputs": []
+       },
+       {
+        "title": "Asset Pipeline Design",
+        "kind": "other",
+        "agent": "claude-1",
+        "model": "claude-opus-5-5",
+        "modelLabel": "Opus 5.5",
+        "brief": "Design a pipeline for 3D models, textures, and audio: file formats, compression, lazy loading, and fallback for low‑end browsers.",
+        "review": "cross",
+        "checks": [
+         "Supported formats listed (glTF, OGG, etc.)",
+         "Compression strategy (Draco, Basis) described",
+         "Loading sequence diagram provided",
+         "Fallback assets identified"
+        ],
+        "after": [
+         1
+        ],
+        "inputs": []
+       },
+       {
+        "title": "Skeleton Codebase Setup",
+        "kind": "code",
+        "agent": "gpt-1",
+        "model": "gpt-6.2-astra",
+        "modelLabel": "GPT-6.2 Astra",
+        "brief": "Initialize a Git repo, add package.json, install Three.js, set up index.html, basic render loop, and a build script (npm run dev).",
+        "review": "cross",
+        "checks": [
+         "Repo initialized with README",
+         "npm scripts for dev and build exist",
+         "Three.js renders a blank scene",
+         "No console errors on load"
+        ],
+        "after": [
+         2
+        ],
+        "inputs": []
+       },
+       {
+        "title": "Vehicle Physics Implementation",
+        "kind": "code",
+        "agent": "gpt-1",
+        "model": "gpt-6.2-astra",
+        "modelLabel": "GPT-6.2 Astra",
+        "brief": "Integrate a lightweight physics library (e.g., cannon-es) and implement basic car control: acceleration, steering, and simple collision response.",
+        "review": "cross",
+        "checks": [
+         "Car model moves forward/backward",
+         "Steering responds to arrow keys",
+         "Collisions stop the car",
+         "Demo scene with a flat ground loads"
+        ],
+        "after": [
+         3
+        ],
+        "inputs": []
+       },
+       {
+        "title": "Character Controller",
+        "kind": "code",
+        "agent": "gpt-1",
+        "model": "gpt-6.2-astra",
+        "modelLabel": "GPT-6.2 Astra",
+        "brief": "Add a third‑person character controller with camera follow, WASD movement, and placeholder animation hooks.",
+        "review": "cross",
+        "checks": [
+         "Character moves on ground",
+         "Camera follows smoothly",
+         "Basic idle/run animation placeholders exist",
+         "No clipping through terrain"
+        ],
+        "after": [
+         4
+        ],
+        "inputs": []
+       },
+       {
+        "title": "Procedural City Generation",
+        "kind": "code",
+        "agent": "gpt-1",
+        "model": "gpt-6.2-astra",
+        "modelLabel": "GPT-6.2 Astra",
+        "brief": "Generate a simple grid‑based city: roads, building blocks (boxes), and a few landmarks. Export as a glTF scene for quick loading.",
+        "review": "cross",
+        "checks": [
+         "City grid of at least 5x5 blocks created",
+         "Road network connects blocks",
+         "Buildings have distinct heights",
+         "Scene loads within 2 seconds"
+        ],
+        "after": [
+         5
+        ],
+        "inputs": []
+       },
+       {
+        "title": "UI and HUD",
+        "kind": "code",
+        "agent": "gpt-1",
+        "model": "gpt-6.2-astra",
+        "modelLabel": "GPT-6.2 Astra",
+        "brief": "Implement a minimal HUD: minimap, health/wanted meter, and mission text overlay using HTML/CSS over the canvas.",
+        "review": "cross",
+        "checks": [
+         "HUD elements visible and updateable",
+         "Minimap reflects player position",
+         "Wanted level changes on collisions",
+         "Responsive layout on different screen sizes"
+        ],
+        "after": [
+         6
+        ],
+        "inputs": []
+       }
+      ]
+     }
     }
    ],
    "selection": [
@@ -802,7 +964,7 @@
      "kind": ""
     }
    ],
-   "updated_at": "2026-11-27T04:15:09+05:30"
+   "updated_at": "2026-11-27T04:15:17+05:30"
   }
  ],
  "usage": {
@@ -810,7 +972,7 @@
    "groq": 8
   },
   "2026-11-27": {
-   "groq": 4
+   "groq": 5
   }
  }
 }
