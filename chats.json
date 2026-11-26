@@ -498,8 +498,12 @@
         "after": [],
         "inputs": []
        }
-      ]
-     }
+      ],
+      "started": true
+     },
+     "tasks": [
+      "T0015"
+     ]
     }
    ],
    "selection": [
