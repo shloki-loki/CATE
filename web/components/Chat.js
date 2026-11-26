@@ -470,11 +470,11 @@ export default function Chat({ chatId, initial, agents, models, recommended, sup
           <div className="composer-bar">
             <input ref={fileInput} type="file" multiple hidden onChange={(e) => setFiles([...files, ...Array.from(e.target.files || [])].slice(0, 5))} />
             <button className="tool" onClick={() => fileInput.current?.click()} title="Attach files"><Clip /></button>
-            <div className="pop-anchor" ref={modelsAnchor}>
-              <button className="tool" aria-expanded={open === 'models'} onClick={() => setOpen(open === 'models' ? '' : 'models')}><Spark /> {selection.length ? `${selection.length} model${selection.length > 1 ? 's' : ''}` : 'Models: auto'}</button>
+            <div className="pop-anchor shrink" ref={modelsAnchor}>
+              <button className="tool" aria-expanded={open === 'models'} onClick={() => setOpen(open === 'models' ? '' : 'models')}><Spark /> <span className="tool-label">{selection.length ? `${selection.length} model${selection.length > 1 ? 's' : ''}` : 'Models: auto'}</span></button>
               {open === 'models' ? <ModelPicker agents={agentRows} models={models} recommended={recommended} selection={selection} toggle={toggle} onClose={() => setOpen('')} /> : null}
             </div>
-            <button className="tool" aria-pressed={compare} disabled={selection.length < 2} onClick={() => setCompare(!compare)} title={selection.length < 2 ? 'Pick two or more models to compare their answers side by side' : 'Send the same prompt to each picked model'}><Split /> Compare</button>
+            <button className="tool" aria-label="Compare" aria-pressed={compare} disabled={selection.length < 2} onClick={() => setCompare(!compare)} title={selection.length < 2 ? 'Pick two or more models to compare their answers side by side' : 'Send the same prompt to each picked model'}><Split /> <span className="tool-label wide-only">Compare</span></button>
             <span className="spacer" />
             <div className="pop-anchor" ref={usageAnchor}>
               <button className="tool" aria-expanded={open === 'usage'} onClick={() => setOpen(open === 'usage' ? '' : 'usage')} title="Limits left on every connection">

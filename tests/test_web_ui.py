@@ -4,7 +4,8 @@
   is not installed): Enter sends, Shift+Enter inserts a plain newline with no list numbering.
 - Static checks keep the T0012 design requirements from regressing: the theme (brightness) button
   lives in the shared top bar, the "show archived projects" switch is gone, and the models page has
-  its "Add a model or API" section.
+  its "Add a model or API" section with native radio groups and honest free/paid labels.
+- web/tests/addDefaults.test.mjs checks the form's placeholder names (no "(free)" on paid APIs).
 """
 
 import shutil
@@ -59,16 +60,56 @@ class LayoutTest(unittest.TestCase):
         self.assertNotIn("Show archived", frame)
         self.assertNotIn("setArchived", frame)
 
-    def test_get_a_key_link_is_not_inside_the_radio(self):
-        """Enter on "Get a key" must open the link, not be swallowed by the provider radio."""
+    def _add_form(self):
         panel = read("components/ModelsPanel.js")
-        block = panel[panel.index('aria-label="API"'):]
-        block = block[: block.index("</fieldset>")]
-        radio = block[block.index('role="radio"'):]
-        radio = radio[: radio.index("</button>")]
-        self.assertNotIn("<a ", radio)
-        self.assertNotIn("onKeyDown", block)
-        self.assertIn("Get a key", block)
+        form = panel[panel.index("function AddConnection"):]
+        return form[: form.index("export function AddSection")]
+
+    def test_add_form_choices_are_native_radio_groups(self):
+        """Type and API choices are labelled native radios, so the browser gives Tab/arrow-key navigation."""
+        form = self._add_form()
+        self.assertNotIn('role="radio"', form)
+        self.assertNotIn('role="radiogroup"', form)
+        self.assertRegex(form, r'<label key=\{t\.runner\} className=\{`option[^>]*>\s*<input type="radio" className="option-input" name="runner"')
+        self.assertRegex(form, r'<label className="option">\s*<input type="radio" className="option-input" name="preset"')
+        for name in ("runner", "preset"):
+            # the radios carry the value the server action reads; no hidden duplicate
+            self.assertNotIn('type="hidden" name="%s"' % name, form)
+        # the radio inputs are hidden only visually, never with display:none (that would drop keyboard focus)
+        css = read("app/globals.css")
+        rule = css[css.index(".option-input {"):]
+        rule = rule[: rule.index("}")]
+        self.assertNotIn("display: none", rule)
+        self.assertIn(".option:has(.option-input:focus-visible)", css)
+
+    def test_get_a_key_link_is_its_own_tab_stop(self):
+        """Each "Get a key" link sits outside its provider's label, so Enter opens it and never selects the radio."""
+        form = self._add_form()
+        block = form[form.index('name="preset"'):]
+        label_end = block.index("</label>")
+        self.assertNotIn("<a ", block[:label_end])
+        self.assertIn("Get a key", block[label_end: block.index("</fieldset>")])
+
+    def test_paid_presets_are_not_labelled_free(self):
+        data = read("lib/data.js")
+        deepseek = data[data.index("  deepseek:"):]
+        deepseek = deepseek[: deepseek.index("\n")]
+        self.assertIn("paid: true", deepseek)
+        form = self._add_form()
+        self.assertNotIn("(free)", form)
+        self.assertIn("connectionPlaceholders(", form)
+
+    def test_composer_toolbar_fits_phones(self):
+        """At phone widths Compare becomes icon-only and the model label may shrink, so Send stays on screen."""
+        chat = read("components/Chat.js")
+        self.assertIn('aria-label="Compare"', chat)
+        self.assertIn('<span className="tool-label wide-only">Compare</span>', chat)
+        self.assertIn('className="pop-anchor shrink"', chat)
+        css = read("app/globals.css")
+        phone = css[css.index("@media (max-width: 560px)"):]
+        phone = phone[: phone.index("\n}")]
+        self.assertIn(".tool-label.wide-only { display: none; }", phone)
+        self.assertIn(".composer-bar > .spacer, .composer-bar > .shrink { flex: 0 1 auto; min-width: 0; }", css)
 
     def test_models_page_has_add_section(self):
         panel = read("components/ModelsPanel.js")

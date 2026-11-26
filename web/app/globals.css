@@ -290,11 +290,16 @@ details.box summary { cursor: pointer; font-weight: 550; font-size: var(--fs-sm)
 .composer textarea { display: block; width: 100%; border: 0; background: transparent; resize: none; padding: 12px 16px 6px; min-height: 64px; max-height: 260px; outline: none; font-size: 15px; }
 .composer-bar { display: flex; align-items: center; gap: 4px; padding: 6px 10px 10px; }
 .composer-bar .spacer { flex: 1; }
+.composer-bar > * { flex: none; }
+.composer-bar > .spacer, .composer-bar > .shrink { flex: 0 1 auto; min-width: 0; }
+.composer-bar > .spacer { flex-grow: 1; }
+.composer-bar .shrink > .tool { max-width: 100%; }
+.tool-label { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
 .tool { display: inline-flex; align-items: center; gap: 6px; height: 32px; white-space: nowrap; padding: 0 10px; border-radius: var(--r-md); color: var(--muted); font-size: var(--fs-sm); font-variant-numeric: tabular-nums; }
 .tool:hover, .tool[aria-pressed="true"], .tool[aria-expanded="true"] { background: var(--hover); color: var(--ink); }
 .tool[aria-pressed="true"] { color: var(--accent-text); }
 .tool:disabled { opacity: .5; cursor: default; }
-.tool svg { width: 16px; height: 16px; }
+.tool svg { width: 16px; height: 16px; flex: none; }
 .send { width: 34px; height: 34px; border-radius: var(--r-md); background: var(--accent-solid); color: var(--accent-ink); display: grid; place-items: center; }
 .send:disabled { opacity: .4; cursor: default; }
 .send svg { width: 17px; height: 17px; }
@@ -382,15 +387,19 @@ details.box summary { cursor: pointer; font-weight: 550; font-size: var(--fs-sm)
 .add-step legend { display: flex; align-items: center; gap: 8px; font-weight: 600; font-size: var(--fs-md); margin-bottom: 10px; padding: 0; }
 .option-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 8px; }
 .option-grid.three { grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); }
-.option { display: grid; align-content: start; gap: 3px; text-align: left; padding: 12px; border-radius: var(--r-lg); border: 1px solid var(--line); background: var(--surface); cursor: pointer; font-size: var(--fs-xs); color: var(--muted); transition: background .12s, border-color .12s; }
+.option { position: relative; display: grid; align-content: start; gap: 3px; text-align: left; padding: 12px; border-radius: var(--r-lg); border: 1px solid var(--line); background: var(--surface); cursor: pointer; font-size: var(--fs-xs); color: var(--muted); transition: background .12s, border-color .12s; }
 .option b { color: var(--ink); font-size: var(--fs-sm); font-weight: 600; }
 .option:hover { background: var(--hover); border-color: var(--line-strong); }
-.option[aria-checked="true"] { border-color: var(--accent); background: var(--accent-soft); box-shadow: inset 0 0 0 1px var(--accent); }
+.option.checked { border-color: var(--accent); background: var(--accent-soft); box-shadow: inset 0 0 0 1px var(--accent); }
+/* the native radio stays in the page (focusable, arrow keys, screen readers) but is visually hidden; the card shows its state */
+.option-input { position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0; border: 0; overflow: hidden; clip: rect(0 0 0 0); clip-path: inset(50%); white-space: nowrap; }
+.option:has(.option-input:focus-visible) { outline: 2px solid var(--accent); outline-offset: 2px; }
+.option .paid { color: var(--warn); }
 .option-card { display: grid; grid-template-rows: 1fr auto; border-radius: var(--r-lg); border: 1px solid var(--line); background: var(--surface); transition: background .12s, border-color .12s; }
 .option-card:hover { background: var(--hover); border-color: var(--line-strong); }
 .option-card.checked { border-color: var(--accent); background: var(--accent-soft); box-shadow: inset 0 0 0 1px var(--accent); }
-.option-card .option, .option-card .option:hover, .option-card .option[aria-checked="true"] { border: 0; background: transparent; box-shadow: none; padding-bottom: 4px; }
-.option-card .option:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
+.option-card .option, .option-card .option:hover { border: 0; background: transparent; box-shadow: none; padding-bottom: 4px; }
+.option-card .option:has(.option-input:focus-visible) { outline-offset: -2px; }
 .option-foot { display: flex; gap: 8px; align-items: center; justify-content: space-between; flex-wrap: wrap; font-size: var(--fs-xs); }
 .option-card .option-foot { padding: 0 12px 12px; }
 .add-help h3 { margin: 0 0 6px; font-size: var(--fs-md); }
@@ -454,5 +463,9 @@ a.node:hover { border-color: var(--line-strong); }
 }
 @media (max-width: 560px) {
   .how-to { grid-template-columns: 1fr; }
+  /* composer toolbar on phones: tighter buttons and an icon-only Compare, so Send always fits */
+  .composer-bar { gap: 2px; padding: 6px 8px 8px; }
+  .tool { padding: 0 7px; }
+  .tool-label.wide-only { display: none; }
   .topbar .button.small.primary { padding: 0 8px; }
 }

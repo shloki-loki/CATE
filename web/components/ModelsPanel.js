@@ -4,6 +4,7 @@ import { useActionState, useState, useTransition } from 'react';
 import { addAgent, removeAgent, setAgent, wakeNow } from '@/app/actions';
 import { Limit } from '@/components/Chat';
 import { statusOf } from '@/lib/status';
+import { connectionPlaceholders } from '@/lib/addDefaults.mjs';
 
 const KIND_LABELS = { plan: 'Planning', research: 'Research', write: 'Writing', code: 'Development', review: 'Review', data: 'Data', other: 'Other' };
 
@@ -172,26 +173,26 @@ const TYPES = [
 ];
 
 // "Add a model or API": three steps in one form. Step 1 picks the type, step 2 the API (for keys), step 3 names it.
+// Both choices are native radio inputs (name="runner" / name="preset") inside labels, so the browser provides
+// the radio-group keyboard behaviour: Tab enters the group at the checked option and the arrow keys move the
+// selection. Each provider's "Get a key" link sits outside its label, so it stays a separate Tab stop.
 function AddConnection({ presets, repo }) {
   const [state, action, pending] = useActionState(addAgent, null);
   const [runner, setRunner] = useState('claude-actions');
   const [preset, setPreset] = useState('groq');
   const type = TYPES.find((t) => t.runner === runner);
   const p = presets[preset];
-  const placeholderId = runner === 'api' ? `free-${preset}` : type.id;
-  const placeholderLabel = runner === 'api' ? `${p?.label || 'API'} (free)` : type.label;
+  const placeholder = connectionPlaceholders({ runner, presetKey: preset, preset: p, type });
   return (
     <form action={action} className="add-form">
-      <input type="hidden" name="runner" value={runner} />
-      {runner === 'api' ? <input type="hidden" name="preset" value={preset} /> : null}
-
       <fieldset className="add-step">
         <legend><span className="step-no">1</span> What are you adding?</legend>
-        <div className="option-grid three" role="radiogroup" aria-label="Type">
+        <div className="option-grid three">
           {TYPES.map((t) => (
-            <button type="button" key={t.runner} role="radio" aria-checked={runner === t.runner} className="option" onClick={() => setRunner(t.runner)}>
+            <label key={t.runner} className={`option${runner === t.runner ? ' checked' : ''}`}>
+              <input type="radio" className="option-input" name="runner" value={t.runner} checked={runner === t.runner} onChange={() => setRunner(t.runner)} />
               <b>{t.title}</b><span>{t.sub}</span>
-            </button>
+            </label>
           ))}
         </div>
       </fieldset>
@@ -199,16 +200,15 @@ function AddConnection({ presets, repo }) {
       {runner === 'api' ? (
         <fieldset className="add-step">
           <legend><span className="step-no">2</span> Which API?</legend>
-          <div className="option-grid" role="radiogroup" aria-label="API">
+          <div className="option-grid">
             {Object.entries(presets).map(([k, x]) => (
-              // The radio (a native button) and the "Get a key" link are siblings, so Enter/Space on the
-              // link opens it and never reaches the radio's selection handling.
               <div key={k} className={`option-card${preset === k ? ' checked' : ''}`}>
-                <button type="button" role="radio" aria-checked={preset === k} className="option" onClick={() => setPreset(k)}>
+                <label className="option">
+                  <input type="radio" className="option-input" name="preset" value={k} checked={preset === k} onChange={() => setPreset(k)} />
                   <b>{x.label}</b>
-                  <span className="num">{x.free}</span>
+                  <span className={`num${x.paid ? ' paid' : ''}`}>{x.free}</span>
                   <span className="faint">{x.note}</span>
-                </button>
+                </label>
                 <div className="option-foot"><a className="link" href={x.key} target="_blank" rel="noreferrer" aria-label={`Get a ${x.label} key (opens in a new tab)`}>Get a key ↗</a><code className="inline">{x.secret}</code></div>
               </div>
             ))}
@@ -219,8 +219,8 @@ function AddConnection({ presets, repo }) {
       <fieldset className="add-step">
         <legend><span className="step-no">{runner === 'api' ? 3 : 2}</span> Name it</legend>
         <div className="row">
-          <label className="field">Short name (lowercase, digits, dashes)<input name="id" required pattern="[a-z0-9-]+" placeholder={placeholderId} /></label>
-          <label className="field">Display name<input name="label" placeholder={placeholderLabel} /></label>
+          <label className="field">Short name (lowercase, digits, dashes)<input name="id" required pattern="[a-z0-9-]+" placeholder={placeholder.id} /></label>
+          <label className="field">Display name<input name="label" placeholder={placeholder.label} /></label>
         </div>
       </fieldset>
 
