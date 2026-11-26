@@ -659,7 +659,7 @@
     "T0011"
    ],
    "inputs": [],
-   "status": "claimed",
+   "status": "review",
    "attempts": 2,
    "exclude": [],
    "chat": "C0007",
@@ -679,14 +679,14 @@
    "created_by": "owner (chat)",
    "created_at": "2026-11-26T14:19:42+05:30",
    "queued_at": "2026-11-26T14:47:59+05:30",
-   "claimed_by": "claude-2",
+   "claimed_by": null,
    "result": {
     "by": "claude-2",
-    "at": "2026-11-26T14:45:15+05:30",
+    "at": "2026-11-26T14:56:33+05:30",
     "file": "outputs/T0012.md",
-    "text": "# T0012 (attempt 2): both review points are fixed. Pull request: https://github.com/shloki-loki/CATE/pull/4 (commit 33b230c)\n\nIt's ready for you to merge, and merging deploys it. I can't merge to `main` myself.\n\n## 1. Shift+Enter no longer numbers or bullets lists\n- In the chat box, **Shift+Enter now always gives a plain new line**. This holds after `1. one`, `- item`, `- [ ] task` or `3) third`. Nothing is added to the next line.\n- **Enter still sends.** Enter doesn't send while a character is still being composed in an input method (IME), such as Japanese.\n- I removed the list feature completely: the code (`web/lib/listContinue.mjs`), its tests and the \"Auto lists: on/off\" switch under the chat box.\n- Your browser may have saved \"on\" from the first version of this pull request. That setting is now ignored and deleted when the page loads, so it can't turn the feature back on.\n- The key handling now lives in `web/lib/composerKeys.mjs`. Only the send keypress is blocked. Shift+Enter is left to the browser.\n- New tests replace the ones that checked for numbering:\n  - `web/tests/composerKeys.test.mjs` checks for a plain new line after numbered, bulleted and checkbox items and after empty items. It also checks that Enter sends and that the Enter that finishes an IME character neither sends nor is blocked.\n  - `tests/test_web_ui.py` checks that the key handler blocks only the send keypress and that none of the old list code or saved setting is left.\n\n## 2. The \"Get a key ↗\" link now works from the keyboard\n- On the Models page, the provider cards (Groq, Gemini, …) under \"Which API?\" were the problem. The link sat inside a clickable card, and the card cancelled Enter.\n- Now each card has a real button that picks the provider, and the \"Get a key\" link sits beside that button, not inside it. The card handler is gone.\n- Enter on the focused link opens the key page in a new tab and leaves the selected provider unchanged.\n- Space or Enter on a provider's button picks it. Tab moves from a provider to its link.\n- The cards look the same as before; I checked a screenshot of the add section.\n\n## Also\nI merged the latest `main`, which brings in pull request #3. All other parts of the redesign are unchanged; the reviewer had passed them. They are the top-right brightness button, the removed archived-projects switch, the \"Add a model or API\" section, the home page, the team map and the colours.\n\n## Testing\n- `python3 -m unittest discover -s tests`: **26 tests, OK**.\n- `cd web && npm ci && npm run build`: **passed**. `npm test`: **6/6 passed**.\n- I ran the site locally against a copy of the data and tested it in headless Chromium: **24/24 checks passed**.\n  - **Chat box, in a fresh browser:** Shift+Enter after each of the 4 list lines gives exactly the line plus a new line. Typing \"1. one\", Shift+Enter, \"two\" gives `1. one` and `two` on the next line with no number. There's no list switch.\n  - **Chat box, in a browser with \"on\" saved from before:** the same results, and the old setting gets deleted.\n  - **Enter** sent a test message, which showed up as a new project.\n  - **Models page:** Enter on the focused \"Get a key\" link wasn't blocked. It opened the provider's key page in a new tab (aistudio.google.com/apikey, which redirected to Google sign-in), and the selected provider stayed Groq. Picking a provider with Space or Enter worked, and so did Tab from a provider to its link.\n  - **Other pages:** there's no \"Show archived\" control. The brightness button sits 12px from the right edge and 9.5px from the top, and clicking it switched light to dark.\n- What I couldn't test: Safari, Firefox, a real phone, or the live Vercel site. The Chromium test script isn't committed because it needs a browser installed.\n\nDone by claude-2 (Claude Opus 5.5).\n",
+    "text": "# T0012 (attempt 3): all 3 merge blockers are fixed. Pull request: https://github.com/shloki-loki/CATE/pull/4 (commit a5f155f)\n\nIt's ready for you to merge, and merging deploys it. I can't merge to `main` myself.\n\n## 1. On phones, Send no longer goes off-screen\n- **What was wrong:** at 375 px wide, the buttons under the chat box didn't fit on one row. The page became wider than the screen and Send was partly cut off.\n- **The fix:** on screens 560 px wide or less (phones):\n  - The **Compare** button shows only its icon. Screen readers still read it as \"Compare\".\n  - The buttons have a little less padding and smaller gaps.\n  - The \"Models: auto\" / \"2 models\" label can shorten itself with \"…\" before anything overflows.\n- Wider screens look the same as before.\n- **Checked in headless Chrome** on Home and on chats with 2 or 3 models picked, at 8 widths from 320 px to 1280 px. **24/24 cases passed:**\n  - The page was never wider than the screen.\n  - Send was fully visible and was the element under a click at its centre.\n  - The buttons stayed on one row.\n  - At 375 px, Send now ends at x=350. Before, it ended at x=391, past the edge.\n\n## 2. Arrow keys work on the Type and API choices\n- Under \"Add a model or API\", the \"What are you adding?\" and \"Which API?\" cards are now **real radio buttons with labels**. They are hidden visually, and the card shows which one is chosen. Before, they were plain buttons that only reacted to clicks.\n- The browser now handles the keys:\n  - **Tab** goes into a group at the chosen card.\n  - The **arrow keys** move the choice.\n  - The focused card shows a teal outline.\n- Each provider's **\"Get a key ↗\" link** sits outside its radio, so it is still its own Tab stop. Enter on it opens the key page in a new tab and leaves your choice as it was.\n- I replaced the test's blanket ban on `onKeyDown` with checks of the actual behaviour:\n  - the choices are native radios with labels and no `role=\"radio\"`;\n  - the hidden radios stay focusable;\n  - each link is outside its label.\n- **Checked in Chrome, 13/13 passed:**\n  - With Claude focused, Right picks ChatGPT and Left goes back.\n  - Down picks API key, which shows the \"Which API?\" step.\n  - Tab lands on Groq, which has a visible outline, and Down picks Gemini.\n  - Tab goes from Groq to Groq's \"Get a key\" link, and the next Tab goes to Gemini's link.\n  - Enter on a link opens a new tab and Groq stays picked.\n- I also submitted the form for real, against a copy of the data, with DeepSeek picked. It saved the connection with the right type (`runner: api`) and provider (`preset: deepseek`), so the form still works without the old hidden fields.\n\n## 3. DeepSeek is no longer called free\n- DeepSeek is now marked as paid in `web/lib/data.js` (`paid: true`).\n- The suggested names come from a small new file, `web/lib/addDefaults.mjs`. It adds \"(free)\" only for APIs that have a free tier.\n- Picking DeepSeek now suggests the display name **\"DeepSeek\"** and the short name **`api-deepseek`**. Before, they were \"DeepSeek (free)\" and `free-deepseek`. Its card also shows \"Paid, cents per task\" in the warning colour.\n- New tests in `web/tests/addDefaults.test.mjs` check this. They also check that every API marked paid is exactly one whose note starts with \"Paid\".\n\n## Unchanged\nThese parts of the redesign are unchanged; the reviewer passed them last time:\n- the brightness button at the top right (still 8 px from the right and 9.5 px from the top at phone width);\n- no \"Show archived\" switch;\n- the \"Add a model or API\" section;\n- Shift+Enter makes a plain new line. I re-checked in Chrome with an empty chat box: typing \"1. one\", Shift+Enter, \"two\" gives exactly `1. one` and then `two`.\n\n## Testing\n- `python3 -m unittest discover -s tests`: **31 tests, OK**.\n- `cd web && npm ci && npm run build`: **passed**.\n- `npm test`: **10/10 passed**.\n- Headless Chrome against a local server and a copy of the data:\n  - phone-width chat box: 24/24;\n  - Add form keyboard and labels: 13/13;\n  - one real form submit, and the Shift+Enter and brightness button re-checks above.\n- I updated the pull request description with these results.\n- **What I couldn't test:**\n  - Safari, Firefox, a real phone, or the live Vercel site.\n  - The status of the GitHub checks on the pull request: my token isn't allowed to read them.\n  - The Chrome test scripts aren't committed because they need a browser installed.\n\nDone by claude-2 (Claude Opus 5.5).\n",
     "tokens_in": 180000,
-    "tokens_out": 20000,
+    "tokens_out": 22000,
     "model": "claude-opus-5-5"
    },
    "reviews": [
@@ -767,14 +767,20 @@
      "actor": "claude-2",
      "event": "claimed",
      "detail": "Opus 5.5"
+    },
+    {
+     "at": "2026-11-26T14:56:33+05:30",
+     "actor": "claude-2",
+     "event": "submitted for review",
+     "detail": "202,000 tokens"
     }
    ],
-   "updated_at": "2026-11-26T14:48:43+05:30",
+   "updated_at": "2026-11-26T14:56:33+05:30",
    "claimed_at": "2026-11-26T14:48:43+05:30",
    "run_model": "claude-opus-5-5",
    "run_effort": "high",
    "run_url": "https://github.com/shloki-loki/CATE/actions/runs/45790737913",
-   "review_queued_at": "2026-11-26T14:45:15+05:30",
+   "review_queued_at": "2026-11-26T14:56:33+05:30",
    "reviewer": null,
    "reviewing_at": "2026-11-26T14:45:53+05:30",
    "review_model": "gpt-6.2-astra",
