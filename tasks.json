@@ -659,8 +659,8 @@
     "T0011"
    ],
    "inputs": [],
-   "status": "reviewing",
-   "attempts": 2,
+   "status": "failed",
+   "attempts": 3,
    "exclude": [],
    "chat": "C0007",
    "group": "",
@@ -705,6 +705,14 @@
      "score": 76,
      "verdict": "fail",
      "notes": "Request changes on PR #4 at 33b230c. Score 76/100.\n\nMerge blockers\n\n1. The home composer pushes Send off-screen at phone width. In headless Chrome at 375 CSS pixels with the default model selection, the document became 391 px wide and Send's right edge was at x=390.94. Applying main's stylesheet to the same composer kept the document at 375 px and Send ended at x=350.13. The new nowrap rule on .tool (web/app/globals.css:293) leaves insufficient space for the row. Adapt the toolbar at narrow widths and check that Send stays fully visible and clickable without horizontal scrolling.\n2. The new Type and API radio groups lose the previous native selectors' arrow-key navigation. In Chrome, focus Claude and press Right, or focus Groq and press Down. Both focus/selection workflows leave the original option selected. The buttons at web/components/ModelsPanel.js:192 and :207 declare role=\"radio\" but implement clicks only. Use labeled native radio inputs or implement radio-group keyboard navigation. Keep each provider's key link separately focusable. Replace the test's blanket ban on onKeyDown with a behavior check if using a custom handler.\n3. Selecting DeepSeek displays “Paid, cents per task” on the card and “DeepSeek (free)” in the display-name field. Remove the unconditional “(free)” from placeholderLabel at web/components/ModelsPanel.js:182 or derive it from accurate preset information.\n\nAcceptance checks\n\n- Research patterns — PASS. T0011's neutral surfaces and teal accent, role-based color tokens, tabular figures and folded connection settings are present.\n- Top-right brightness control — PASS. On desktop Home it was 12 px from the right and 9.5 px from the top. Clicking changed light to dark. Models and Logs use the same header.\n- Archived projects button removed — PASS. The sidebar filters archived projects and the visibility switch is gone.\n- Clear Add API/Model section — PASS for discoverability. The Models header links to the labeled section, with separate subscription and API choices and guidance for catalog additions. The selection and pricing defects above still need correction.\n- Shift+Enter does not auto-number — PASS. In Chrome, typing “1. one”, Shift+Enter, “two” produced exactly two lines with no second marker. Unit tests also cover bullets, checkboxes and empty items.\n\nVerification on the checked-out PR head: all 28 Python tests and all 6 Node tests passed. npm ci and npm run build succeeded. Browser checks used a local production server and a temporary copy of the dashboard data.\n"
+    },
+    {
+     "by": "gpt-1",
+     "model": "gpt-6.2-astra",
+     "at": "2026-11-26T15:00:10+05:30",
+     "score": 78,
+     "verdict": "fail",
+     "notes": "Request changes on PR #4, commit a5f155f. Score 78/100.\n\nTwo issues prevent merge.\n\n1. The Models page gives contradictory cost information for the same connection. In Chrome I selected DeepSeek and submitted the Add form against a temporary data copy. The picker correctly said “Paid, cents per task”. The resulting connection card read “review-deepseek · Free API” and its Team map node also read “Free API”. In web/app/(app)/models/page.js the planLabel for every API runner is hard-coded to “Free API”. The Home limits panel in web/components/Chat.js likewise labels every active API as free. Use the preset metadata or a neutral “API” label in these views, including for saved connections. Verify the labels after submission and after Resume. The placeholder tests miss this path.\n2. The closed composer toolbar fits a 375 CSS-pixel viewport. Opening its controls still clips them. On Home in Chrome, opening Models placed the 343px picker at x=57 through 400 and increased document scrollWidth to 400. Opening Limits placed its panel at x=-29 through 314, cutting off the left edge. The issue is the combination of viewport-relative width and button-relative positioning in web/app/globals.css. Position the open panels within the viewport on phones and check their bounds and Close buttons at 320px and 375px.\n\nBrief checks on the reviewed commit\n\n- PASS — Research patterns. The design implements neutral layered surfaces and a teal accent, a shared global header, progressive disclosure of connection settings, and tabular figures with sticky headers.\n- PASS — Brightness. On Home, Models and Logs at 375px and 1280px the top-right button changed the theme, and reloading preserved the choice.\n- PASS — Archived projects. The shared sidebar filters archived projects and no longer renders the Show archived control.\n- PASS — Add API/Model. The Models header links to the labelled Add section. Arrow keys changed both radio groups and submitting created the chosen connection. The saved connection's cost label is the separate defect above.\n- PASS — Shift+Enter. In Chrome the composer kept exactly one plain newline after both “1. one” and “- bullet”, followed by “two”. Neither inserted a prefix nor submitted.\n\nValidation: 31 Python tests passed, all 10 Node tests passed, npm ci succeeded, and npm run build succeeded. Browser checks used the local production build and copied data. GitHub reports MERGEABLE with merge state UNSTABLE. The integration returned HTTP 403 for the underlying check results, so their status is unverified.\n"
     }
    ],
    "history": [
@@ -779,15 +787,21 @@
      "actor": "gpt-1",
      "event": "review started",
      "detail": ""
+    },
+    {
+     "at": "2026-11-26T15:00:10+05:30",
+     "actor": "gpt-1",
+     "event": "review failed; out of attempts",
+     "detail": "score 78 (needs 80)"
     }
    ],
-   "updated_at": "2026-11-26T14:57:14+05:30",
+   "updated_at": "2026-11-26T15:00:10+05:30",
    "claimed_at": "2026-11-26T14:48:43+05:30",
    "run_model": "claude-opus-5-5",
    "run_effort": "high",
    "run_url": "https://github.com/shloki-loki/CATE/actions/runs/45790737913",
    "review_queued_at": "2026-11-26T14:56:33+05:30",
-   "reviewer": "gpt-1",
+   "reviewer": null,
    "reviewing_at": "2026-11-26T14:57:14+05:30",
    "review_model": "gpt-6.2-astra",
    "review_run_url": "https://github.com/shloki-loki/CATE/actions/runs/45792051410",
