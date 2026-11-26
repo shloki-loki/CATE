@@ -530,6 +530,15 @@
    "title": "free-gemini is back from its usage-limit rest",
    "detail": "",
    "ref": ""
+  },
+  {
+   "id": "J0060",
+   "at": "2026-11-26T14:11:00+05:30",
+   "by": "owner",
+   "kind": "update",
+   "title": "New connection deep (deepseek, api)",
+   "detail": "",
+   "ref": ""
   }
  ]
 }
