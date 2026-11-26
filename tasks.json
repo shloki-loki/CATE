@@ -1198,7 +1198,7 @@
     "T0016"
    ],
    "inputs": [],
-   "status": "review",
+   "status": "reviewing",
    "attempts": 0,
    "exclude": [],
    "chat": "C0008",
@@ -1245,14 +1245,24 @@
      "actor": "gpt-1",
      "event": "submitted for review",
      "detail": "26,200 tokens"
+    },
+    {
+     "at": "2026-11-27T04:26:24+05:30",
+     "actor": "claude-2",
+     "event": "review started",
+     "detail": ""
     }
    ],
-   "updated_at": "2026-11-27T04:25:41+05:30",
+   "updated_at": "2026-11-27T04:26:24+05:30",
    "claimed_at": "2026-11-27T04:23:54+05:30",
    "run_model": "gpt-6-astra",
    "run_effort": "medium",
    "run_url": "https://github.com/shloki-loki/CATE/actions/runs/45907615879",
-   "review_queued_at": "2026-11-27T04:25:41+05:30"
+   "review_queued_at": "2026-11-27T04:25:41+05:30",
+   "reviewer": "claude-2",
+   "reviewing_at": "2026-11-27T04:26:24+05:30",
+   "review_model": "claude-opus-5-5",
+   "review_run_url": "https://github.com/shloki-loki/CATE/actions/runs/45907849300"
   },
   {
    "id": "T0018",
