@@ -2,6 +2,7 @@
 
 import { useActionState, useState, useTransition } from 'react';
 import { addAgent, removeAgent, setAgent, wakeNow } from '@/app/actions';
+import { safe } from '@/lib/safe';
 import { Limit } from '@/components/Chat';
 import { statusOf } from '@/lib/status';
 import { connectionPlaceholders } from '@/lib/addDefaults.mjs';
@@ -69,7 +70,7 @@ function AgentCard({ agent, catalogModels, usage, repo }) {
   const [state, setState] = useState(null);
   const [enabled, setEnabled] = useState(agent.models);
   const [budget, setBudget] = useState(agent.budget || 0);
-  const run = (changes) => start(async () => setState(await setAgent(agent.id, changes)));
+  const run = (changes) => start(async () => setState(await safe(() => setAgent(agent.id, changes))));
   const toggle = (id) => {
     const next = enabled.includes(id) ? enabled.filter((m) => m !== id) : [...enabled, id];
     if (!next.length) return;
@@ -147,7 +148,7 @@ function AgentCard({ agent, catalogModels, usage, repo }) {
           : <button className="button small" disabled={pending} onClick={() => run({ status: 'paused' })}>Pause</button>}
         <Feedback state={state} />
         <span style={{ flex: 1 }} />
-        <button className="button small ghost danger" disabled={pending} onClick={() => { if (confirm(`Remove ${agent.label}? Its history stays in the logs.`)) start(async () => setState(await removeAgent(agent.id))); }}>Remove</button>
+        <button className="button small ghost danger" disabled={pending} onClick={() => { if (confirm(`Remove ${agent.label}? Its history stays in the logs.`)) start(async () => setState(await safe(() => removeAgent(agent.id)))); }}>Remove</button>
       </div>
     </article>
   );
@@ -177,7 +178,7 @@ const TYPES = [
 // the radio-group keyboard behaviour: Tab enters the group at the checked option and the arrow keys move the
 // selection. Each provider's "Get a key" link sits outside its label, so it stays a separate Tab stop.
 function AddConnection({ presets, repo }) {
-  const [state, action, pending] = useActionState(addAgent, null);
+  const [state, action, pending] = useActionState((previous, formData) => safe(() => addAgent(previous, formData)), null);
   const [runner, setRunner] = useState('claude-actions');
   const [preset, setPreset] = useState('groq');
   const type = TYPES.find((t) => t.runner === runner);
@@ -271,7 +272,7 @@ export default function ModelsPanel({ agents, providers, usage, repo }) {
     <section className="section" id="connections" aria-labelledby="conn-title">
       <div className="section-head row-head">
         <div><h2 id="conn-title">Connections</h2><p>Each card is one account or API key. Open <b>Configure</b> to choose its models and which job each model does.</p></div>
-        <span className="button-row"><button className="button small" disabled={pending} onClick={() => start(async () => setState(await wakeNow()))}>Wake agents with work</button><Feedback state={state} /></span>
+        <span className="button-row"><button className="button small" disabled={pending} onClick={() => start(async () => setState(await safe(() => wakeNow())))}>Wake agents with work</button><Feedback state={state} /></span>
       </div>
       {agents.length ? (
         <div className="conn-grid">

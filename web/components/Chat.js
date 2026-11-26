@@ -3,6 +3,7 @@
 import { useRouter } from 'next/navigation';
 import { useCallback, useEffect, useMemo, useRef, useState, useTransition } from 'react';
 import { approveTask, archiveChat, cancelTask, retryTask, runPlan, sendMessage } from '@/app/actions';
+import { safe } from '@/lib/safe';
 import Link from 'next/link';
 import { TopBar } from '@/components/AppFrame';
 import { Archive, Arrow, ChatIcon, Clip, Cube, List, Spark, Split, X } from '@/components/Icons';
@@ -229,7 +230,7 @@ function PlanCard({ chatId, message, agents, models, tasks }) {
       {started ? null : (
         <div className="plan-foot">
           <span>If a chosen account runs out of limit, the next account of the same provider takes over with the same model.</span>
-          <button className="button primary" disabled={pending} onClick={() => start(async () => setState(await runPlan(chatId, message.id, steps)))}>{pending ? 'Starting…' : 'Run plan'}</button>
+          <button className="button primary" disabled={pending} onClick={() => start(async () => setState(await safe(() => runPlan(chatId, message.id, steps))))}>{pending ? 'Starting…' : 'Run plan'}</button>
           {state?.error ? <span className="feedback bad">{state.error}</span> : state?.warning ? <span className="feedback bad">{state.warning}</span> : null}
         </div>
       )}
@@ -246,7 +247,7 @@ function TaskCard({ task, agents, models }) {
   const model = task.status === 'reviewing' ? task.review_model : (task.run_model || task.result?.model || task.model);
   const agentLabel = agents.find((a) => a.id === who)?.label || who;
   const review = task.reviews?.[task.reviews.length - 1];
-  const act = (fn) => start(async () => setState(await fn(task.id)));
+  const act = (fn) => start(async () => setState(await safe(() => fn(task.id))));
   const statusTone = task.status === 'done' ? 'ok' : ['failed', 'blocked'].includes(task.status) ? 'bad' : OPEN.includes(task.status) ? 'accent' : '';
   return (
     <div className="task">
@@ -372,7 +373,7 @@ export default function Chat({ chatId, initial, agents, models, recommended, sup
     setText(''); // the saved draft stays until the message is accepted (or restored below on error)
     setFiles([]);
     start(async () => {
-      const result = await sendMessage(form);
+      const result = await safe(() => sendMessage(form));
       if (!result?.ok) { setError(result?.error || 'Could not send.'); updateText(sent); setOptimistic(null); return; }
       writeDraft(chatId, '');
       if (!chatId && result.chatId) { router.push(`/c/${result.chatId}`); return; }
@@ -391,7 +392,8 @@ export default function Chat({ chatId, initial, agents, models, recommended, sup
         {active ? <span className="pill accent"><span className="spinner" aria-hidden="true" /> Agents working</span> : null}
         {chatId ? (
           <button className="icon-btn" title={chat?.archived ? 'Move back to projects' : 'Archive project'} aria-label={chat?.archived ? 'Move back to projects' : 'Archive project'} onClick={() => start(async () => {
-            await archiveChat(chatId, !chat?.archived);
+            const done = await safe(() => archiveChat(chatId, !chat?.archived));
+            if (done?.ok === false) { setError(done.error); return; }
             if (!chat?.archived) router.push('/'); else router.refresh();
           })}><Archive /></button>
         ) : null}
