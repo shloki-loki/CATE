@@ -272,6 +272,7 @@ def supervise(actor: str = "supervisor") -> list[str]:
     tasks = store.load("tasks")
     timeout = cfg("claim_timeout_minutes", 150)
     max_attempts = cfg("max_attempts", 3)
+    failed: list[tuple[dict, str]] = []
 
     for agent in agents["agents"]:
         if agent.get("status") == "limited" and minutes_since(agent.get("limited_until")) >= 0:
@@ -289,6 +290,7 @@ def supervise(actor: str = "supervisor") -> list[str]:
             if task["attempts"] >= max_attempts:
                 task["status"] = "failed"
                 history(task, actor, "failed", f"{who} went silent; out of attempts")
+                failed.append((task, f"{who} went silent"))
                 notes.append(f"{task['id']} failed: {who} went silent and attempts are used up")
             else:
                 task["status"] = "queued"
@@ -313,6 +315,8 @@ def supervise(actor: str = "supervisor") -> list[str]:
 
     store.save("agents", agents)
     store.save("tasks", tasks)
+    for task, why in failed:
+        tell_chat(task, failure_message(task, why))
     for line in notes:
         store.journal(actor, "supervise", line)
     return notes
@@ -344,6 +348,34 @@ def merge_candidates(tasks: list[dict]) -> list[dict]:
     return out
 
 
+def tell_chat(task: dict, text: str) -> None:
+    """Post a CATE message in the project chat the task came from (if any)."""
+    if not task.get("chat"):
+        return
+    chats = store.load("chats")
+    chat = store.find(chats["chats"], task["chat"])
+    if chat is None:
+        return
+    chat.setdefault("messages", []).append({"id": store.next_id(chat["messages"], "M"), "role": "system", "by": "cate",
+                                            "text": text, "at": now_iso()})
+    chat["updated_at"] = now_iso()
+    store.save("chats", chats)
+
+
+def failure_message(task: dict, why: str) -> str:
+    """What the owner reads in the chat when a task runs out of attempts."""
+    text = f"✗ {task['id']} \u201c{task.get('title', '')}\u201d stopped after {task.get('attempts', 0)} attempts: {why}."
+    pr = pr_number((task.get("result") or {}).get("text", ""))
+    if pr:
+        repo = settings().get("repo", "")
+        text += (f" Its pull request #{pr} was not merged (CATE only auto-merges work that passed review)."
+                 f" Read the last review, then merge it by hand on GitHub (https://github.com/{repo}/pull/{pr})"
+                 " or press Run again.")
+    else:
+        text += " Press Run again to retry."
+    return text
+
+
 def record_merge(task_id: str, pr: int, status: str, detail: str) -> None:
     tasks = store.load("tasks")
     task = store.find(tasks["tasks"], task_id)
@@ -352,16 +384,8 @@ def record_merge(task_id: str, pr: int, status: str, detail: str) -> None:
     task["merge"] = {"pr": pr, "status": status, "detail": detail[:1000], "at": now_iso()}
     history(task, "cate", f"pull request #{pr} {status}", detail[:300])
     store.save("tasks", tasks)
-    if task.get("chat"):
-        chats = store.load("chats")
-        chat = store.find(chats["chats"], task["chat"])
-        if chat is not None:
-            text = (f"✓ Merged pull request #{pr} after review, tests and build passed. It goes live in about a minute."
-                    if status == "merged" else f"Auto-merge of pull request #{pr} stopped: {detail}. You can merge it by hand on GitHub.")
-            chat.setdefault("messages", []).append({"id": store.next_id(chat["messages"], "M"), "role": "system", "by": "cate",
-                                                    "text": text, "at": now_iso()})
-            chat["updated_at"] = now_iso()
-            store.save("chats", chats)
+    tell_chat(task, f"✓ Merged pull request #{pr} after review, tests and build passed. It goes live in about a minute."
+              if status == "merged" else f"Auto-merge of pull request #{pr} stopped: {detail}. You can merge it by hand on GitHub.")
     store.journal("cate", "update", f"PR #{pr} {status}", detail[:300], task_id)
 
 
@@ -487,6 +511,8 @@ def review(agent_id: str, task_id: str, score: int, verdict: str, notes: str,
             task["feedback"] = notes[:20000]
             history(task, agent_id, "review failed; sent back with feedback", f"score {score} (needs {threshold})")
     store.save("tasks", tasks)
+    if task["status"] == "failed":
+        tell_chat(task, failure_message(task, f"the last review scored {score} and needs {threshold}"))
     ledger = store.load("ledger")
     charge(ledger, agent_id,
            0 if deferred() else (tokens_in if tokens_in is not None else estimate_tokens(task["result"]["text"]) + 2000),
