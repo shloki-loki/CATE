@@ -773,6 +773,15 @@
    "title": "Handed work back",
    "detail": "API error: 503 from https://generativelanguage.googleapis.com/v1beta/openai: [{\n  \"error\": {\n    \"code\": 503,\n    \"message\": \"This model is currently experiencing high demand. Spikes in demand are usually temporary. Please try again later.\",\n    \"status\": \"UNAVAILABLE\"\n  }\n}\n]; resting 60 min",
    "ref": "T0014"
+  },
+  {
+   "id": "J0087",
+   "at": "2026-11-26T19:31:59+05:30",
+   "by": "github-actions",
+   "kind": "supervise",
+   "title": "free-gemini is back from its usage-limit rest",
+   "detail": "",
+   "ref": ""
   }
  ]
 }
