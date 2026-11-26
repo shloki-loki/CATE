@@ -836,6 +836,15 @@
    "title": "Idle",
    "detail": "nothing in the queue for this agent",
    "ref": ""
+  },
+  {
+   "id": "J0094",
+   "at": "2026-11-27T02:01:43+05:30",
+   "by": "owner",
+   "kind": "update",
+   "title": "Cancelled T0015",
+   "detail": "",
+   "ref": "T0015"
   }
  ]
 }
