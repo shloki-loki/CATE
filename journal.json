@@ -764,6 +764,15 @@
    "title": "Reviewing T0014: Why are the merges not working here",
    "detail": "",
    "ref": "T0014"
+  },
+  {
+   "id": "J0086",
+   "at": "2026-11-26T15:31:47+05:30",
+   "by": "free-gemini",
+   "kind": "fail",
+   "title": "Handed work back",
+   "detail": "API error: 503 from https://generativelanguage.googleapis.com/v1beta/openai: [{\n  \"error\": {\n    \"code\": 503,\n    \"message\": \"This model is currently experiencing high demand. Spikes in demand are usually temporary. Please try again later.\",\n    \"status\": \"UNAVAILABLE\"\n  }\n}\n]; resting 60 min",
+   "ref": "T0014"
   }
  ]
 }
