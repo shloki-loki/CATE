@@ -141,7 +141,7 @@ function UsagePanel({ usage, onClose }) {
       {usage.rows.map((r) => (
         <div className="pop-agent" key={r.id}>
           <div className="pop-agent-head"><b>{r.label}</b>
-            {r.status === 'paused' ? <span className="pill warn">{r.note ? 'Not connected' : 'Paused'}</span> : <span className="pill">{r.runner === 'api' ? 'Free API' : 'Subscription'}</span>}
+            {r.status === 'paused' ? <span className="pill warn">{r.note ? 'Not connected' : 'Paused'}</span> : <span className="pill">{r.runner === 'api' ? (r.apiLabel || 'API') : 'Subscription'}</span>}
           </div>
           <div className="limits">
             {r.windows.map((w) => <Limit key={w.label} w={w} />)}

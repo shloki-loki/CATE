@@ -14,6 +14,9 @@ record() { python3 -m cate merge-record --task "$task" --pr "$pr" --status "$1" 
 
 while read -r task pr; do
   [ -n "$task" ] || continue
+  # The task's own pull request is the one on its branch (cate/<task id>-...); a result may mention others.
+  own=$(gh api "repos/$repo/pulls?state=all&per_page=100" --jq "[.[] | select(.head.ref | startswith(\"cate/$task\"))] | sort_by(.created_at) | last | .number // empty" 2>/dev/null)
+  [ -n "$own" ] && pr="$own"
   echo "== $task: pull request #$pr"
   info=$(gh api "repos/$repo/pulls/$pr" --jq '[.state, (.merged|tostring), .head.ref, .base.ref] | @tsv') \
     || { record waiting "could not read the pull request"; continue; }

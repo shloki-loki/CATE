@@ -19,7 +19,7 @@ export default async function Models() {
   const usable = agents.filter((a) => a.runner !== 'manual');
   const rows = usable.map((a) => ({
     id: a.id, label: a.label || a.id, provider: a.provider, runner: a.runner, status: a.status, note: a.note || '',
-    planLabel: a.runner === 'api' ? 'Free API' : catalog.providers?.[a.provider]?.plan || a.provider,
+    planLabel: a.runner === 'api' ? (String(PRESETS[a.preset]?.free || '').startsWith('Paid') ? 'Paid API' : PRESETS[a.preset] ? 'Free API' : 'API') : catalog.providers?.[a.provider]?.plan || a.provider,
     models: enabledModels(catalog, a), roles: a.roles || {}, budget: a.weekly_budget_tokens || 0,
     defaults: Object.fromEntries(Object.keys(KIND_LABELS).map((k) => [k, chooseModel(catalog, a, k)])),
     secret: secretFor(a), keyUrl: KEY_URLS[a.provider] || PRESETS[a.preset]?.key || '',

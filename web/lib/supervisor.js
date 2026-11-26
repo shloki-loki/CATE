@@ -61,6 +61,8 @@ Rules:
 - Never add separate "review" steps for work you already marked "review":"cross": CATE reviews it automatically.
 - Requests to change CATE itself (this dashboard, its agents, its code) are "code" steps on a subscription
   agent; their brief must say: work on a branch, run the tests, open a pull request for the owner to merge.
+- Do not plan a copy or replica of a specific existing game (its name, characters, map, art, music or look).
+  Offer an original game in the same genre instead, and say so in your reply.
 - Use the agent ids and model ids exactly as listed. Never invent facts about the user.
 
 Reply with ONLY this JSON object:
@@ -78,31 +80,50 @@ function history(messages, tasks) {
   });
 }
 
-export async function supervise({ catalog, agents, messages, tasks, selection }) {
-  const endpoint = supervisorAvailable();
-  if (!endpoint) return null;
-  const body = {
-    model: endpoint.model(),
-    temperature: 0.2,
-    response_format: { type: 'json_object' },
-    messages: [{ role: 'system', content: system(catalog, agents, selection) }, ...history(messages, tasks)],
-  };
+async function ask(endpoint, messages, json) {
+  const body = { model: endpoint.model(), temperature: 0.2, messages };
+  if (json) body.response_format = { type: 'json_object' };
   const response = await fetch(`${endpoint.base}/chat/completions`, {
     method: 'POST',
     headers: { Authorization: `Bearer ${process.env[endpoint.key]}`, 'Content-Type': 'application/json' },
     body: JSON.stringify(body),
     cache: 'no-store',
   });
-  if (!response.ok) throw new Error(`${endpoint.provider} answered ${response.status}: ${(await response.text()).slice(0, 300)}`);
+  if (!response.ok) throw new Error(`${endpoint.provider} answered ${response.status}: ${(await response.text()).slice(0, 200)}`);
   const data = await response.json();
-  const text = data.choices?.[0]?.message?.content || '{}';
-  let parsed;
-  try {
-    parsed = JSON.parse(text.slice(text.indexOf('{'), text.lastIndexOf('}') + 1));
-  } catch {
-    parsed = { reply: text, plan: null };
+  return data.choices?.[0]?.message?.content || '';
+}
+
+function parse(text) {
+  const start = text.indexOf('{');
+  const end = text.lastIndexOf('}');
+  if (start < 0 || end <= start) return null;
+  try { return JSON.parse(text.slice(start, end + 1)); } catch { return null; }
+}
+
+// Groq's strict JSON mode sometimes rejects long plans ("Failed to generate JSON"). Try JSON mode, then the same
+// request without it (parsing the JSON out of the text), then the next provider (Gemini) the same way.
+export async function supervise({ catalog, agents, messages, tasks, selection }) {
+  const endpoints = ENDPOINTS.filter((e) => process.env[e.key]);
+  if (!endpoints.length) return null;
+  const prompt = [{ role: 'system', content: system(catalog, agents, selection) }, ...history(messages, tasks)];
+  const errors = [];
+  for (const endpoint of endpoints) {
+    for (const json of [true, false]) {
+      try {
+        const text = await ask(endpoint, prompt, json);
+        const parsed = parse(text);
+        if (parsed && (parsed.reply || parsed.plan)) {
+          return { ...sanitize(parsed, catalog, agents, selection), provider: endpoint.provider, model: endpoint.model() };
+        }
+        if (!json && text.trim()) return { reply: text.trim().slice(0, 8000), plan: null, provider: endpoint.provider, model: endpoint.model() };
+        errors.push(`${endpoint.provider}: unreadable answer`);
+      } catch (error) {
+        errors.push(error.message);
+      }
+    }
   }
-  return { ...sanitize(parsed, catalog, agents, selection), provider: endpoint.provider, model: endpoint.model() };
+  throw new Error(errors.join(' | ').slice(0, 300));
 }
 
 // Keep the plan to agents and models that exist and are enabled; fill gaps with the recommended choice.

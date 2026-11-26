@@ -3,6 +3,10 @@
 
 import { modelInfo, providerModels } from '@/lib/catalog';
 
+// API presets that cost money (mirrors PRESETS in lib/data.js); everything else listed there is a free tier.
+const PAID_PRESETS = new Set(['deepseek']);
+const FREE_PRESETS = new Set(['groq', 'gemini', 'openrouter', 'mistral', 'cerebras']);
+
 const DAY = (iso) => (iso || '').slice(0, 10);
 
 export function requestsToday(ledger, chats, provider, today) {
@@ -31,6 +35,7 @@ export function usageRows({ agents, ledger, chats, catalog, week, today }) {
     const budget = a.weekly_budget_tokens || 0;
     return {
       id: a.id, label: a.label || a.id, provider: a.provider, runner: a.runner, status: a.status, note: a.note || '',
+      apiLabel: a.runner !== 'api' ? '' : PAID_PRESETS.has(a.preset) ? 'Paid API' : FREE_PRESETS.has(a.preset) ? 'Free API' : 'API',
       windows, budgetLeft: budget ? Math.max(0, Math.round(100 - (tokens / budget) * 100)) : null,
       tokens, cached: row.cached || 0, jobs: row.tasks || 0, readingAt: l.at || null,
     };

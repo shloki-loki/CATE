@@ -9,7 +9,7 @@ export const PROVIDERS = {
 export const RUNNERS = {
   'claude-actions': 'Claude Pro / Max subscription',
   'codex-actions': 'ChatGPT Plus / Pro subscription',
-  api: 'Free API key',
+  api: 'API key (free tier or paid)',
   manual: 'Manual (you paste the prompt)',
 };
 

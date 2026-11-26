@@ -334,8 +334,8 @@ def run_url() -> str:
 def pr_number(text: str) -> int | None:
     import re
     repo = settings().get("repo", "")
-    match = re.search(rf"github\.com/{re.escape(repo)}/pull/(\d+)", text or "", re.I)
-    return int(match.group(1)) if match else None
+    found = re.findall(rf"github\.com/{re.escape(repo)}/pull/(\d+)", text or "", re.I)
+    return int(found[0]) if found else None
 
 
 def merge_candidates(tasks: list[dict]) -> list[dict]:
@@ -381,11 +381,14 @@ def record_merge(task_id: str, pr: int, status: str, detail: str) -> None:
     task = store.find(tasks["tasks"], task_id)
     if not task:
         raise Refused(f"No task {task_id}")
+    before = task.get("merge") or {}
     task["merge"] = {"pr": pr, "status": status, "detail": detail[:1000], "at": now_iso()}
     history(task, "cate", f"pull request #{pr} {status}", detail[:300])
     store.save("tasks", tasks)
-    tell_chat(task, f"✓ Merged pull request #{pr} after review, tests and build passed. It goes live in about a minute."
-              if status == "merged" else f"Auto-merge of pull request #{pr} stopped: {detail}. You can merge it by hand on GitHub.")
+    # Tell the chat once per outcome; "waiting" (retry next run) is not news.
+    if status != "waiting" and (before.get("status"), before.get("pr")) != (status, pr):
+        tell_chat(task, f"✓ Merged pull request #{pr} after review, tests and build passed. It goes live in about a minute."
+                  if status == "merged" else f"Auto-merge of pull request #{pr} stopped: {detail}. You can merge it by hand on GitHub.")
     store.journal("cate", "update", f"PR #{pr} {status}", detail[:300], task_id)
 
 
