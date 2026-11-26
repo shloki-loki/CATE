@@ -38,6 +38,7 @@ python3 -m cate task import examples/resume_tailor.json
 ## Commands
 
 ```
+python3 -m cate.audit                        # offline product audit as a Markdown chat message
 python3 -m cate status                       # tasks and agents
 python3 -m cate tick --agent claude-1        # an agent's check-in
 python3 -m cate task add --title ... --brief ... --kind write --prefer anthropic --review cross
