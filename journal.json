@@ -782,6 +782,15 @@
    "title": "free-gemini is back from its usage-limit rest",
    "detail": "",
    "ref": ""
+  },
+  {
+   "id": "J0088",
+   "at": "2026-11-26T19:32:10+05:30",
+   "by": "free-gemini",
+   "kind": "claim",
+   "title": "Reviewing T0014: Why are the merges not working here",
+   "detail": "",
+   "ref": "T0014"
   }
  ]
 }
