@@ -578,7 +578,7 @@
         "title": "WebGL Engine Research",
         "kind": "research",
         "agent": "gpt-1",
-        "model": "gpt-6.2-astra",
+        "model": "gpt-6-astra",
         "modelLabel": "GPT-6.2 Astra",
         "brief": "Evaluate open‑source WebGL/JS engines (Three.js, Babylon.js, PlayCanvas) for realistic 3D city rendering, compare performance, licensing, and community support. Recommend the best fit.",
         "review": "cross",
@@ -615,7 +615,7 @@
         "title": "Skeleton Codebase Setup",
         "kind": "code",
         "agent": "gpt-1",
-        "model": "gpt-6.2-astra",
+        "model": "gpt-6.2-sol",
         "modelLabel": "GPT-6.2 Astra",
         "brief": "Create a new Git branch \"browser-gta\", init package.json, install the chosen engine, set up folder structure (src/, assets/, public/), and add a minimal scene with camera that builds and runs locally.",
         "review": "cross",
@@ -670,7 +670,7 @@
         "title": "Procedural City Generation",
         "kind": "code",
         "agent": "gpt-1",
-        "model": "gpt-6.2-astra",
+        "model": "gpt-6-astra",
         "modelLabel": "GPT-6.2 Astra",
         "brief": "Generate a simple city block layout using a road‑network algorithm, place building placeholders, and load the result into the engine.",
         "review": "cross",
@@ -689,7 +689,7 @@
         "title": "UI and HUD",
         "kind": "code",
         "agent": "gpt-1",
-        "model": "gpt-6.2-astra",
+        "model": "gpt-6-astra",
         "modelLabel": "GPT-6.2 Astra",
         "brief": "Create a minimal HUD (speedometer, mini‑map, mission indicator) using HTML/CSS overlay or canvas that updates in real time.",
         "review": "cross",
@@ -704,8 +704,19 @@
         ],
         "inputs": []
        }
-      ]
-     }
+      ],
+      "started": true
+     },
+     "tasks": [
+      "T0016",
+      "T0017",
+      "T0018",
+      "T0019",
+      "T0020",
+      "T0021",
+      "T0022",
+      "T0023"
+     ]
     }
    ],
    "selection": [
