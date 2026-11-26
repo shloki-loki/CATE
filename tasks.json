@@ -1079,6 +1079,352 @@
    ],
    "updated_at": "2026-11-27T02:01:42+05:30",
    "reviewer": null
+  },
+  {
+   "id": "T0016",
+   "title": "Project Architecture Planning",
+   "brief": "Produce a high‑level architecture for a browser GTA‑style game: list major components (engine, rendering, physics, AI, UI, asset pipeline), choose tech stack (e.g., Three.js + Ammo.js), and define module boundaries.",
+   "kind": "plan",
+   "prefer": "agent:claude-2",
+   "model": "claude-opus-5-5",
+   "priority": 2,
+   "after": [],
+   "inputs": [],
+   "status": "queued",
+   "attempts": 0,
+   "exclude": [],
+   "chat": "C0008",
+   "group": "",
+   "review": {
+    "mode": "cross",
+    "pass_score": 80,
+    "checks": [
+     "components listed",
+     "tech stack justified",
+     "modular structure defined"
+    ]
+   },
+   "parent": null,
+   "created_by": "owner (chat)",
+   "created_at": "2026-11-27T02:06:14+05:30",
+   "queued_at": "2026-11-27T02:06:14+05:30",
+   "claimed_by": null,
+   "result": null,
+   "reviews": [],
+   "history": [
+    {
+     "at": "2026-11-27T02:06:14+05:30",
+     "actor": "owner",
+     "event": "created",
+     "detail": "claude-opus-5-5"
+    }
+   ],
+   "updated_at": "2026-11-27T02:06:14+05:30"
+  },
+  {
+   "id": "T0017",
+   "title": "WebGL Engine Research",
+   "brief": "Evaluate open‑source WebGL/JS engines (Three.js, Babylon.js, PlayCanvas) for realistic 3D city rendering, compare performance, licensing, and community support. Recommend the best fit.",
+   "kind": "research",
+   "prefer": "agent:gpt-1",
+   "model": "gpt-6-astra",
+   "priority": 2,
+   "after": [
+    "T0016"
+   ],
+   "inputs": [],
+   "status": "queued",
+   "attempts": 0,
+   "exclude": [],
+   "chat": "C0008",
+   "group": "",
+   "review": {
+    "mode": "cross",
+    "pass_score": 80,
+    "checks": [
+     "engine selected",
+     "performance notes included",
+     "license compatible"
+    ]
+   },
+   "parent": null,
+   "created_by": "owner (chat)",
+   "created_at": "2026-11-27T02:06:14+05:30",
+   "queued_at": "2026-11-27T02:06:14+05:30",
+   "claimed_by": null,
+   "result": null,
+   "reviews": [],
+   "history": [
+    {
+     "at": "2026-11-27T02:06:14+05:30",
+     "actor": "owner",
+     "event": "created",
+     "detail": "gpt-6-astra"
+    }
+   ],
+   "updated_at": "2026-11-27T02:06:14+05:30"
+  },
+  {
+   "id": "T0018",
+   "title": "Asset Pipeline Design",
+   "brief": "Design a pipeline to generate placeholder 3D assets (buildings, vehicles) using procedural methods or low‑poly models, specify file format (glTF), storage layout, and naming conventions.",
+   "kind": "data",
+   "prefer": "agent:claude-1",
+   "model": "claude-opus-5-5",
+   "priority": 2,
+   "after": [
+    "T0016",
+    "T0017"
+   ],
+   "inputs": [],
+   "status": "queued",
+   "attempts": 0,
+   "exclude": [],
+   "chat": "C0008",
+   "group": "",
+   "review": {
+    "mode": "cross",
+    "pass_score": 80,
+    "checks": [
+     "asset types listed",
+     "format specified",
+     "generation method described"
+    ]
+   },
+   "parent": null,
+   "created_by": "owner (chat)",
+   "created_at": "2026-11-27T02:06:14+05:30",
+   "queued_at": "2026-11-27T02:06:14+05:30",
+   "claimed_by": null,
+   "result": null,
+   "reviews": [],
+   "history": [
+    {
+     "at": "2026-11-27T02:06:14+05:30",
+     "actor": "owner",
+     "event": "created",
+     "detail": "claude-opus-5-5"
+    }
+   ],
+   "updated_at": "2026-11-27T02:06:14+05:30"
+  },
+  {
+   "id": "T0019",
+   "title": "Skeleton Codebase Setup",
+   "brief": "Create a new Git branch \"browser-gta\", init package.json, install the chosen engine, set up folder structure (src/, assets/, public/), and add a minimal scene with camera that builds and runs locally.",
+   "kind": "code",
+   "prefer": "agent:gpt-1",
+   "model": "gpt-6.2-sol",
+   "priority": 2,
+   "after": [
+    "T0016",
+    "T0017"
+   ],
+   "inputs": [],
+   "status": "queued",
+   "attempts": 0,
+   "exclude": [],
+   "chat": "C0008",
+   "group": "",
+   "review": {
+    "mode": "cross",
+    "pass_score": 80,
+    "checks": [
+     "project builds",
+     "basic scene renders",
+     "folder layout correct"
+    ]
+   },
+   "parent": null,
+   "created_by": "owner (chat)",
+   "created_at": "2026-11-27T02:06:14+05:30",
+   "queued_at": "2026-11-27T02:06:14+05:30",
+   "claimed_by": null,
+   "result": null,
+   "reviews": [],
+   "history": [
+    {
+     "at": "2026-11-27T02:06:14+05:30",
+     "actor": "owner",
+     "event": "created",
+     "detail": "gpt-6.2-sol"
+    }
+   ],
+   "updated_at": "2026-11-27T02:06:14+05:30"
+  },
+  {
+   "id": "T0020",
+   "title": "Vehicle Physics Implementation",
+   "brief": "Integrate Ammo.js (or Cannon.js) to add a controllable vehicle entity with realistic acceleration, steering, and collision handling.",
+   "kind": "code",
+   "prefer": "agent:claude-2",
+   "model": "claude-opus-5-5",
+   "priority": 2,
+   "after": [
+    "T0019"
+   ],
+   "inputs": [],
+   "status": "queued",
+   "attempts": 0,
+   "exclude": [],
+   "chat": "C0008",
+   "group": "",
+   "review": {
+    "mode": "cross",
+    "pass_score": 80,
+    "checks": [
+     "vehicle responds to input",
+     "collision detection works",
+     "physics stable"
+    ]
+   },
+   "parent": null,
+   "created_by": "owner (chat)",
+   "created_at": "2026-11-27T02:06:14+05:30",
+   "queued_at": "2026-11-27T02:06:14+05:30",
+   "claimed_by": null,
+   "result": null,
+   "reviews": [],
+   "history": [
+    {
+     "at": "2026-11-27T02:06:14+05:30",
+     "actor": "owner",
+     "event": "created",
+     "detail": "claude-opus-5-5"
+    }
+   ],
+   "updated_at": "2026-11-27T02:06:14+05:30"
+  },
+  {
+   "id": "T0021",
+   "title": "Character Controller",
+   "brief": "Implement a third‑person character controller for walking, jumping, and interacting with the environment, with camera follow logic.",
+   "kind": "code",
+   "prefer": "agent:claude-1",
+   "model": "claude-opus-5-5",
+   "priority": 2,
+   "after": [
+    "T0019"
+   ],
+   "inputs": [],
+   "status": "queued",
+   "attempts": 0,
+   "exclude": [],
+   "chat": "C0008",
+   "group": "",
+   "review": {
+    "mode": "cross",
+    "pass_score": 80,
+    "checks": [
+     "movement smooth",
+     "camera follows",
+     "environment collision works"
+    ]
+   },
+   "parent": null,
+   "created_by": "owner (chat)",
+   "created_at": "2026-11-27T02:06:14+05:30",
+   "queued_at": "2026-11-27T02:06:14+05:30",
+   "claimed_by": null,
+   "result": null,
+   "reviews": [],
+   "history": [
+    {
+     "at": "2026-11-27T02:06:14+05:30",
+     "actor": "owner",
+     "event": "created",
+     "detail": "claude-opus-5-5"
+    }
+   ],
+   "updated_at": "2026-11-27T02:06:14+05:30"
+  },
+  {
+   "id": "T0022",
+   "title": "Procedural City Generation",
+   "brief": "Generate a simple city block layout using a road‑network algorithm, place building placeholders, and load the result into the engine.",
+   "kind": "code",
+   "prefer": "agent:gpt-1",
+   "model": "gpt-6-astra",
+   "priority": 2,
+   "after": [
+    "T0018",
+    "T0019"
+   ],
+   "inputs": [],
+   "status": "queued",
+   "attempts": 0,
+   "exclude": [],
+   "chat": "C0008",
+   "group": "",
+   "review": {
+    "mode": "cross",
+    "pass_score": 80,
+    "checks": [
+     "roads connected",
+     "buildings placed",
+     "performance acceptable"
+    ]
+   },
+   "parent": null,
+   "created_by": "owner (chat)",
+   "created_at": "2026-11-27T02:06:14+05:30",
+   "queued_at": "2026-11-27T02:06:14+05:30",
+   "claimed_by": null,
+   "result": null,
+   "reviews": [],
+   "history": [
+    {
+     "at": "2026-11-27T02:06:14+05:30",
+     "actor": "owner",
+     "event": "created",
+     "detail": "gpt-6-astra"
+    }
+   ],
+   "updated_at": "2026-11-27T02:06:14+05:30"
+  },
+  {
+   "id": "T0023",
+   "title": "UI and HUD",
+   "brief": "Create a minimal HUD (speedometer, mini‑map, mission indicator) using HTML/CSS overlay or canvas that updates in real time.",
+   "kind": "code",
+   "prefer": "agent:gpt-1",
+   "model": "gpt-6-astra",
+   "priority": 2,
+   "after": [
+    "T0020",
+    "T0021"
+   ],
+   "inputs": [],
+   "status": "queued",
+   "attempts": 0,
+   "exclude": [],
+   "chat": "C0008",
+   "group": "",
+   "review": {
+    "mode": "cross",
+    "pass_score": 80,
+    "checks": [
+     "speed displayed",
+     "mini‑map shows position",
+     "no UI glitches"
+    ]
+   },
+   "parent": null,
+   "created_by": "owner (chat)",
+   "created_at": "2026-11-27T02:06:14+05:30",
+   "queued_at": "2026-11-27T02:06:14+05:30",
+   "claimed_by": null,
+   "result": null,
+   "reviews": [],
+   "history": [
+    {
+     "at": "2026-11-27T02:06:14+05:30",
+     "actor": "owner",
+     "event": "created",
+     "detail": "gpt-6-astra"
+    }
+   ],
+   "updated_at": "2026-11-27T02:06:14+05:30"
   }
  ]
 }
