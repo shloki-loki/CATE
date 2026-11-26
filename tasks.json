@@ -1090,7 +1090,7 @@
    "priority": 2,
    "after": [],
    "inputs": [],
-   "status": "reviewing",
+   "status": "review",
    "attempts": 0,
    "exclude": [],
    "chat": "C0008",
@@ -1143,15 +1143,21 @@
      "actor": "free-gemini",
      "event": "review started",
      "detail": ""
+    },
+    {
+     "at": "2026-11-27T02:10:44+05:30",
+     "actor": "free-gemini",
+     "event": "review released",
+     "detail": "API error: 503 from https://generativelanguage.googleapis.com/v1beta/openai: [{\n  \"error\": {\n    \"code\": 503,\n    \"message\": \"This model is currently experiencing high demand. Spikes in demand are usually temporary. Please try again later.\",\n    \"status\": \"UNAVAILABLE\"\n  }\n}\n]"
     }
    ],
-   "updated_at": "2026-11-27T02:10:38+05:30",
+   "updated_at": "2026-11-27T02:10:44+05:30",
    "claimed_at": "2026-11-27T02:06:34+05:30",
    "run_model": "claude-opus-5-5",
    "run_effort": "high",
    "run_url": "https://github.com/shloki-loki/CATE/actions/runs/45892251051",
    "review_queued_at": "2026-11-27T02:09:57+05:30",
-   "reviewer": "free-gemini",
+   "reviewer": null,
    "reviewing_at": "2026-11-27T02:10:38+05:30",
    "review_model": "gemini-3.8-flash",
    "review_run_url": "https://github.com/shloki-loki/CATE/actions/runs/45892720891"
