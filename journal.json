@@ -827,6 +827,15 @@
    "title": "Reviewing T0014: Why are the merges not working here",
    "detail": "",
    "ref": "T0014"
+  },
+  {
+   "id": "J0093",
+   "at": "2026-11-27T02:01:41+05:30",
+   "by": "free-gemini",
+   "kind": "run",
+   "title": "Idle",
+   "detail": "nothing in the queue for this agent",
+   "ref": ""
   }
  ]
 }
