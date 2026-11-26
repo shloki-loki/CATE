@@ -4,13 +4,14 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { createContext, useContext, useEffect, useState } from 'react';
 import { logout } from '@/app/actions';
-import { Archive, ChatIcon, Cube, List, Menu, Moon, Out, Plus, Sun } from '@/components/Icons';
+import { ChatIcon, Cube, List, Menu, Out, Plus } from '@/components/Icons';
+import ThemeButton from '@/components/ThemeButton';
 
-const MenuContext = createContext(() => {});
+const FrameContext = createContext({ openMenu: () => {}, signOut: false });
 
 const NAV = [
   { href: '/', label: 'Chat', Icon: ChatIcon },
-  { href: '/models', label: 'Models & connections', Icon: Cube },
+  { href: '/models', label: 'Models', Icon: Cube },
   { href: '/logs', label: 'Logs', Icon: List },
 ];
 
@@ -30,19 +31,11 @@ function group(chats) {
 export default function AppFrame({ chats, signOut, children }) {
   const path = usePathname();
   const [open, setOpen] = useState(false);
-  const [archived, setArchived] = useState(false);
-  const [theme, setTheme] = useState('dark');
 
-  useEffect(() => { setTheme(document.documentElement.dataset.theme || 'dark'); }, []);
   useEffect(() => { setOpen(false); }, [path]);
 
-  const flip = () => {
-    const next = theme === 'dark' ? 'light' : 'dark';
-    document.documentElement.dataset.theme = next;
-    try { localStorage.setItem('cate-theme', next); } catch {}
-    setTheme(next);
-  };
-  const visible = chats.filter((c) => Boolean(c.archived) === archived)
+  // Archived projects are hidden from the sidebar (the "show archived" switch was removed on request).
+  const visible = chats.filter((c) => !c.archived)
     .sort((a, b) => String(b.updated_at || b.created_at).localeCompare(String(a.updated_at || a.created_at)));
 
   return (
@@ -69,23 +62,36 @@ export default function AppFrame({ chats, signOut, children }) {
               ))}
             </div>
           ))}
-          {!visible.length ? <p className="faint" style={{ padding: '12px 10px', fontSize: 13 }}>{archived ? 'No archived projects.' : 'Your projects will appear here.'}</p> : null}
+          {!visible.length ? <p className="faint side-empty">Your projects will appear here.</p> : null}
         </nav>
-        <div className="side-foot">
-          <button className="icon-btn" onClick={() => setArchived(!archived)} title={archived ? 'Show active projects' : 'Show archived projects'} aria-pressed={archived}><Archive /></button>
-          <button className="icon-btn" onClick={flip} title={theme === 'dark' ? 'Light mode' : 'Dark mode'}>{theme === 'dark' ? <Sun /> : <Moon />}</button>
-          {signOut ? <form action={logout}><button className="icon-btn" title="Sign out" type="submit"><Out /></button></form> : <span />}
-        </div>
       </aside>
       <button className="scrim" aria-label="Close menu" onClick={() => setOpen(false)} />
       <div className="main">
-        <MenuContext.Provider value={() => setOpen(true)}>{children}</MenuContext.Provider>
+        <FrameContext.Provider value={{ openMenu: () => setOpen(true), signOut }}>{children}</FrameContext.Provider>
       </div>
     </div>
   );
 }
 
 export function MenuButton() {
-  const openMenu = useContext(MenuContext);
+  const { openMenu } = useContext(FrameContext);
   return <button className="icon-btn menu-btn" onClick={openMenu} aria-label="Open menu"><Menu /></button>;
+}
+
+// One header for every page: menu button (mobile) and title on the left; page actions, then the
+// brightness (theme) button and sign-out at the top right.
+export function TopBar({ title, children }) {
+  const { signOut } = useContext(FrameContext);
+  return (
+    <header className="topbar">
+      <MenuButton />
+      <h1 className="topbar-title">{title}</h1>
+      <div className="topbar-actions">
+        {children}
+        {children ? <span className="topbar-divider" aria-hidden="true" /> : null}
+        <ThemeButton />
+        {signOut ? <form action={logout}><button className="icon-btn" title="Sign out" aria-label="Sign out" type="submit"><Out /></button></form> : null}
+      </div>
+    </header>
+  );
 }

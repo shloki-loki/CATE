@@ -3,9 +3,11 @@
 import { useRouter } from 'next/navigation';
 import { useCallback, useEffect, useMemo, useRef, useState, useTransition } from 'react';
 import { approveTask, archiveChat, cancelTask, retryTask, runPlan, sendMessage } from '@/app/actions';
-import { MenuButton } from '@/components/AppFrame';
-import { Archive, Arrow, Clip, Spark, Split, X } from '@/components/Icons';
+import Link from 'next/link';
+import { TopBar } from '@/components/AppFrame';
+import { Archive, Arrow, ChatIcon, Clip, Cube, List, Spark, Split, X } from '@/components/Icons';
 import Markdown from '@/components/Markdown';
+import { AUTO_LIST_KEY, continueList } from '@/lib/listContinue.mjs';
 
 const KIND_LABELS = { plan: 'Planning', research: 'Research', write: 'Writing', code: 'Development', review: 'Review', data: 'Data', other: 'Other' };
 const STATUS = {
@@ -32,12 +34,76 @@ function fitHeight(el) {
   el.style.height = `${Math.min(260, el.scrollHeight)}px`;
 }
 
+const SUGGESTIONS = [
+  { Icon: List, title: 'Research', text: 'Research 10 companies hiring for strategy roles and summarise each' },
+  { Icon: ChatIcon, title: 'Write', text: 'Tailor my resume (attached) to a current Founder’s Office opening in Bengaluru' },
+  { Icon: Cube, title: 'Build', text: 'Plan and build a landing page for my NGO’s donation drive' },
+  { Icon: Split, title: 'Improve CATE', text: 'Change CATE itself: describe the change and an agent opens a pull request for you to merge' },
+];
+
+function statusOf(row) {
+  if (row.status === 'paused') return row.note ? { tone: 'bad', word: 'not connected' } : { tone: 'warn', word: 'paused' };
+  const left = row.windows.length ? Math.min(...row.windows.map((w) => w.left)) : null;
+  if (left === null) return { tone: 'ok', word: 'ready' };
+  return { tone: left <= 10 ? 'bad' : left <= 30 ? 'warn' : 'ok', word: `${left}% left` };
+}
+
+// Home: team status (system status first, as NN/g's empty-state guidance suggests), starting points, recent projects.
+function Home({ usage, supervisor, recent, onPick }) {
+  const rows = usage?.rows || [];
+  const ready = rows.filter((r) => r.status !== 'paused');
+  return (
+    <div className="hero">
+      <h1>What should your AI team work on?</h1>
+      <p>Describe the project. The supervisor{supervisor ? '' : ' (off until a free Groq key is added)'} frames it with you, then hands each step to the best model on the account with the most limit left.</p>
+      {!ready.length || !supervisor ? (
+        <Link prefetch={false} href="/models#add" className="setup-card">
+          <b>{ready.length ? 'Turn on the instant supervisor' : 'Connect your first model'}</b>
+          <span>{ready.length ? 'Add a free GROQ_API_KEY so the chat can answer and plan within seconds.' : 'Add a Claude or ChatGPT subscription, or a free API key. It takes about 2 minutes.'}</span>
+          <span className="link">Open the guide →</span>
+        </Link>
+      ) : null}
+      {rows.length ? (
+        <div className="team-strip" aria-label="Your connections">
+          {rows.map((r) => {
+            const st = statusOf(r);
+            return <Link prefetch={false} key={r.id} href={`/models#agent-${r.id}`} className={`team-chip ${st.tone}`} title={`${r.label}: ${st.word}`}><i aria-hidden="true" />{r.label}<span>{st.word}</span></Link>;
+          })}
+          <Link prefetch={false} href="/models#add" className="team-chip add">+ Add</Link>
+        </div>
+      ) : null}
+      <div className="suggestions">
+        {SUGGESTIONS.map(({ Icon, title, text }) => (
+          <button key={title} className="suggestion" onClick={() => onPick(text)}>
+            <b><Icon /> {title}</b>
+            <span>{text}</span>
+          </button>
+        ))}
+      </div>
+      {recent?.length ? (
+        <div className="recent">
+          <div className="section-label">Recent projects</div>
+          {recent.map((c) => (
+            <Link prefetch={false} key={c.id} href={`/c/${c.id}`}>
+              <span className={`dot ${c.status}`} aria-hidden="true" />
+              <span className="t">{c.title}</span>
+              <span className="faint">{c.status === 'idle' ? '' : c.status}</span>
+              <span className="faint num">{ago(c.updated_at)}{ago(c.updated_at) && ago(c.updated_at) !== 'just now' ? ' ago' : ''}</span>
+            </Link>
+          ))}
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
 function ago(iso) {
   if (!iso) return '';
   const m = Math.round((Date.now() - new Date(iso).getTime()) / 60000);
   if (m < 1) return 'just now';
   if (m < 60) return `${m} min`;
-  return `${Math.round(m / 60)} h`;
+  if (m < 48 * 60) return `${Math.round(m / 60)} h`;
+  return `${Math.round(m / 1440)} d`;
 }
 
 function tone(left) {
@@ -215,7 +281,7 @@ function TaskCard({ task, agents, models }) {
 }
 
 // ---- the chat ----
-export default function Chat({ chatId, initial, agents, models, recommended, supervisor }) {
+export default function Chat({ chatId, initial, agents, models, recommended, supervisor, recent = [] }) {
   const router = useRouter();
   const [data, setData] = useState(initial);
   const [text, setText] = useState('');
@@ -226,6 +292,7 @@ export default function Chat({ chatId, initial, agents, models, recommended, sup
   const [pending, start] = useTransition();
   const [error, setError] = useState('');
   const [optimistic, setOptimistic] = useState(null);
+  const [autoLists, setAutoLists] = useState(true);
   const bottom = useRef(null);
   const fileInput = useRef(null);
   const statusKey = useRef('');
@@ -265,6 +332,26 @@ export default function Chat({ chatId, initial, agents, models, recommended, sup
   useEffect(() => { fitHeight(textBox.current); }, [text]);
   // Every edit goes through here so the draft in localStorage always matches the box.
   const updateText = (value) => { setText(value); writeDraft(chatId, value); };
+
+  // Lists continue on Shift+Enter (on by default; can be switched off below the chat box, kept per browser).
+  useEffect(() => { try { setAutoLists(window.localStorage.getItem(AUTO_LIST_KEY) !== 'off'); } catch {} }, []);
+  const flipAutoLists = () => {
+    const next = !autoLists;
+    setAutoLists(next);
+    try { window.localStorage.setItem(AUTO_LIST_KEY, next ? 'on' : 'off'); } catch {}
+  };
+  const onKeyDown = (e) => {
+    if (e.key !== 'Enter' || e.nativeEvent.isComposing) return; // no sending mid-IME composition
+    if (!e.shiftKey) { e.preventDefault(); submit(); return; }
+    if (!autoLists) return; // plain new line
+    const el = e.currentTarget;
+    if (el.selectionStart !== el.selectionEnd) return; // let the browser replace a selection
+    const next = continueList(el.value, el.selectionStart);
+    if (!next) return; // not a list line: plain new line
+    e.preventDefault();
+    updateText(next.value);
+    requestAnimationFrame(() => { el.selectionStart = el.selectionEnd = next.caret; fitHeight(el); });
+  };
 
   // An open popover (model picker or limits panel) closes on a click/tap outside it or on Escape.
   useEffect(() => {
@@ -313,36 +400,26 @@ export default function Chat({ chatId, initial, agents, models, recommended, sup
 
   return (
     <div className="chat">
-      <div className="chat-head">
-        <MenuButton />
-        <h2>{chat?.title || 'New project'}</h2>
+      <TopBar title={chat?.title || 'New project'}>
         {active ? <span className="pill accent"><span className="spinner" aria-hidden="true" /> Agents working</span> : null}
         {chatId ? (
-          <button className="icon-btn" title={chat?.archived ? 'Move back to projects' : 'Archive project'} onClick={() => start(async () => {
+          <button className="icon-btn" title={chat?.archived ? 'Move back to projects' : 'Archive project'} aria-label={chat?.archived ? 'Move back to projects' : 'Archive project'} onClick={() => start(async () => {
             await archiveChat(chatId, !chat?.archived);
             if (!chat?.archived) router.push('/'); else router.refresh();
           })}><Archive /></button>
         ) : null}
-      </div>
+      </TopBar>
 
       <div className="messages">
         {empty ? (
-          <div className="hero">
-            <h1>What should your AI team do?</h1>
-            <p>Describe the project. The supervisor{supervisor ? '' : ' (off until a free Groq key is added)'} frames it with you, then hands each step to the best model on the account with the most limit left.</p>
-            <div className="suggestions">
-              {['Tailor my resume (attached) to a current Founder’s Office opening in Bengaluru', 'Research 10 companies hiring for strategy roles and summarise each', 'Plan and build a landing page for my NGO’s donation drive'].map((s) => (
-                <button key={s} className="suggestion" onClick={() => updateText(s)}>{s}</button>
-              ))}
-            </div>
-          </div>
+          <Home usage={data.usage} supervisor={supervisor} recent={chatId ? [] : recent} onPick={(s) => { updateText(s); textBox.current?.focus(); }} />
         ) : (
           <div className="messages-inner">
             {messages.map((m) => {
               if (m.role === 'user') {
                 return (
                   <div key={m.id} className="msg-user">{m.text}
-                    {m.files?.length ? <div className="msg-files">{m.files.map((f) => <span key={f} className="pill">📎 {f.split('/').pop()}</span>)}</div> : null}
+                    {m.files?.length ? <div className="msg-files">{m.files.map((f) => <span key={f} className="pill"><Clip /> {f.split('/').pop()}</span>)}</div> : null}
                   </div>
                 );
               }
@@ -365,7 +442,7 @@ export default function Chat({ chatId, initial, agents, models, recommended, sup
             })}
             {optimistic ? (
               <>
-                <div className="msg-user">{optimistic.text}{optimistic.files.length ? <div className="msg-files">{optimistic.files.map((f) => <span key={f} className="pill">📎 {f}</span>)}</div> : null}</div>
+                <div className="msg-user">{optimistic.text}{optimistic.files.length ? <div className="msg-files">{optimistic.files.map((f) => <span key={f} className="pill"><Clip /> {f}</span>)}</div> : null}</div>
                 <div className="msg-bot"><div className="avatar">C</div><div className="faint" style={{ display: 'flex', gap: 8, alignItems: 'center' }}><span className="spinner" /> {compare && selection.length >= 2 ? 'Sending to the models…' : 'Supervisor is thinking…'}</div></div>
               </>
             ) : null}
@@ -392,7 +469,7 @@ export default function Chat({ chatId, initial, agents, models, recommended, sup
                 );
               })}
               {files.map((f) => (
-                <span key={f.name} className="chip file-chip">📎 {f.name}<button className="x" aria-label="Remove file" onClick={() => setFiles(files.filter((x) => x !== f))}><X /></button></span>
+                <span key={f.name} className="chip file-chip"><Clip /> {f.name}<button className="x" aria-label="Remove file" onClick={() => setFiles(files.filter((x) => x !== f))}><X /></button></span>
               ))}
             </div>
           ) : null}
@@ -400,7 +477,8 @@ export default function Chat({ chatId, initial, agents, models, recommended, sup
             ref={textBox}
             value={text} placeholder={chatId ? 'Reply, add details, or ask for changes…' : 'Describe your project…'} rows={2}
             onChange={(e) => updateText(e.target.value)}
-            onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); submit(); } }}
+            onKeyDown={onKeyDown}
+            aria-label="Message"
           />
           <div className="composer-bar">
             <input ref={fileInput} type="file" multiple hidden onChange={(e) => setFiles([...files, ...Array.from(e.target.files || [])].slice(0, 5))} />
@@ -420,7 +498,9 @@ export default function Chat({ chatId, initial, agents, models, recommended, sup
             <button className="send" disabled={pending || (!text.trim() && !files.length)} onClick={submit} aria-label="Send"><Arrow /></button>
           </div>
         </div>
-        <div className="composer-note">{error ? <span className="feedback bad">{error}</span> : 'Enter to send · Shift+Enter for a new line · the ring shows the lowest limit left across your connections'}</div>
+        <div className="composer-note">{error ? <span className="feedback bad">{error}</span> : (
+          <>Enter to send · Shift+Enter for a new line{autoLists ? ' (lists continue)' : ''} · <button className="note-btn" onClick={flipAutoLists} aria-pressed={autoLists} title="When on, Shift+Enter after “1. ” or “- ” starts the next number or bullet">Auto lists: {autoLists ? 'on' : 'off'}</button> · the ring shows the lowest limit left</>
+        )}</div>
       </div>
     </div>
   );

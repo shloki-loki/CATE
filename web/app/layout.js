@@ -9,10 +9,14 @@ export const metadata = {
   robots: { index: false, follow: false },
 };
 
-export const viewport = { themeColor: '#0f1214', width: 'device-width', initialScale: 1 };
+export const viewport = {
+  themeColor: [{ media: '(prefers-color-scheme: light)', color: '#fafafa' }, { media: '(prefers-color-scheme: dark)', color: '#0b0d0f' }],
+  width: 'device-width', initialScale: 1,
+};
 
-// Dark by default; a saved choice is applied before paint so there is no flash.
-const themeScript = `try{var t=localStorage.getItem('cate-theme');if(t==='light')document.documentElement.dataset.theme='light'}catch(e){}`;
+// Follows the operating system unless the user picked a theme with the top-right button (see ThemeButton).
+// Applied before paint so there is no flash.
+const themeScript = `try{var t=localStorage.getItem('cate-theme');if(t!=='light'&&t!=='dark')t=matchMedia('(prefers-color-scheme: light)').matches?'light':'dark';document.documentElement.dataset.theme=t}catch(e){}`;
 
 export default function RootLayout({ children }) {
   return (

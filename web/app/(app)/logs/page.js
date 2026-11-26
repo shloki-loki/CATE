@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { MenuButton } from '@/components/AppFrame';
+import { TopBar } from '@/components/AppFrame';
 import { loadAll, when } from '@/lib/data';
 
 export const dynamic = 'force-dynamic';
@@ -10,11 +10,9 @@ export default async function Logs() {
   const entries = journal.slice(-400).reverse();
   return (
     <div className="page">
+      <TopBar title="Logs" />
       <div className="page-inner">
-        <div className="page-head" style={{ display: 'flex', gap: 10, alignItems: 'start' }}>
-          <MenuButton />
-          <div><h1>Logs</h1><p>Every run, hand-in, review, hand-back and change, newest first.</p></div>
-        </div>
+        <div className="page-head"><h2>Logs</h2><p>Every run, hand-in, review, hand-back and change, newest first.</p></div>
         <div className="section table-wrap">
           <table className="table">
             <thead><tr><th>When</th><th>Who</th><th>What</th><th>Detail</th></tr></thead>
