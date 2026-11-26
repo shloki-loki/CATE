@@ -585,6 +585,132 @@
     "detail": "review, tests and build passed",
     "at": "2026-11-26T05:09:13+05:30"
    }
+  },
+  {
+   "id": "T0011",
+   "title": "Research modern UI designs for dashboards",
+   "brief": "Find contemporary, professional web dashboard designs (color schemes, typography, layout) that suit a multimodal AI product. Gather examples for home page, models page, and a top‑right brightness control. Summarize key patterns and provide CSS snippets or design notes.",
+   "kind": "research",
+   "prefer": "agent:claude-2",
+   "model": "claude-opus-5-5",
+   "priority": 2,
+   "after": [],
+   "inputs": [],
+   "status": "queued",
+   "attempts": 0,
+   "exclude": [],
+   "chat": "C0007",
+   "group": "",
+   "review": {
+    "mode": "none",
+    "pass_score": 80,
+    "checks": []
+   },
+   "parent": null,
+   "created_by": "owner (chat)",
+   "created_at": "2026-11-26T14:19:42+05:30",
+   "queued_at": "2026-11-26T14:19:42+05:30",
+   "claimed_by": null,
+   "result": null,
+   "reviews": [],
+   "history": [
+    {
+     "at": "2026-11-26T14:19:42+05:30",
+     "actor": "owner",
+     "event": "created",
+     "detail": "claude-opus-5-5"
+    }
+   ],
+   "updated_at": "2026-11-26T14:19:42+05:30"
+  },
+  {
+   "id": "T0012",
+   "title": "Update CATE UI components",
+   "brief": "On a new branch, apply the researched design to the dashboard:\n- Home page: modern layout, professional colors, no auto‑numbered lists on Shift+Enter.\n- Models page: clearer typography, sections for adding APIs/models, easy‑read tables, remove the \"Show archived projects\" button.\n- Brightness operator: move to top‑right corner, style consistently.\n- Ensure bullet/number auto‑formatting is disabled.\nRun existing tests, add any new UI tests if needed, and open a PR.\nA good result: UI matches research notes, passes all tests, and the PR is ready for merge.",
+   "kind": "code",
+   "prefer": "agent:claude-2",
+   "model": "claude-opus-5-5",
+   "priority": 2,
+   "after": [
+    "T0011"
+   ],
+   "inputs": [],
+   "status": "queued",
+   "attempts": 0,
+   "exclude": [],
+   "chat": "C0007",
+   "group": "",
+   "review": {
+    "mode": "cross",
+    "pass_score": 80,
+    "checks": [
+     "Design matches at least 3 research patterns",
+     "Brightness bar appears top‑right and functions",
+     "Archived projects button removed",
+     "Models page includes clear \"Add API/Model\" section",
+     "Shift+Enter does not auto‑number lists"
+    ]
+   },
+   "parent": null,
+   "created_by": "owner (chat)",
+   "created_at": "2026-11-26T14:19:42+05:30",
+   "queued_at": "2026-11-26T14:19:42+05:30",
+   "claimed_by": null,
+   "result": null,
+   "reviews": [],
+   "history": [
+    {
+     "at": "2026-11-26T14:19:42+05:30",
+     "actor": "owner",
+     "event": "created",
+     "detail": "claude-opus-5-5"
+    }
+   ],
+   "updated_at": "2026-11-26T14:19:42+05:30"
+  },
+  {
+   "id": "T0013",
+   "title": "Add independent audit script for feature/bug check and competitor analysis",
+   "brief": "Create a new Python module (e.g., cate/audit.py) that runs as an independent agent:\n- Scans CATE’s codebase for common bugs (missing imports, dead routes, memory‑leak patterns).\n- Generates a feature checklist of current capabilities.\n- Performs a competitor analysis using hard‑coded data for major multimodal platforms (e.g., OpenAI GPT‑4‑Vision, Google Gemini, Anthropic Claude). Include architecture differences, UI/UX strengths, and performance notes.\n- Outputs the full report as a formatted chat message.\nAdd a CLI entry point (python -m cate.audit) and unit test that the script runs without error and produces the expected sections.\nA good result: script executes, prints a comprehensive report, and all tests pass.",
+   "kind": "code",
+   "prefer": "agent:gpt-1",
+   "model": "gpt-6.2-astra",
+   "priority": 2,
+   "after": [
+    "T0011"
+   ],
+   "inputs": [],
+   "status": "queued",
+   "attempts": 0,
+   "exclude": [],
+   "chat": "C0007",
+   "group": "",
+   "review": {
+    "mode": "cross",
+    "pass_score": 80,
+    "checks": [
+     "Script runs without exceptions",
+     "Report contains Feature Checklist, Bug Summary, and Competitor Analysis sections",
+     "Competitor list includes at least 3 major platforms",
+     "Unit test validates script output format"
+    ]
+   },
+   "parent": null,
+   "created_by": "owner (chat)",
+   "created_at": "2026-11-26T14:19:42+05:30",
+   "queued_at": "2026-11-26T14:19:42+05:30",
+   "claimed_by": null,
+   "result": null,
+   "reviews": [],
+   "history": [
+    {
+     "at": "2026-11-26T14:19:42+05:30",
+     "actor": "owner",
+     "event": "created",
+     "detail": "gpt-6.2-astra"
+    }
+   ],
+   "updated_at": "2026-11-26T14:19:42+05:30"
   }
  ]
 }
