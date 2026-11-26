@@ -917,6 +917,15 @@
    "title": "PR #4 merged",
    "detail": "merged by the owner after the last review issue (API cost labels) was fixed",
    "ref": "T0012"
+  },
+  {
+   "id": "J0103",
+   "at": "2026-11-27T03:11:31+05:30",
+   "by": "cate",
+   "kind": "update",
+   "title": "PR #5 merged",
+   "detail": "merged by the owner",
+   "ref": "T0014"
   }
  ]
 }
