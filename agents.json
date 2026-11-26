@@ -90,29 +90,6 @@
    "preset": "gemini",
    "secret": "GEMINI_API_KEY",
    "limits": {}
-  },
-  {
-   "id": "deep",
-   "label": "Deep",
-   "provider": "deepseek",
-   "runner": "api",
-   "account": "",
-   "model": "deepseek-chat",
-   "preset": "deepseek",
-   "secret": "DEEPSEEK_API_KEY",
-   "skills": [
-    "plan",
-    "review",
-    "data",
-    "write"
-   ],
-   "weekly_budget_tokens": 0,
-   "status": "paused",
-   "note": "Not connected yet: follow the connect steps, then press Resume.",
-   "limited_until": null,
-   "last_seen": null,
-   "created_at": "2026-11-26T14:10:58+05:30",
-   "limits": {}
   }
  ]
 }
