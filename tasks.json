@@ -824,9 +824,15 @@
      "actor": "claude-2",
      "event": "review passed",
      "detail": "score 88 (needs 80)"
+    },
+    {
+     "at": "2026-11-26T14:41:44+05:30",
+     "actor": "cate",
+     "event": "pull request #3 merged",
+     "detail": "review, tests and build passed"
     }
    ],
-   "updated_at": "2026-11-26T14:39:20+05:30",
+   "updated_at": "2026-11-26T14:41:44+05:30",
    "claimed_at": "2026-11-26T14:25:57+05:30",
    "run_model": "gpt-6.2-astra",
    "run_effort": "high",
@@ -835,7 +841,13 @@
    "reviewer": null,
    "reviewing_at": "2026-11-26T14:38:40+05:30",
    "review_model": "claude-opus-5-5",
-   "review_run_url": "https://github.com/shloki-loki/CATE/actions/runs/45789182445"
+   "review_run_url": "https://github.com/shloki-loki/CATE/actions/runs/45789182445",
+   "merge": {
+    "pr": 3,
+    "status": "merged",
+    "detail": "review, tests and build passed",
+    "at": "2026-11-26T14:41:44+05:30"
+   }
   }
  ]
 }
