@@ -128,6 +128,26 @@ class Pipeline(unittest.TestCase):
         self.assertIn('CATE agent "gpt-1"', out)
         self.assertIn("python3 -m cate tick --agent gpt-1", out)
 
+    def test_failed_task_tells_its_chat(self):
+        store.save("chats", {"chats": [{"id": "C0001", "title": "p", "messages": []}]})
+        run("task", "add", "--title", "UI", "--brief", "x", "--kind", "code", "--prefer", "anthropic", "--review", "cross")
+        tasks = store.load("tasks")
+        store.find(tasks["tasks"], "T0001")["chat"] = "C0001"
+        store.save("tasks", tasks)
+        for _ in range(3):
+            self.assertIn("WORK for claude-1: T0001", run("tick", "--agent", "claude-1")[1])
+            run("submit", "--agent", "claude-1", "--task", "T0001",
+                "--text", "PR https://github.com/shloki-loki/CATE/pull/4")
+            self.assertIn("REVIEW", run("tick", "--agent", "gpt-1")[1])
+            self.assertEqual(run("review", "--agent", "gpt-1", "--task", "T0001", "--score", "78",
+                                 "--verdict", "fail", "--notes", "no")[0], 0)
+        self.assertEqual(store.find(store.load("tasks")["tasks"], "T0001")["status"], "failed")
+        self.assertEqual(core.merge_candidates(store.load("tasks")["tasks"]), [])
+        messages = store.find(store.load("chats")["chats"], "C0001")["messages"]
+        self.assertEqual(len(messages), 1)
+        self.assertIn("pull request #4 was not merged", messages[0]["text"])
+        self.assertIn("scored 78 and needs 80", messages[0]["text"])
+
 
 if __name__ == "__main__":
     unittest.main()
