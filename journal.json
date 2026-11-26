@@ -656,6 +656,15 @@
    "title": "PR #3 merged",
    "detail": "review, tests and build passed",
    "ref": "T0013"
+  },
+  {
+   "id": "J0074",
+   "at": "2026-11-26T14:42:02+05:30",
+   "by": "claude-2",
+   "kind": "claim",
+   "title": "Took T0012: Update CATE UI components",
+   "detail": "",
+   "ref": "T0012"
   }
  ]
 }
