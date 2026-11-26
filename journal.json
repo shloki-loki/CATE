@@ -890,6 +890,15 @@
    "title": "Finished T0016: Project Architecture Planning",
    "detail": "54,000 tokens; now review",
    "ref": "T0016"
+  },
+  {
+   "id": "J0100",
+   "at": "2026-11-27T02:10:38+05:30",
+   "by": "free-gemini",
+   "kind": "claim",
+   "title": "Reviewing T0016: Project Architecture Planning",
+   "detail": "",
+   "ref": "T0016"
   }
  ]
 }
