@@ -258,7 +258,11 @@ async function changeTask(id, change, message) {
 }
 
 export async function cancelTask(id) {
-  return guarded(async () => ({ ok: true, chatId: await changeTask(id, (t) => { t.status = 'cancelled'; t.claimed_by = null; t.reviewer = null; }, 'cancelled') }));
+  return guarded(async () => {
+    const chatId = await changeTask(id, (t) => { t.status = 'cancelled'; t.claimed_by = null; t.reviewer = null; }, 'cancelled');
+    await wakeAgents(`cancelled ${id}`);
+    return { ok: true, chatId };
+  });
 }
 
 export async function retryTask(id, agent, model) {
@@ -273,10 +277,14 @@ export async function retryTask(id, agent, model) {
 }
 
 export async function approveTask(id) {
-  return guarded(async () => ({ ok: true, chatId: await changeTask(id, (t) => {
-    if (!t.result) throw new Abort('Nothing has been handed in yet.');
-    t.status = 'done'; t.reviewer = null;
-  }, 'approved by the owner') }));
+  return guarded(async () => {
+    const chatId = await changeTask(id, (t) => {
+      if (!t.result) throw new Abort('Nothing has been handed in yet.');
+      t.status = 'done'; t.reviewer = null;
+    }, 'approved by the owner');
+    await wakeAgents(`approved ${id}`); // the next steps can start now
+    return { ok: true, chatId };
+  });
 }
 
 export async function wakeNow() {

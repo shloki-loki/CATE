@@ -192,10 +192,14 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
           BEFORE: ${{ needs.plan.outputs.before }}
+          PLANNED: ${{ needs.plan.outputs.agents }}
         run: |
           after=$(python3 -m cate fingerprint)
           plan=$(python3 -m cate dispatch --json)
           echo "before: $BEFORE"; echo "after:  $after"; echo "next:   $plan"
-          if [ "$plan" != "[]" ] && [ "$after" != "$BEFORE" ]; then
+          ran=$(echo "$PLANNED" | python3 -c 'import json,sys; print(" ".join(sorted(p["agent"] for p in json.load(sys.stdin))))')
+          next=$(echo "$plan" | python3 -c 'import json,sys; print(" ".join(sorted(p["agent"] for p in json.load(sys.stdin))))')
+          # Start again if the work moved on, or if different agents are now needed (e.g. one handed a job back).
+          if [ "$plan" != "[]" ] && { [ "$after" != "$BEFORE" ] || [ "$next" != "$ran" ]; }; then
             gh workflow run agents.yml -f reason="chain after ${{ github.run_id }}"
           fi

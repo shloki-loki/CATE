@@ -23,7 +23,15 @@ function roster(catalog, agents) {
   }).join('\n');
 }
 
-function system(catalog, agents, selection) {
+function projectStatus(messages, tasks) {
+  const ids = messages.flatMap((m) => m.tasks || []);
+  const mine = ids.map((id) => tasks.find((t) => t.id === id)).filter(Boolean);
+  if (!mine.length) return '';
+  const label = { queued: 'waiting to start', claimed: 'being worked on', review: 'waiting for review', reviewing: 'being reviewed', done: 'done', failed: 'failed', cancelled: 'cancelled', blocked: 'blocked' };
+  return mine.map((t) => `- ${t.id} ${t.title}: ${label[t.status] || t.status}${t.claimed_by || t.reviewer ? ` (${t.claimed_by || t.reviewer})` : ''}${t.after?.length && t.status === 'queued' ? ` (after ${t.after.join(', ')})` : ''}`).join('\n');
+}
+
+function system(catalog, agents, selection, status = '') {
   const best = Object.keys(KIND_LABELS).map((k) => {
     const b = bestFor(catalog, agents, k);
     return b ? `${k}: ${b.agent} / ${b.model}` : null;
@@ -46,6 +54,12 @@ questions, and propose a plan whose steps run on the agents below (each step tak
 Agents:
 ${roster(catalog, agents)}
 
+${status ? `This project ALREADY HAS a plan running. Current status of its steps:
+${status}
+If the user asks about progress, what happened, or where it is stuck: answer from this status in plain,
+simple words (what is done, what is running, what waits for what) and give NO plan. Never re-propose steps that
+already exist. Only propose new steps for genuinely new work, or if the user asks to change or redo the plan.
+` : ''}
 Job kinds: ${Object.entries(KIND_LABELS).map(([k, v]) => `${k} (${v})`).join(', ')}.
 ${picked}
 
@@ -106,7 +120,7 @@ function parse(text) {
 export async function supervise({ catalog, agents, messages, tasks, selection }) {
   const endpoints = ENDPOINTS.filter((e) => process.env[e.key]);
   if (!endpoints.length) return null;
-  const prompt = [{ role: 'system', content: system(catalog, agents, selection) }, ...history(messages, tasks)];
+  const prompt = [{ role: 'system', content: system(catalog, agents, selection, projectStatus(messages, tasks)) }, ...history(messages, tasks)];
   const errors = [];
   for (const endpoint of endpoints) {
     for (const json of [true, false]) {

@@ -179,8 +179,8 @@ def worker_provider(task: dict, agents: list[dict]) -> str:
 def can_review(task: dict, agent: dict, agents: list[dict]) -> bool:
     if task.get("status") != "review":
         return False
-    if task.get("kind") == "code" and agent.get("runner") == "api":
-        return False  # a code change needs a reviewer that can read the diff and run the tests
+    if agent.get("runner") == "api":
+        return False  # free API models frame and clarify; reviews go to subscription agents (reliable, can read code)
     skills = agent.get("skills") or ["any"]
     if not ("any" in skills or "review" in skills):
         return False
