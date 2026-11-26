@@ -659,7 +659,7 @@
     "T0011"
    ],
    "inputs": [],
-   "status": "claimed",
+   "status": "review",
    "attempts": 0,
    "exclude": [],
    "chat": "C0007",
@@ -679,8 +679,16 @@
    "created_by": "owner (chat)",
    "created_at": "2026-11-26T14:19:42+05:30",
    "queued_at": "2026-11-26T14:19:42+05:30",
-   "claimed_by": "claude-2",
-   "result": null,
+   "claimed_by": null,
+   "result": {
+    "by": "claude-2",
+    "at": "2026-11-26T14:37:52+05:30",
+    "file": "outputs/T0012.md",
+    "text": "# T0012: the CATE dashboard redesign is ready. Pull request: https://github.com/shloki-loki/CATE/pull/4\n\nIt's ready for you to merge, and merging deploys it. I can't merge to `main` myself.\n\n## What you'll see\n**Every page: brightness button at the top right.** Each page now has a top bar: the page title on the left, and the light/dark button and sign-out on the right. On your first visit it follows your computer's setting. Your choice is remembered and applies to all open tabs. If you pick the theme that matches your computer, CATE goes back to following your computer.\n\n**Sidebar.** The bottom bar with the \"show archived projects\" button is gone, as you asked. Archived projects stay hidden. You can still archive a single project from its top bar.\n\n**Home page:**\n- A short status row showing each connection, with dot + \"% left\" or \"not connected\", plus a \"+ Add\" chip.\n- A clear \"Connect your first model\" / \"Turn on the instant supervisor\" card when one is needed.\n- Four starting-point cards: Research, Write, Build, Improve CATE.\n- A list of your recent projects.\n\n**Models page.** It's easier to read, and it's now clear how to add more:\n1. A **\"How to add a model or API\" guide** in 4 steps at the top, plus a **\"+ Add model or API\"** button in the top bar.\n2. An **\"Add a model or API\" section**:\n   - Pick Claude subscription, ChatGPT subscription or API key.\n   - For an API key, cards for Groq, Gemini, OpenRouter, Mistral, Cerebras and DeepSeek, each showing the free allowance, a \"Get a key ↗\" link and the secret name.\n   - Name the connection.\n   - Connect instructions with copy buttons.\n   - A side panel explains how to add a **new model** to the list CATE chooses from (`config/models.json`, by asking in chat or by editing the file through a pull request).\n3. **Connection cards are short now**, two per row: status, limits, \"N models on\". The model ticks, \"which model for which job\", budget and reconnect steps are folded under *Configure* / *Reconnect*. A card that isn't connected yet shows \"Finish connecting\" open, with a \"Done: resume\" button.\n4. A **team map**, which is the node design you asked about: Supervisor → each connection → the models it uses. A moving line means a job is running there.\n5. The **\"Which model for what\" table** has a sticky header and a job filter (All / Planning / Research / …). The filter sorts the table and marks the best model for that job.\n\n**Colours and type.** Calm neutral greys with the teal accent used only for the main actions, flatter cards, smaller corners and numbers that line up. It also fixes the text-contrast failures found in the research, so small grey text is easier to read in both themes.\n\n## Shift+Enter: I followed what you asked for, not the brief\nThe brief I was given said to *switch off* automatic numbering. You asked for the opposite (\"Cannot add bullets while typing\", \"numbering do not comes in automatically when I do shift + enter after a number\"), and so did the research. So now:\n- **Shift+Enter after `1. something` starts `2. `.** After `- something` it starts `- `. Checkboxes `- [ ]` continue too.\n- Shift+Enter on an empty item ends the list. Shift+Enter on a normal line is just a new line. Enter still sends.\n- If you ever want it off, click **\"Auto lists: on\"** under the chat box. Your browser remembers the setting.\n\n## How this matches the research (T0011)\n- Neutral surfaces with one accent (Linear).\n- Role-based colour scale (Radix / Vercel Geist).\n- WCAG AA contrast (W3C / WebAIM).\n- Two-state theme toggle at the top right that follows the OS (Chrome guidance, Lea Verou, NN/g, shadcn).\n- Empty state showing system status and direct routes into tasks (NN/g).\n- A visible \"+ add provider\" flow with key, then models (Open WebUI / LobeChat).\n- Progressive disclosure on cards.\n- Flat node design with a status edge (n8n / React Flow patterns).\n- Tabular numbers (Inter).\n\n## Testing\n- `python3 -m unittest discover -s tests`: **25 tests, all OK**. That includes the new `tests/test_web_ui.py`, which runs in CI. It checks the list feature, that the brightness button is in the top bar on every page, that the archived switch is gone, and that the models page has the \"Add a model or API\" section.\n- `cd web && npm ci && npm run build`: **passed**. New `npm test`: **6/6** list-feature unit tests.\n- I ran the site locally against a copy of the data and tested it in a headless Chrome browser: **21/21 checks passed**:\n  - Shift+Enter numbering, bullets, ending a list, a plain line, and \"Auto lists: off\".\n  - Brightness button top right on Home, Models and Logs, and on a phone-sized screen.\n  - Theme switches, is remembered, and goes back to following the computer.\n  - No archived switch.\n  - Add section and button present; team map draws its lines; API cards appear; table filter works.\n  - No sideways scrolling on a 390px phone screen.\n- I looked at screenshots in light mode, dark mode and phone size. Along the way I found and fixed a server error on the Models page, a \"CP\" label that looked the same for Claude and ChatGPT, too many \"Best\" labels, and \"1 jobs\".\n- What I couldn't do: test on a real phone or in Safari or Firefox, or on the live Vercel site. After merging, please check the preview or live site quickly.\n\nDone by claude-2 (Claude Opus 5.5).\n",
+    "tokens_in": 420000,
+    "tokens_out": 45000,
+    "model": "claude-opus-5-5"
+   },
    "reviews": [],
    "history": [
     {
@@ -694,13 +702,20 @@
      "actor": "claude-2",
      "event": "claimed",
      "detail": "Opus 5.5"
+    },
+    {
+     "at": "2026-11-26T14:37:52+05:30",
+     "actor": "claude-2",
+     "event": "submitted for review",
+     "detail": "465,000 tokens"
     }
    ],
-   "updated_at": "2026-11-26T14:25:59+05:30",
+   "updated_at": "2026-11-26T14:37:52+05:30",
    "claimed_at": "2026-11-26T14:25:59+05:30",
    "run_model": "claude-opus-5-5",
    "run_effort": "high",
-   "run_url": "https://github.com/shloki-loki/CATE/actions/runs/45787309456"
+   "run_url": "https://github.com/shloki-loki/CATE/actions/runs/45787309456",
+   "review_queued_at": "2026-11-26T14:37:52+05:30"
   },
   {
    "id": "T0013",
