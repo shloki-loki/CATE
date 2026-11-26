@@ -201,12 +201,15 @@ function AddConnection({ presets, repo }) {
           <legend><span className="step-no">2</span> Which API?</legend>
           <div className="option-grid" role="radiogroup" aria-label="API">
             {Object.entries(presets).map(([k, x]) => (
-              <div key={k} role="radio" tabIndex={0} aria-checked={preset === k} className="option" onClick={() => setPreset(k)}
-                onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setPreset(k); } }}>
-                <b>{x.label}</b>
-                <span className="num">{x.free}</span>
-                <span className="faint">{x.note}</span>
-                <span className="option-foot"><a className="link" href={x.key} target="_blank" rel="noreferrer" onClick={(e) => e.stopPropagation()}>Get a key ↗</a><code className="inline">{x.secret}</code></span>
+              // The radio (a native button) and the "Get a key" link are siblings, so Enter/Space on the
+              // link opens it and never reaches the radio's selection handling.
+              <div key={k} className={`option-card${preset === k ? ' checked' : ''}`}>
+                <button type="button" role="radio" aria-checked={preset === k} className="option" onClick={() => setPreset(k)}>
+                  <b>{x.label}</b>
+                  <span className="num">{x.free}</span>
+                  <span className="faint">{x.note}</span>
+                </button>
+                <div className="option-foot"><a className="link" href={x.key} target="_blank" rel="noreferrer" aria-label={`Get a ${x.label} key (opens in a new tab)`}>Get a key ↗</a><code className="inline">{x.secret}</code></div>
               </div>
             ))}
           </div>

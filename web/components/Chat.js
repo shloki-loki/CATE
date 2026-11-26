@@ -7,7 +7,7 @@ import Link from 'next/link';
 import { TopBar } from '@/components/AppFrame';
 import { Archive, Arrow, ChatIcon, Clip, Cube, List, Spark, Split, X } from '@/components/Icons';
 import Markdown from '@/components/Markdown';
-import { AUTO_LIST_KEY, continueList } from '@/lib/listContinue.mjs';
+import { LEGACY_AUTO_LIST_KEY, composerKeyAction } from '@/lib/composerKeys.mjs';
 
 const KIND_LABELS = { plan: 'Planning', research: 'Research', write: 'Writing', code: 'Development', review: 'Review', data: 'Data', other: 'Other' };
 const STATUS = {
@@ -292,7 +292,6 @@ export default function Chat({ chatId, initial, agents, models, recommended, sup
   const [pending, start] = useTransition();
   const [error, setError] = useState('');
   const [optimistic, setOptimistic] = useState(null);
-  const [autoLists, setAutoLists] = useState(true);
   const bottom = useRef(null);
   const fileInput = useRef(null);
   const statusKey = useRef('');
@@ -333,24 +332,12 @@ export default function Chat({ chatId, initial, agents, models, recommended, sup
   // Every edit goes through here so the draft in localStorage always matches the box.
   const updateText = (value) => { setText(value); writeDraft(chatId, value); };
 
-  // Lists continue on Shift+Enter (on by default; can be switched off below the chat box, kept per browser).
-  useEffect(() => { try { setAutoLists(window.localStorage.getItem(AUTO_LIST_KEY) !== 'off'); } catch {} }, []);
-  const flipAutoLists = () => {
-    const next = !autoLists;
-    setAutoLists(next);
-    try { window.localStorage.setItem(AUTO_LIST_KEY, next ? 'on' : 'off'); } catch {}
-  };
+  // Enter sends; Shift+Enter is never intercepted, so the browser inserts a plain newline (no auto
+  // numbering or bullets). An old list-continuation preference from an earlier build is cleared.
+  useEffect(() => { try { window.localStorage.removeItem(LEGACY_AUTO_LIST_KEY); } catch {} }, []);
   const onKeyDown = (e) => {
-    if (e.key !== 'Enter' || e.nativeEvent.isComposing) return; // no sending mid-IME composition
-    if (!e.shiftKey) { e.preventDefault(); submit(); return; }
-    if (!autoLists) return; // plain new line
-    const el = e.currentTarget;
-    if (el.selectionStart !== el.selectionEnd) return; // let the browser replace a selection
-    const next = continueList(el.value, el.selectionStart);
-    if (!next) return; // not a list line: plain new line
-    e.preventDefault();
-    updateText(next.value);
-    requestAnimationFrame(() => { el.selectionStart = el.selectionEnd = next.caret; fitHeight(el); });
+    const action = composerKeyAction({ key: e.key, shiftKey: e.shiftKey, isComposing: e.nativeEvent.isComposing });
+    if (action === 'send') { e.preventDefault(); submit(); }
   };
 
   // An open popover (model picker or limits panel) closes on a click/tap outside it or on Escape.
@@ -499,7 +486,7 @@ export default function Chat({ chatId, initial, agents, models, recommended, sup
           </div>
         </div>
         <div className="composer-note">{error ? <span className="feedback bad">{error}</span> : (
-          <>Enter to send · Shift+Enter for a new line{autoLists ? ' (lists continue)' : ''} · <button className="note-btn" onClick={flipAutoLists} aria-pressed={autoLists} title="When on, Shift+Enter after “1. ” or “- ” starts the next number or bullet">Auto lists: {autoLists ? 'on' : 'off'}</button> · the ring shows the lowest limit left</>
+          <>Enter to send · Shift+Enter for a new line · the ring shows the lowest limit left</>
         )}</div>
       </div>
     </div>
