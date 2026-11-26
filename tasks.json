@@ -793,9 +793,15 @@
      "actor": "gpt-1",
      "event": "review failed; out of attempts",
      "detail": "score 78 (needs 80)"
+    },
+    {
+     "at": "2026-11-27T03:11:29+05:30",
+     "actor": "cate",
+     "event": "pull request #4 merged",
+     "detail": "merged by the owner after the last review issue (API cost labels) was fixed"
     }
    ],
-   "updated_at": "2026-11-26T15:00:10+05:30",
+   "updated_at": "2026-11-27T03:11:29+05:30",
    "claimed_at": "2026-11-26T14:48:43+05:30",
    "run_model": "claude-opus-5-5",
    "run_effort": "high",
@@ -805,7 +811,13 @@
    "reviewing_at": "2026-11-26T14:57:14+05:30",
    "review_model": "gpt-6.2-astra",
    "review_run_url": "https://github.com/shloki-loki/CATE/actions/runs/45792051410",
-   "feedback": "Request changes on PR #4 at 33b230c. Score 76/100.\n\nMerge blockers\n\n1. The home composer pushes Send off-screen at phone width. In headless Chrome at 375 CSS pixels with the default model selection, the document became 391 px wide and Send's right edge was at x=390.94. Applying main's stylesheet to the same composer kept the document at 375 px and Send ended at x=350.13. The new nowrap rule on .tool (web/app/globals.css:293) leaves insufficient space for the row. Adapt the toolbar at narrow widths and check that Send stays fully visible and clickable without horizontal scrolling.\n2. The new Type and API radio groups lose the previous native selectors' arrow-key navigation. In Chrome, focus Claude and press Right, or focus Groq and press Down. Both focus/selection workflows leave the original option selected. The buttons at web/components/ModelsPanel.js:192 and :207 declare role=\"radio\" but implement clicks only. Use labeled native radio inputs or implement radio-group keyboard navigation. Keep each provider's key link separately focusable. Replace the test's blanket ban on onKeyDown with a behavior check if using a custom handler.\n3. Selecting DeepSeek displays “Paid, cents per task” on the card and “DeepSeek (free)” in the display-name field. Remove the unconditional “(free)” from placeholderLabel at web/components/ModelsPanel.js:182 or derive it from accurate preset information.\n\nAcceptance checks\n\n- Research patterns — PASS. T0011's neutral surfaces and teal accent, role-based color tokens, tabular figures and folded connection settings are present.\n- Top-right brightness control — PASS. On desktop Home it was 12 px from the right and 9.5 px from the top. Clicking changed light to dark. Models and Logs use the same header.\n- Archived projects button removed — PASS. The sidebar filters archived projects and the visibility switch is gone.\n- Clear Add API/Model section — PASS for discoverability. The Models header links to the labeled section, with separate subscription and API choices and guidance for catalog additions. The selection and pricing defects above still need correction.\n- Shift+Enter does not auto-number — PASS. In Chrome, typing “1. one”, Shift+Enter, “two” produced exactly two lines with no second marker. Unit tests also cover bullets, checkboxes and empty items.\n\nVerification on the checked-out PR head: all 28 Python tests and all 6 Node tests passed. npm ci and npm run build succeeded. Browser checks used a local production server and a temporary copy of the dashboard data.\n"
+   "feedback": "Request changes on PR #4 at 33b230c. Score 76/100.\n\nMerge blockers\n\n1. The home composer pushes Send off-screen at phone width. In headless Chrome at 375 CSS pixels with the default model selection, the document became 391 px wide and Send's right edge was at x=390.94. Applying main's stylesheet to the same composer kept the document at 375 px and Send ended at x=350.13. The new nowrap rule on .tool (web/app/globals.css:293) leaves insufficient space for the row. Adapt the toolbar at narrow widths and check that Send stays fully visible and clickable without horizontal scrolling.\n2. The new Type and API radio groups lose the previous native selectors' arrow-key navigation. In Chrome, focus Claude and press Right, or focus Groq and press Down. Both focus/selection workflows leave the original option selected. The buttons at web/components/ModelsPanel.js:192 and :207 declare role=\"radio\" but implement clicks only. Use labeled native radio inputs or implement radio-group keyboard navigation. Keep each provider's key link separately focusable. Replace the test's blanket ban on onKeyDown with a behavior check if using a custom handler.\n3. Selecting DeepSeek displays “Paid, cents per task” on the card and “DeepSeek (free)” in the display-name field. Remove the unconditional “(free)” from placeholderLabel at web/components/ModelsPanel.js:182 or derive it from accurate preset information.\n\nAcceptance checks\n\n- Research patterns — PASS. T0011's neutral surfaces and teal accent, role-based color tokens, tabular figures and folded connection settings are present.\n- Top-right brightness control — PASS. On desktop Home it was 12 px from the right and 9.5 px from the top. Clicking changed light to dark. Models and Logs use the same header.\n- Archived projects button removed — PASS. The sidebar filters archived projects and the visibility switch is gone.\n- Clear Add API/Model section — PASS for discoverability. The Models header links to the labeled section, with separate subscription and API choices and guidance for catalog additions. The selection and pricing defects above still need correction.\n- Shift+Enter does not auto-number — PASS. In Chrome, typing “1. one”, Shift+Enter, “two” produced exactly two lines with no second marker. Unit tests also cover bullets, checkboxes and empty items.\n\nVerification on the checked-out PR head: all 28 Python tests and all 6 Node tests passed. npm ci and npm run build succeeded. Browser checks used a local production server and a temporary copy of the dashboard data.\n",
+   "merge": {
+    "pr": 4,
+    "status": "merged",
+    "detail": "merged by the owner after the last review issue (API cost labels) was fixed",
+    "at": "2026-11-27T03:11:29+05:30"
+   }
   },
   {
    "id": "T0013",

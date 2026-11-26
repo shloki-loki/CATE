@@ -908,6 +908,15 @@
    "title": "Handed work back",
    "detail": "API error: 503 from https://generativelanguage.googleapis.com/v1beta/openai: [{\n  \"error\": {\n    \"code\": 503,\n    \"message\": \"This model is currently experiencing high demand. Spikes in demand are usually temporary. Please try again later.\",\n    \"status\": \"UNAVAILABLE\"\n  }\n}\n]; resting 60 min",
    "ref": "T0016"
+  },
+  {
+   "id": "J0102",
+   "at": "2026-11-27T03:11:29+05:30",
+   "by": "cate",
+   "kind": "update",
+   "title": "PR #4 merged",
+   "detail": "merged by the owner after the last review issue (API cost labels) was fixed",
+   "ref": "T0012"
   }
  ]
 }
