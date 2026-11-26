@@ -521,6 +521,15 @@
    "title": "PR #2 merged",
    "detail": "review, tests and build passed",
    "ref": "T0010"
+  },
+  {
+   "id": "J0059",
+   "at": "2026-11-26T09:42:49+05:30",
+   "by": "github-actions",
+   "kind": "supervise",
+   "title": "free-gemini is back from its usage-limit rest",
+   "detail": "",
+   "ref": ""
   }
  ]
 }
