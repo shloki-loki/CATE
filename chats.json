@@ -450,6 +450,83 @@
     }
    ],
    "updated_at": "2026-11-26T15:27:54+05:30"
+  },
+  {
+   "id": "C0008",
+   "title": "Build Minecraft",
+   "created_at": "2026-11-27T01:58:54+05:30",
+   "messages": [
+    {
+     "id": "M0001",
+     "role": "user",
+     "text": "Build Minecraft\nDO NOT FUCK UP. I want a perfect replica with no errors\ndivide all the tasks between all the models keeping in mind the token limits and the complexity of the task to the complexity of a model.",
+     "at": "2026-11-27T01:58:54+05:30",
+     "files": []
+    }
+   ],
+   "selection": [
+    {
+     "agent": "claude-1",
+     "model": "claude-opus-5-5",
+     "kind": ""
+    },
+    {
+     "agent": "claude-1",
+     "model": "claude-sonnet-5-5",
+     "kind": ""
+    },
+    {
+     "agent": "claude-1",
+     "model": "claude-haiku-5-5",
+     "kind": ""
+    },
+    {
+     "agent": "claude-2",
+     "model": "claude-opus-5-5",
+     "kind": ""
+    },
+    {
+     "agent": "claude-2",
+     "model": "claude-sonnet-5-5",
+     "kind": ""
+    },
+    {
+     "agent": "claude-2",
+     "model": "claude-haiku-5-5",
+     "kind": ""
+    },
+    {
+     "agent": "gpt-1",
+     "model": "gpt-6.2-astra",
+     "kind": ""
+    },
+    {
+     "agent": "gpt-1",
+     "model": "gpt-6.2-sol",
+     "kind": ""
+    },
+    {
+     "agent": "gpt-1",
+     "model": "gpt-6.1-sol",
+     "kind": ""
+    },
+    {
+     "agent": "gpt-1",
+     "model": "gpt-6.1-terra",
+     "kind": ""
+    },
+    {
+     "agent": "gpt-1",
+     "model": "gpt-6-luna",
+     "kind": ""
+    },
+    {
+     "agent": "gpt-1",
+     "model": "gpt-6-astra",
+     "kind": ""
+    }
+   ],
+   "updated_at": "2026-11-27T01:58:54+05:30"
   }
  ],
  "usage": {
