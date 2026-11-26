@@ -659,7 +659,7 @@
     "T0011"
    ],
    "inputs": [],
-   "status": "review",
+   "status": "reviewing",
    "attempts": 1,
    "exclude": [],
    "chat": "C0007",
@@ -741,18 +741,24 @@
      "actor": "claude-2",
      "event": "submitted for review",
      "detail": "200,000 tokens"
+    },
+    {
+     "at": "2026-11-26T14:45:53+05:30",
+     "actor": "gpt-1",
+     "event": "review started",
+     "detail": ""
     }
    ],
-   "updated_at": "2026-11-26T14:45:15+05:30",
+   "updated_at": "2026-11-26T14:45:53+05:30",
    "claimed_at": "2026-11-26T14:42:02+05:30",
    "run_model": "claude-opus-5-5",
    "run_effort": "high",
    "run_url": "https://github.com/shloki-loki/CATE/actions/runs/45789694308",
    "review_queued_at": "2026-11-26T14:45:15+05:30",
-   "reviewer": null,
-   "reviewing_at": "2026-11-26T14:38:39+05:30",
+   "reviewer": "gpt-1",
+   "reviewing_at": "2026-11-26T14:45:53+05:30",
    "review_model": "gpt-6.2-astra",
-   "review_run_url": "https://github.com/shloki-loki/CATE/actions/runs/45789182445",
+   "review_run_url": "https://github.com/shloki-loki/CATE/actions/runs/45790304895",
    "feedback": "Fail · 75/100 · PR #4 at 3c4904c.\n\n1. **Research patterns — pass.** The neutral surfaces and teal action color, tabular figures in the model table, and connection cards with configuration under disclosure controls all match T0011. Home also groups connection status, suggested tasks, and recent projects.\n2. **Brightness control — pass.** In Chromium I clicked the top-right theme button on Home, Models, and Logs. Each click switched the document theme. The button was within 23 pixels of the right edge on all three.\n3. **Archived projects button removed — pass.** AppFrame filters archived projects and removes the sidebar switch. The separate action for archiving an individual project is retained.\n4. **Add API/Model section — pass.** The Models header links to the rendered “Add a model or API” section. The section exposes subscription and API choices and explains how to add a catalog model. One keyboard regression in the API choices needs repair below.\n5. **Shift+Enter leaves lists unformatted — fail.** In a fresh Chromium session, typing “1. one” and pressing Shift+Enter inserted a newline followed by “2. ”. Chat.js lines 295 and 337 enable continuation by default, and lines 343–354 intercept the native newline. The same handler continues bullets and checkboxes. The opt-out requires users to change a setting. Restore native Shift+Enter even with an existing saved “on” preference, preserve Enter-to-send, and replace the helper-presence and continuation assertions with composer tests verifying a plain newline after numbered and bulleted items.\n\n**Additional regression.** In ModelsPanel.js lines 204–209, focusing the nested “Get a key” link and pressing Enter bubbles to the provider card, whose key handler cancels the link's default action. I confirmed the focused link's Enter event was canceled in Chromium. Separate the link from the radio control or restrict the handler to the card itself. Verify keyboard users can activate the link independently of provider selection.\n\n**Verification.** The Python suite passed all 25 tests, npm test passed all six tests, and npm ci and the production build succeeded. The numbered and bulleted list tests explicitly assert continuation, so a green suite currently enforces the failed behavior.\n"
   },
   {
