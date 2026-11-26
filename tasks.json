@@ -923,7 +923,7 @@
    "priority": 2,
    "after": [],
    "inputs": [],
-   "status": "reviewing",
+   "status": "done",
    "attempts": 0,
    "exclude": [],
    "chat": "C0007",
@@ -947,7 +947,16 @@
     "tokens_out": 9000,
     "model": "claude-opus-5-5"
    },
-   "reviews": [],
+   "reviews": [
+    {
+     "by": "claude-1",
+     "model": "claude-sonnet-5-5",
+     "at": "2026-11-27T02:01:53+05:30",
+     "score": 86,
+     "verdict": "pass",
+     "notes": "Review of T0014 (claude-2). The review header pointed at PR #3, which is the already-merged audit (T0013). The code change for this task is PR #5, so I reviewed that.\n\nChecks\n- Answers the question: PASS. The report says auto-merge isn't broken. PR #3 merged and PR #4 stayed open because T0012 failed review 3 times. That matches `merge_candidates` in cate/core.py, which only takes `done` tasks. PR #4 is OPEN, MERGEABLE and UNSTABLE, as the report says.\n- Honest about what it couldn't verify: PASS. It says its token got 403 on check and deployment status, so it couldn't name the failing check or confirm that PR #3 went live.\n- Raises the Shift+Enter ambiguity and asks the owner to confirm: PASS. This is useful.\n- PR #5 matches the description: PASS. `tell_chat` and `failure_message` are factored out. `supervise` (agent went silent) and `review` (failed on the last attempt) both post to the chat. The `record_merge` behaviour is unchanged. The message names the PR, says it was not merged, and gives next steps. A new unit test covers it.\n- Tests: PASS. On the PR #5 checkout, `python3 -m unittest discover -s tests` ran 23 tests, all OK. `web/` was not touched.\n- No secrets, and nothing pushed to main: PASS.\n\nMinor notes (not blocking)\n- The report didn't say that the review header pointed at PR #3, not PR #5.\n- The Vercel and groq sections are tangents. The groq failure was noted but not investigated, which the report admits.\n- In `supervise`, `tell_chat` re-loads and saves chats after tasks are saved. That is fine, but a crash between the two saves would lose the message.\n\nScore 86.\n"
+    }
+   ],
    "history": [
     {
      "at": "2026-11-26T15:28:07+05:30",
@@ -996,15 +1005,21 @@
      "actor": "claude-1",
      "event": "review started",
      "detail": ""
+    },
+    {
+     "at": "2026-11-27T02:01:53+05:30",
+     "actor": "claude-1",
+     "event": "review passed",
+     "detail": "score 86 (needs 80)"
     }
    ],
-   "updated_at": "2026-11-27T02:01:33+05:30",
+   "updated_at": "2026-11-27T02:01:53+05:30",
    "claimed_at": "2026-11-26T15:28:30+05:30",
    "run_model": "claude-opus-5-5",
    "run_effort": "high",
    "run_url": "https://github.com/shloki-loki/CATE/actions/runs/45796891577",
    "review_queued_at": "2026-11-26T15:30:48+05:30",
-   "reviewer": "claude-1",
+   "reviewer": null,
    "reviewing_at": "2026-11-27T02:01:33+05:30",
    "review_model": "claude-sonnet-5-5",
    "review_run_url": "https://github.com/shloki-loki/CATE/actions/runs/45891633126"
