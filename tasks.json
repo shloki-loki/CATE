@@ -714,7 +714,7 @@
     "T0011"
    ],
    "inputs": [],
-   "status": "claimed",
+   "status": "review",
    "attempts": 0,
    "exclude": [],
    "chat": "C0007",
@@ -733,8 +733,16 @@
    "created_by": "owner (chat)",
    "created_at": "2026-11-26T14:19:42+05:30",
    "queued_at": "2026-11-26T14:19:42+05:30",
-   "claimed_by": "gpt-1",
-   "result": null,
+   "claimed_by": null,
+   "result": {
+    "by": "gpt-1",
+    "at": "2026-11-26T14:31:03+05:30",
+    "file": "outputs/T0013.md",
+    "text": "Implemented the independent audit in [pull request #3](https://github.com/shloki-loki/CATE/pull/3). Run `python3 -m cate.audit` from the checkout to generate the chat report. The command runs locally and uses fixed, sourced competitor profiles.\n\nAll 22 tests passed with `python3 -m unittest discover -s tests`. The new tests run the CLI, check the required Markdown sections and competitors, and exercise the scan against broken and valid source fixtures.\n\n# CATE product audit\n\n## Feature Checklist\n\nEach check marks implementation evidence in this checkout.\n\n- [x] Project chat and attachments — `web/app/actions.js:133`\n- [x] Send the same prompt to multiple models — `web/app/actions.js:137`\n- [x] Review a plan before starting its steps — `web/app/actions.js:203`\n- [x] Add model connections — `web/app/actions.js:291`\n- [x] Choose a model for a task — `cate/core.py:109`\n- [x] Gate dispatch on account availability — `cate/core.py:61`\n- [x] Check cross-provider review eligibility — `cate/core.py:179`\n- [x] Track run usage and limits — `cate/core.py:249`\n- [x] Recover stalled work — `cate/core.py:268`\n- [x] Restore browser drafts per project — `web/components/Chat.js:21`\n\n## Bug Summary\n\nInspected 9 Python and 25 dashboard source files. Checks cover unresolved Python names and module imports, literal internal routes, interval cleanup and retained module caches. Findings need runtime verification.\n\n- `web/lib/store.js:41` Module cache `cache` retains entries. Check whether the key set and retained values stay bounded.\n- `web/lib/store.js:126` Module cache `mainCache` retains entries. Check whether the key set and retained values stay bounded.\n\n### Conversation continuity\n\nThe worker prompt selects one project by chat ID and includes up to 24 recent messages (`cate/cli.py`, `conversation`). Instructions in another project or earlier in a long conversation can drop out of this handoff. Try a saved, user-editable project brief and check whether a second worker can recall a preference from it.\nThe dashboard supervisor receives up to 30 messages from the active chat (`web/lib/supervisor.js`, `history`). Reopening a saved chat and carrying context into a new project are separate behaviors to test.\n\n## Competitor Analysis\n\nThese fixed examples use named 2024 model releases so the vendor measurements have a clear baseline. The reusable-context examples come from separate product documentation.\n\n### OpenAI ChatGPT · GPT-4o\n\nGPT-4o processes speech, images and text in one neural network. A person can ask about a photo in chat, a shorter interaction than submitting an attachment and waiting for a CATE worker. OpenAI reported a 320 ms average response to audio input, a model-level figure. ChatGPT Projects also lets related chats reuse project files and instructions. [GPT-4o launch](https://openai.com/index/hello-gpt-4o/) · [ChatGPT Projects](https://help.openai.com/en/articles/10169521-projects-in-chatgpt)\n\n### Google Gemini Advanced · Gemini 1.5 Pro\n\nGemini uses a mixture of experts inside the model. CATE selects entire models for individual tasks. Gemini Advanced lets a user attach files from Drive or a device and ask about them together. Google reported 99% retrieval of a planted fact in its test with inputs up to one million tokens. That test measures recall within one input. For continuity across chats, a user can save instructions and reference files in a Gem. [Model and evaluation](https://blog.google/innovation-and-ai/products/google-gemini-next-generation-model-february-2024/) · [Gemini Advanced workflow](https://blog.google/products-and-platforms/products/gemini/google-gemini-update-may-2024/) · [Reusable Gems](https://support.google.com/gemini/answer/15146780?hl=en)\n\n### Anthropic Claude · Claude 3.5 Sonnet\n\nClaude pairs a hosted vision-and-text model with Artifacts, a pane for inspecting and revising generated work alongside the chat. A user can check the result while discussing it. Anthropic reported twice the speed of Claude 3 Opus and stronger results on its vision evaluations. CATE adds a different quality check by sending completed work to a separate reviewer. [Sonnet and Artifacts](https://www.anthropic.com/news/claude-3-5-sonnet)\n\n### What to measure in CATE\n\nRun the same document question and revision through direct chat and a reviewed CATE task. Record time to first answer, time to accepted result, charges or subscription tokens, and errors caught by review. A second chat with the same project instructions tests continuity. Use a non-secret preference for the recall test. These vendor measurements cover different tasks and cannot establish a CATE performance ranking.\n",
+    "tokens_in": 24100,
+    "tokens_out": 7100,
+    "model": "gpt-6.2-astra"
+   },
    "reviews": [],
    "history": [
     {
@@ -748,13 +756,20 @@
      "actor": "gpt-1",
      "event": "claimed",
      "detail": "GPT-6.2 Astra"
+    },
+    {
+     "at": "2026-11-26T14:31:03+05:30",
+     "actor": "gpt-1",
+     "event": "submitted for review",
+     "detail": "31,200 tokens"
     }
    ],
-   "updated_at": "2026-11-26T14:25:57+05:30",
+   "updated_at": "2026-11-26T14:31:03+05:30",
    "claimed_at": "2026-11-26T14:25:57+05:30",
    "run_model": "gpt-6.2-astra",
    "run_effort": "high",
-   "run_url": "https://github.com/shloki-loki/CATE/actions/runs/45787309456"
+   "run_url": "https://github.com/shloki-loki/CATE/actions/runs/45787309456",
+   "review_queued_at": "2026-11-26T14:31:03+05:30"
   }
  ]
 }
