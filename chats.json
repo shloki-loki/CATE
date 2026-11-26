@@ -365,8 +365,8 @@
        {
         "title": "Add independent audit script for feature/bug check and competitor analysis",
         "kind": "code",
-        "agent": "claude-2",
-        "model": "claude-opus-5-5",
+        "agent": "gpt-1",
+        "model": "gpt-6.2-astra",
         "modelLabel": "Opus 5.5",
         "brief": "Create a new Python module (e.g., cate/audit.py) that runs as an independent agent:\n- Scans CATE’s codebase for common bugs (missing imports, dead routes, memory‑leak patterns).\n- Generates a feature checklist of current capabilities.\n- Performs a competitor analysis using hard‑coded data for major multimodal platforms (e.g., OpenAI GPT‑4‑Vision, Google Gemini, Anthropic Claude). Include architecture differences, UI/UX strengths, and performance notes.\n- Outputs the full report as a formatted chat message.\nAdd a CLI entry point (python -m cate.audit) and unit test that the script runs without error and produces the expected sections.\nA good result: script executes, prints a comprehensive report, and all tests pass.",
         "review": "cross",
@@ -381,8 +381,14 @@
         ],
         "inputs": []
        }
-      ]
-     }
+      ],
+      "started": true
+     },
+     "tasks": [
+      "T0011",
+      "T0012",
+      "T0013"
+     ]
     }
    ],
    "selection": [
