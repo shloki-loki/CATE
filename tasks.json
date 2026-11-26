@@ -1198,7 +1198,7 @@
     "T0016"
    ],
    "inputs": [],
-   "status": "reviewing",
+   "status": "done",
    "attempts": 0,
    "exclude": [],
    "chat": "C0008",
@@ -1226,7 +1226,16 @@
     "tokens_out": 3200,
     "model": "gpt-6-astra"
    },
-   "reviews": [],
+   "reviews": [
+    {
+     "by": "claude-2",
+     "model": "claude-opus-5-5",
+     "at": "2026-11-27T04:26:54+05:30",
+     "score": 85,
+     "verdict": "pass",
+     "notes": "# Review of T0017 (gpt-1) by claude-2 — PASS, score 85\n\n## What I checked\n- Read data/outputs/T0016.md. The quotes the report attributes to it are accurate: the 60 fps / 30 fps Low preset / ~30 MB targets, \"T0017 benchmarks them formally\", \"WebGL2 runs everywhere\", and the WebGPU CPU-regression claim.\n- Opened the main cited URLs (Three.js WebGLRenderer and InstancedMesh docs, Babylon thin instances, PlayCanvas clustered lighting and standalone-engine docs, all three upstream LICENSE files). All returned HTTP 200. The license files match what the report says: Babylon.js is Apache 2.0, PlayCanvas engine is MIT (Copyright PlayCanvas Ltd), Three.js is MIT.\n- The claim that Three.js dropped WebGL1 in r163 matches my own knowledge of the release history.\n\n## Checks\n- **Engine selected: PASS.** It clearly picks Three.js with WebGLRenderer (WebGL2). The reasons tie to the approved T0016 architecture, and it names fallbacks with the conditions that would trigger them (Babylon for integrated tooling, PlayCanvas for clustered lighting).\n- **Performance notes included: PASS.** It compares each engine's batching approach (InstancedMesh, thin instances, batching), the main performance risks, and clustered lighting costs. It gives concrete, specific guidance for Three.js and a well-designed, reproducible benchmark protocol (median/p95 frame times, all-pass draw calls, warm-up, real hardware).\n- **License compatible: PASS.** It gives the correct license for each engine and the obligations that come with it (keeping notices; for Apache-2.0, the NOTICE file, marking modified files, and the patent grant). It correctly says none of them forces the game's source to be published. It also says, correctly, that the engine licenses give no rights to GTA assets.\n\n## Strengths\n- Very honest. It says plainly that no benchmark was run, that there are no measured FPS, memory or bundle-size rankings, and that it does not meet T0016's expectation of a formal benchmark. It turns the benchmark into a proposed implementation gate instead.\n- It corrects an overbroad claim in T0016 (\"WebGL2 runs everywhere\") and recommends a fallback message for unsupported browsers.\n- It cites primary sources throughout.\n\n## Weaknesses (why the score is not higher)\n- The performance comparison is based only on documentation; there is no measured data. The brief says \"compare performance\", and T0016 expected benchmarks. This is disclosed, and the proposed gate partly makes up for it, but it is still the biggest gap.\n- The community-support comparison is qualitative only (it lists channels). It gives no indicators such as release cadence, number of contributors or npm downloads, even though these are easy to check and would make \"community support\" concrete.\n- It does not mention BatchedMesh or LOD for Three.js, which T0016 lists and which matter for city rendering. This is minor.\n\n## Suggested follow-up (optional, non-blocking)\nDuring T0019, implement the proposed performance gate scene, at least for Three.js, so the T0016 targets are measured.\n"
+    }
+   ],
    "history": [
     {
      "at": "2026-11-27T02:06:14+05:30",
@@ -1251,15 +1260,21 @@
      "actor": "claude-2",
      "event": "review started",
      "detail": ""
+    },
+    {
+     "at": "2026-11-27T04:26:54+05:30",
+     "actor": "claude-2",
+     "event": "review passed",
+     "detail": "score 85 (needs 80)"
     }
    ],
-   "updated_at": "2026-11-27T04:26:24+05:30",
+   "updated_at": "2026-11-27T04:26:54+05:30",
    "claimed_at": "2026-11-27T04:23:54+05:30",
    "run_model": "gpt-6-astra",
    "run_effort": "medium",
    "run_url": "https://github.com/shloki-loki/CATE/actions/runs/45907615879",
    "review_queued_at": "2026-11-27T04:25:41+05:30",
-   "reviewer": "claude-2",
+   "reviewer": null,
    "reviewing_at": "2026-11-27T04:26:24+05:30",
    "review_model": "claude-opus-5-5",
    "review_run_url": "https://github.com/shloki-loki/CATE/actions/runs/45907849300"
