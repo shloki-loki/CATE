@@ -1268,6 +1268,15 @@
    "title": "Reviewed T0024: pass (90)",
    "detail": "",
    "ref": "T0024"
+  },
+  {
+   "id": "J0142",
+   "at": "2026-11-27T14:39:30+05:30",
+   "by": "claude-2",
+   "kind": "claim",
+   "title": "Took T0025: Implement Vehicle Physics",
+   "detail": "",
+   "ref": "T0025"
   }
  ]
 }
