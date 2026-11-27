@@ -1874,7 +1874,7 @@
    "priority": 2,
    "after": [],
    "inputs": [],
-   "status": "review",
+   "status": "reviewing",
    "attempts": 0,
    "exclude": [],
    "chat": "C0008",
@@ -1922,14 +1922,24 @@
      "actor": "claude-1",
      "event": "submitted for review",
      "detail": "69,000 tokens"
+    },
+    {
+     "at": "2026-11-27T14:38:07+05:30",
+     "actor": "claude-2",
+     "event": "review started",
+     "detail": ""
     }
    ],
-   "updated_at": "2026-11-27T09:04:59+05:30",
+   "updated_at": "2026-11-27T14:38:07+05:30",
    "claimed_at": "2026-11-27T09:01:45+05:30",
    "run_model": "claude-opus-5-5",
    "run_effort": "high",
    "run_url": "https://github.com/shloki-loki/CATE/actions/runs/45934671367",
-   "review_queued_at": "2026-11-27T09:04:59+05:30"
+   "review_queued_at": "2026-11-27T09:04:59+05:30",
+   "reviewer": "claude-2",
+   "reviewing_at": "2026-11-27T14:38:07+05:30",
+   "review_model": "claude-opus-5-5",
+   "review_run_url": "https://github.com/shloki-loki/CATE/actions/runs/45971118055"
   },
   {
    "id": "T0025",

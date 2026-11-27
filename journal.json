@@ -1250,6 +1250,15 @@
    "title": "PR #9 blocked",
    "detail": "it conflicts with main",
    "ref": "T0022"
+  },
+  {
+   "id": "J0140",
+   "at": "2026-11-27T14:38:07+05:30",
+   "by": "claude-2",
+   "kind": "claim",
+   "title": "Reviewing T0024: Review Asset Pipeline Design",
+   "detail": "",
+   "ref": "T0024"
   }
  ]
 }
