@@ -1,4 +1,5 @@
 /// <reference types="vitest/config" />
+import { fileURLToPath } from 'node:url';
 import { defineConfig } from 'vite';
 
 // Relative base so the production build in dist/ also works from any sub-path
@@ -14,6 +15,11 @@ export default defineConfig({
     // ~4.3 MB minified (~1.7 MB gzipped) by design. Keep it in its own cached chunk.
     chunkSizeWarningLimit: 4500,
     rolldownOptions: {
+      // Two pages: the game, and the vehicle test arena (T0025).
+      input: {
+        main: fileURLToPath(new URL('./index.html', import.meta.url)),
+        arena: fileURLToPath(new URL('./arena.html', import.meta.url)),
+      },
       output: {
         manualChunks(id: string) {
           if (id.includes('node_modules/three')) return 'three';

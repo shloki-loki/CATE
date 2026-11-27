@@ -63,6 +63,7 @@ game/
   tools/             build-time asset generators (T0018)
   src/
     main.ts          boot only
+    arena.ts         vehicle test arena page (arena.html, T0025)
     services.ts      the Services object every system receives
     core/            loop, ECS world, event bus, settings, time of day, log
     input/           keyboard/mouse -> actions
@@ -76,12 +77,13 @@ game/
       events.ts      ALL event types
       shared/        physics step/sync, view sync, time-of-day systems
       camera/        chase camera for vehicles (T0020); debug orbit camera (unused, kept for debugging)
-      vehicles/      VehicleDef data, DriveController, spawn, drive/collision/damage systems, car view (T0020)
+      vehicles/      VehicleDef data, DriveController, spawn, drive/collision/damage systems, car view (T0020);
+                     the standalone Vehicle class and the test arena (T0025)
       demo/          the skeleton scene (replaced by T0022's procedural city)
       world/ player/ ai/ combat/ wanted/ missions/ save/   (owned by later tasks)
   tests/
     unit/            Vitest
-    e2e/             Playwright smoke test
+    e2e/             Playwright smoke test and arena drive test
 ```
 
 ## Module rules (enforced by `tests/unit/boundaries.test.ts`)
@@ -130,3 +132,48 @@ and that full-lock cornering at 100 km/h does not roll any class over.
 
 To tune a car, edit its def and run `npm test`. The plausibility tests will flag
 values that are out of range.
+
+## The `Vehicle` class and the test arena (T0025)
+
+`Vehicle` (`src/game/vehicles/Vehicle.ts`) is a whole car in one object: the Rapier
+raycast vehicle (chassis body, four wheel rays with spring/damper suspension and
+tyre friction), the drive controller above, drag and rolling resistance, and the
+Three.js model with wheels that steer, spin and follow the suspension. It runs the
+same physics and drive code as the ECS systems (shared in `driveTick.ts`; a unit
+test checks that both follow the same path to within 1 mm), so it can be used with no ECS:
+
+```ts
+import { Vehicle } from './game/vehicles'; // from './game' it is `DrivableVehicle`
+
+const car = new Vehicle(physics, 'sedan', { position: { x: 0, y: 0, z: 0 }, yaw: 0 });
+car.addTo(scene); // any Three.js Scene/Group
+new GameLoop({
+  step(dt) {
+    car.setInput({ throttle: 1, brake: 0, steer: 0.3, handbrake: false }); // steer -1 left .. +1 right
+    car.update(dt); // before physics.step
+    physics.step(dt);
+    car.postStep(); // after physics.step
+  },
+  render(alpha) {
+    car.syncView(alpha); // mesh interpolated between the last two ticks
+    renderer.render(alpha);
+  },
+}).start();
+```
+
+It also has `speed`/`speedKmh`/`gear`/`rpm`/`heading`/`position`/`quaternion`, `forward()`/`up()`,
+`telemetry`, `reset()`, `damage()`, `dispose()` and `view: false` for headless use.
+(`Vehicle` from `./game` is still the ECS component, so the class is exported there as
+`DrivableVehicle`.)
+
+The **vehicle test arena** (`arena.html`, entry `src/arena.ts`) drives the class
+from a plain `GameLoop`. It is a walled 240 m square with a ramp and kerbs:
+
+- `npm run dev`, then open `http://localhost:5173/arena.html`: drive with W/S/A/D (or arrows), Space for the handbrake and R to reset.
+- `arena.html?autodrive`: runs the scripted 30-second test drive (`ARENA_DRIVE_SCRIPT`):
+  accelerate, turn right, brake, reverse, drive off, turn left, handbrake slide, stop.
+- `arena.html?car=sports`: pick the class (compact, sedan, sports, van, police).
+- `window.__arena`: read-only status (speeds, turns, sync error, errors) for tests and DevTools.
+
+Tests: `tests/unit/vehicleClass.test.ts` (headless, every class) and `tests/e2e/arena.spec.ts`
+(the real build in headless Chromium).
