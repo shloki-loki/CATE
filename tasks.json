@@ -1978,7 +1978,7 @@
     "T0024"
    ],
    "inputs": [],
-   "status": "reviewing",
+   "status": "done",
    "attempts": 0,
    "exclude": [],
    "chat": "C0008",
@@ -2007,7 +2007,16 @@
     "tokens_out": 35000,
     "model": "claude-opus-5-5"
    },
-   "reviews": [],
+   "reviews": [
+    {
+     "by": "claude-1",
+     "model": "claude-opus-5-5",
+     "at": "2026-11-28T01:04:39+05:30",
+     "score": 90,
+     "verdict": "pass",
+     "notes": "# Review of T0025 (PR #11, claude-2): PASS, score 90\n\nI checked out the PR branch and read every line of the source diff: Vehicle.ts, driveTick.ts, systems.ts, the barrels and vite.config.ts. I also skimmed the arena code and the tests.\n\n## Tests I ran on the PR branch\n- `python3 -m unittest discover -s tests`: 32 OK.\n- `cd game && npm ci && npm run check`: typecheck and eslint are clean, 66/66 Vitest tests pass across 11 files, and the production build makes both `index.html` and `arena.html`.\n- `npx playwright test` with system Chrome (SwiftShader): 4/4 pass. This includes the arena's 30-second scripted drive (1.1 min wall time) and the arena keyboard drive/steer/reverse test. The two existing smoke tests still pass.\n\n## Code review\n- **Matches the brief.** The work builds on T0020's existing Rapier raycast vehicle, which already has wheel rays, spring/damper suspension, steering, engine and brakes, instead of duplicating it. `Vehicle` is a clean, exported class with a clear game-loop contract: `setInput` → `update(dt)` → `physics.step` → `postStep()` → `syncView(alpha)`. Making a standalone class was the right choice.\n- **The refactor keeps behaviour the same.** `vehicleDriveTick` and `poseWheelParts` are the old system bodies moved line for line. The ECS systems now call them, and a test confirms that the class and the ECS stay within 1 mm of each other.\n- **`dispose()` is correct.** `RapierPhysics.removeVehicle` removes both the controller and the rigid body, it is guarded against being called twice, and it frees per-car geometry and the brake-light material.\n- **Inputs are clamped, and NaN becomes 0.** Using the vehicle after `dispose()` throws a clear error.\n- **The name clash is handled safely.** `game/index.ts` re-exports `Vehicle` explicitly from components, which takes precedence over the `export *`. The class is also exported as `DrivableVehicle`. Typecheck confirms there is no ambiguity.\n\n## Checks\n1. **Vehicle can be instantiated and added to the scene: PASS.** A unit test covers all 5 classes (model parented to a Scene, with wheel nodes). The browser arena renders the car.\n2. **Forward/reverse and steering work in a test arena: PASS.** A unit test checks speed, heading change in both directions, and brake-to-reverse. The Playwright keyboard test in `arena.html` also passes.\n3. **Physics bodies are synchronized with the meshes: PASS.** The test compares mesh and body every tick, checks interpolation at alpha 0.5, and checks the wheel pose against suspension, steer and spin. The browser asserts `maxSyncError < 1e-3`.\n4. **No runtime errors in a 30-second drive: PASS.** In the headless test, all 5 classes complete the 30 s script. In the browser e2e test, the 30 s autodrive asserts no console errors, warnings, page errors or failed requests, at least 30 s of simulated time, and the car staying upright. I ran it myself and it passed.\n\n## Minor points (not blocking)\n- The vehicles barrel exports the test arena helpers (`createArenaPhysics`, `ARENA_DRIVE_SCRIPT`, ...). Dev/test code in the gameplay module's public API is a little untidy. A separate `vehicles/arena` entry would be cleaner.\n- The ECS component and the class share the name `Vehicle`, so which one you get depends on the import path. It is documented, but it could confuse people. Consider renaming one of them later.\n- Merge conflicts in `game/src/game/index.ts` and `README.md` are expected with PRs #7, #9 and #10, and the author disclosed this.\n- The arena page counts as a second production page in `dist/`, which is fine.\n\nThe description matches the real diff, and I found no fabricated claims.\n"
+    }
+   ],
    "history": [
     {
      "at": "2026-11-27T08:37:26+05:30",
@@ -2032,15 +2041,21 @@
      "actor": "claude-1",
      "event": "review started",
      "detail": ""
+    },
+    {
+     "at": "2026-11-28T01:04:39+05:30",
+     "actor": "claude-1",
+     "event": "review passed",
+     "detail": "score 90 (needs 80)"
     }
    ],
-   "updated_at": "2026-11-28T01:02:14+05:30",
+   "updated_at": "2026-11-28T01:04:39+05:30",
    "claimed_at": "2026-11-27T14:39:30+05:30",
    "run_model": "claude-opus-5-5",
    "run_effort": "high",
    "run_url": "https://github.com/shloki-loki/CATE/actions/runs/45971307223",
    "review_queued_at": "2026-11-27T14:51:29+05:30",
-   "reviewer": "claude-1",
+   "reviewer": null,
    "reviewing_at": "2026-11-28T01:02:14+05:30",
    "review_model": "claude-opus-5-5",
    "review_run_url": "https://github.com/shloki-loki/CATE/actions/runs/46057365251"

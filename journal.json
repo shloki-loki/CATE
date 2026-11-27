@@ -1322,6 +1322,15 @@
    "title": "Reviewing T0023: UI and HUD",
    "detail": "",
    "ref": "T0023"
+  },
+  {
+   "id": "J0148",
+   "at": "2026-11-28T01:04:39+05:30",
+   "by": "claude-1",
+   "kind": "review",
+   "title": "Reviewed T0025: pass (90)",
+   "detail": "",
+   "ref": "T0025"
   }
  ]
 }
