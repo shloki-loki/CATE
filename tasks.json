@@ -1808,7 +1808,7 @@
     "T0021"
    ],
    "inputs": [],
-   "status": "reviewing",
+   "status": "done",
    "attempts": 0,
    "exclude": [],
    "chat": "C0008",
@@ -1836,7 +1836,16 @@
     "tokens_out": 30000,
     "model": "claude-opus-5-5"
    },
-   "reviews": [],
+   "reviews": [
+    {
+     "by": "claude-2",
+     "model": "claude-opus-5-5",
+     "at": "2026-11-28T01:05:21+05:30",
+     "score": 90,
+     "verdict": "pass",
+     "notes": "# Review of T0023 (UI and HUD), PR #10, by claude-2\n\n**Verdict: PASS, score 90/100**\n\n## What I checked (on branch `cate/T0023-hud`)\n- I read the whole diff: 21 files, about 1800 lines.\n- `python3 -m unittest discover -s tests`: 32 tests, all OK.\n- `cd game && npm ci && npm run check`: typecheck, lint, 65/65 Vitest tests and the vite build all pass.\n- `CHROMIUM_PATH=/usr/bin/google-chrome npx playwright test`: 4/4 pass. That is the 2 existing smoke tests and the 2 new HUD tests.\n- I took my own screenshot of the production build at 1280x720 while driving at about 43 km/h. It showed:\n  - the speedometer at 43 km/h, gear 1;\n  - the minimap with the player arrow at the centre, heading-up, the N marker on the rim and the yellow objective blip ahead;\n  - the mission panel (\"WARM-UP LAP 1/6\", a running timer, the objective text, \"35 m\").\n\n  Nothing overlapped the F3 overlay or any other HUD element.\n- The PR is MERGEABLE against `main`. `web/` is not touched.\n\n## Checks\n- **speed displayed: PASS.** `hudBridge.ts` reads `VehicleTelemetry.speed*3.6` into the existing Speedometer, now part of the `.hud` layer. Tabular figures stop the digits jittering. The e2e test checks that the shown value matches the car's real speed (>20 km/h, within 15). I saw it on screen.\n- **mini-map shows position: PASS.** I checked the maths by hand:\n  - `mapRotation = heading - PI` with `worldToMinimap` puts the forward direction up and +X/+Z on the correct sides (not mirrored).\n  - The `drawImage` transform uses the same rotation, so blips line up with the cached map.\n  - The map layout comes from the same numbers as the demo meshes.\n  - The e2e test checks that the minimap centre equals the car's position and that the canvas changes as the car moves.\n- **no UI glitches: PASS.**\n  - The overlap and viewport test covers 6 window sizes, from 1920x1080 down to 800x500.\n  - The canvas backing store follows CSS size times DPR, with a ResizeObserver.\n  - The HUD layer has `pointer-events: none`.\n  - Text nodes are only written when their text changes.\n  - A car on its roof keeps its last heading, so the minimap doesn't spin.\n  - The e2e tests log no console errors or warnings.\n\n## Good\n- The architecture boundary is kept: `ui/` never imports `game/`, and the bridge lives in `src/hudBridge.ts`.\n- Per-frame cost is low: one cached map image, pooled blip objects and no per-frame allocations.\n- The mission logic is pure and unit-tested, and it emits typed events.\n- The tests are real and meaningful.\n\n## Minor (do not block merging)\n- Two doc comments say the mission panel is at \"top centre\" (`ui/hud/hud.ts` and `ui/hud/missionPanel.ts`), but it is at the top right. Fix them next time these files are touched.\n- `CheckpointRun` is a placeholder mission. That is fine for this brief, but the mission-system task should replace it.\n- Rebase conflicts with PRs #7 and #9 are likely, as the author says.\n"
+    }
+   ],
    "history": [
     {
      "at": "2026-11-27T02:06:14+05:30",
@@ -1861,15 +1870,21 @@
      "actor": "claude-2",
      "event": "review started",
      "detail": ""
+    },
+    {
+     "at": "2026-11-28T01:05:21+05:30",
+     "actor": "claude-2",
+     "event": "review passed",
+     "detail": "score 90 (needs 80)"
     }
    ],
-   "updated_at": "2026-11-28T01:02:16+05:30",
+   "updated_at": "2026-11-28T01:05:21+05:30",
    "claimed_at": "2026-11-27T14:21:48+05:30",
    "run_model": "claude-opus-5-5",
    "run_effort": "high",
    "run_url": "https://github.com/shloki-loki/CATE/actions/runs/45968899981",
    "review_queued_at": "2026-11-27T14:37:28+05:30",
-   "reviewer": "claude-2",
+   "reviewer": null,
    "reviewing_at": "2026-11-28T01:02:16+05:30",
    "review_model": "claude-opus-5-5",
    "review_run_url": "https://github.com/shloki-loki/CATE/actions/runs/46057365251"
