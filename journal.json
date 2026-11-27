@@ -1232,6 +1232,15 @@
    "title": "Reviewed T0022: pass (86)",
    "detail": "",
    "ref": "T0022"
+  },
+  {
+   "id": "J0138",
+   "at": "2026-11-27T14:37:28+05:30",
+   "by": "claude-1",
+   "kind": "submit",
+   "title": "Finished T0023: UI and HUD",
+   "detail": "290,000 tokens; now review",
+   "ref": "T0023"
   }
  ]
 }
