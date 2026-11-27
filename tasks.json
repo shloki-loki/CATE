@@ -1292,7 +1292,7 @@
     "T0017"
    ],
    "inputs": [],
-   "status": "reviewing",
+   "status": "done",
    "attempts": 0,
    "exclude": [],
    "chat": "C0008",
@@ -1320,7 +1320,16 @@
     "tokens_out": 14000,
     "model": "claude-opus-5-5"
    },
-   "reviews": [],
+   "reviews": [
+    {
+     "by": "claude-2",
+     "model": "claude-opus-5-5",
+     "at": "2026-11-27T08:35:42+05:30",
+     "score": 90,
+     "verdict": "pass",
+     "notes": "# Review of T0018 (Asset Pipeline Design) by claude-1, reviewed by claude-2\n\n**Verdict: PASS. Score 90/100.**\n\n## Checks\n1. **Asset types listed: PASS.** §2 lists every type with v1 ids and variants. Runtime procedural: 9 building styles, roads and ground, street furniture, textures. Build-time glTF: 6 vehicles (plus a motorbike stretch goal), the character, its animation clips, 3 weapons, 8 hero/mission props. One rule decides which side each type goes on (runtime or build-time).\n2. **Format specified: PASS.** glTF 2.0 binary `.glb` with `EXT_meshopt_compression` and `KHR_mesh_quantization`, loaded with GLTFLoader and MeshoptDecoder. KTX2/Basis is an optional later step with its native `ktx` dependency named. It says why Draco is not used. Storage layout (§7.1), manifest schema (§7.2) and naming conventions (§8, with lint regexes) are also covered, which the brief asked for.\n3. **Generation method described: PASS.** A 12-step building mesher (§4), a vehicle parameter-row method with an interface and named nodes and sockets (§5.2), a character skeleton with code-authored clips (§5.3), a build pipeline (generate → lint → export → optimise → validate → write → manifest) and a determinism check (§5.5).\n\n## What I checked myself\n- Package versions with `npm view`: three 0.187.0, @gltf-transform/core 4.5.1, meshoptimizer 1.3.0. All match.\n- Reproduced the main spike claims on Node v24.22.3:\n  - `typeof FileReader === 'undefined'`.\n  - With the 6-line shim from §9, `GLTFExporter.parseAsync(..., {binary:true})` produces a `.glb`.\n  - gltf-validator reports 0 errors and 0 warnings.\n  - `three/examples/jsm/libs/meshopt_decoder.module.js` exists in 0.187.0.\n  - I did not re-run the meshopt or determinism steps.\n- The fixed inputs match the cited sources: T0016 §3.9 for units, axes, `wheel_FL/FR/RL/RR` and `category.name##`, and T0017's request that T0018 track asset provenance (covered in §7.4).\n- The left/right convention (left = +X when facing +Z) is consistent with right-handed +Y up, and the example wheel coordinates agree with it.\n- The document is honest about limits: \"Not tested here\", plus the run-time and size estimates are flagged as estimates.\n\n## Problems (minor; none blocks passing, but fix them during implementation)\n1. **Bone count is wrong.** §5.3 says \"19 bones\", but the list has 6 central bones (root, hips, spine, chest, neck, head) plus 7 × 2 limb bones, which is **20**. Fix the number or the list before T0021 uses it.\n2. **Path inconsistency.** §4 says the mesher is `game/world/cityMesher.ts`. Everything else uses `game/src/...`, so it is probably `game/src/world/cityMesher.ts`.\n3. **Texture naming conflicts with the id regex.** §8.5 names textures `tex_<subject>_<map>`. The §8.1 id regex and `AssetId` require `texture.<name>##`. That is fine while textures are runtime-only, but if §6.3 KTX2 files are adopted, it is unclear which name goes in the manifest. Say so explicitly.\n4. The example manifest entry mixes illustrative values with a measured byte count from a different (simpler) car. This is disclosed, but it could mislead someone skimming.\n\n## Summary\nA thorough, well-sourced and partly verified design that meets every check and the brief. The defects above are small consistency errors.\n"
+    }
+   ],
    "history": [
     {
      "at": "2026-11-27T02:06:14+05:30",
@@ -1345,15 +1354,21 @@
      "actor": "claude-2",
      "event": "review started",
      "detail": ""
+    },
+    {
+     "at": "2026-11-27T08:35:42+05:30",
+     "actor": "claude-2",
+     "event": "review passed",
+     "detail": "score 90 (needs 80)"
     }
    ],
-   "updated_at": "2026-11-27T08:34:58+05:30",
+   "updated_at": "2026-11-27T08:35:42+05:30",
    "claimed_at": "2026-11-27T04:27:29+05:30",
    "run_model": "claude-opus-5-5",
    "run_effort": "high",
    "run_url": "https://github.com/shloki-loki/CATE/actions/runs/45907964758",
    "review_queued_at": "2026-11-27T04:32:42+05:30",
-   "reviewer": "claude-2",
+   "reviewer": null,
    "reviewing_at": "2026-11-27T08:34:58+05:30",
    "review_model": "claude-opus-5-5",
    "review_run_url": "https://github.com/shloki-loki/CATE/actions/runs/45932034982"
