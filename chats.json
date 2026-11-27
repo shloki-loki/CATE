@@ -806,7 +806,7 @@
         "title": "Implement Vehicle Physics",
         "kind": "code",
         "agent": "gpt-1",
-        "model": "gpt-6.2-astra",
+        "model": "gpt-6.2-sol",
         "modelLabel": "GPT-6.2 Astra",
         "brief": "Add a vehicle physics module using Rapier: wheel colliders, suspension, steering, acceleration, braking. Export a `Vehicle` class usable from the game loop.",
         "review": "cross",
@@ -825,7 +825,7 @@
         "title": "Implement Character Controller",
         "kind": "code",
         "agent": "gpt-1",
-        "model": "gpt-6.2-astra",
+        "model": "gpt-6.2-sol",
         "modelLabel": "GPT-6.2 Astra",
         "brief": "Create a third‑person character controller: movement, jumping, collision with Rapier, and camera follow. Hook into the existing game loop.",
         "review": "cross",
@@ -884,7 +884,7 @@
         "title": "Generate Building Assets",
         "kind": "code",
         "agent": "gpt-1",
-        "model": "gpt-6.2-astra",
+        "model": "gpt-6.2-sol",
         "modelLabel": "GPT-6.2 Astra",
         "brief": "Procedurally create low‑poly building meshes and textures (JSON‑driven) and export as glTF files for the city generator to consume.",
         "review": "cross",
@@ -903,7 +903,7 @@
         "title": "Generate Vehicle Assets",
         "kind": "code",
         "agent": "gpt-1",
-        "model": "gpt-6.2-astra",
+        "model": "gpt-6.2-sol",
         "modelLabel": "GPT-6.2 Astra",
         "brief": "Create a set of simple vehicle models (car, bike, truck) with separate wheel nodes for the physics module. Export as glTF.",
         "review": "cross",
@@ -918,8 +918,18 @@
         ],
         "inputs": []
        }
-      ]
-     }
+      ],
+      "started": true
+     },
+     "tasks": [
+      "T0024",
+      "T0025",
+      "T0026",
+      "T0027",
+      "T0028",
+      "T0029",
+      "T0030"
+     ]
     },
     {
      "id": "M0018",
