@@ -2288,7 +2288,7 @@
     "T0026"
    ],
    "inputs": [],
-   "status": "claimed",
+   "status": "review",
    "attempts": 0,
    "exclude": [],
    "chat": "C0008",
@@ -2307,8 +2307,16 @@
    "created_by": "owner (chat)",
    "created_at": "2026-11-27T08:37:26+05:30",
    "queued_at": "2026-11-27T08:37:26+05:30",
-   "claimed_by": "claude-1",
-   "result": null,
+   "claimed_by": null,
+   "result": {
+    "by": "claude-1",
+    "at": "2026-11-28T01:43:28+05:30",
+    "file": "outputs/T0028.md",
+    "text": "# T0028: UI and HUD (done)\n\n**Pull request:** https://github.com/shloki-loki/CATE/pull/14 (branch `cate/T0028-hud-health-wanted`, based on `main` 3a9ce3a)\n\n## Starting point\n`main` already had part of the HUD from T0023 (PR #10): a speedometer, a mini-map and a mission panel. This job adds the parts that were missing: **health and wanted-level indicators**, and the gameplay that raises the wanted level on collisions. The `game/wanted` module was an empty stub before this.\n\n## What was built\n- **Wanted level** (`game/src/game/wanted/wanted.ts`, `WantedSystem`): a `WantedLevel` component holds 0–5 stars.\n  - Every collision involving the player's car counts as an offence: +1 star, or +2 for ramming a police car.\n  - One crash produces several contact events, so offences are debounced to one per crash (1 s).\n  - Stars drop one at a time after a quiet spell (10 s + 3 s per star).\n  - It emits a new `wantedChanged` event.\n- **Player health** (`game/src/game/shared/playerHealth.ts`, `PlayerHealthSystem`): the player has 100 HP, separate from the car's damage bar.\n  - Hard crashes hurt the driver by 0.12 × the car's collision damage.\n  - Health regenerates at 2 HP/s after 6 s without damage.\n  - Death and respawn are not implemented; they are left for the combat/player tasks.\n- **HUD overlay** (`game/src/ui/hud/statusPanel.ts` plus CSS): HTML/CSS on top of the canvas, with `pointer-events: none`. It sits above the mini-map and shows:\n  - five wanted stars;\n  - a health bar with the number (and an armour bar when armour > 0).\n\n  Values are written to the page only when they change. A new star makes the stars flash, the lit stars blink in the last 4 s before one is lost, and the health bar turns red when low. Windows ≤ 700 px wide or ≤ 540 px tall get a compact layout.\n- The speedometer and mini-map from T0023 are unchanged: speed updates every frame, and the mini-map is centred on the player with a heading arrow.\n- `hudBridge.ts` fills the new `HudModel.status`, and `ui/` still never imports `game/`. `window.__neon.hud` now also shows `health` and `wanted`.\n\n## Checks\n- **Speed updates in real time:** the existing e2e test passes. It checks that the shown speed matches the car's real speed while driving.\n- **Mini-map shows player position:** the existing unit and e2e tests pass. They check that the mini-map centre equals the car's position and that the map changes as the car moves.\n- **Wanted level increments on collisions:**\n  - New unit tests with real physics cover:\n    - no stars while driving without hitting anything;\n    - +1 star after ramming a parked car, counted once per crash;\n    - +2 stars for a police car;\n    - repeated wall crashes add one star each, up to a maximum of 5;\n    - stars decay one at a time after exactly the quiet time.\n  - A new e2e test drives into the parked sedan in the browser. It checks that ≥ 1 star is lit and that the lit stars match the game state.\n- **Responsive layout on common browsers:**\n  - Chromium: the e2e overlap and viewport test (now including the health/wanted panel) passes at 1920x1080, 1366x768, 1280x720, 1024x768, 900x600 and 800x500.\n  - WebKit (Safari engine): the full game ran with no overlaps at those sizes, and a crash lit 1 star.\n  - Firefox: headless Firefox on the runner has no WebGL2, so the game shows its \"WebGL2 not available\" screen. I checked the HUD CSS there by injecting the live HUD markup: no overlaps at any of those sizes. I could not play the game in Firefox.\n\n## Testing done in this job\n- `npm run check`: typecheck, lint, 72 unit tests (7 new) and the build all pass. Prettier is clean.\n- `npx playwright test` (system Chromium, SwiftShader): 5/5 pass, including the new wanted/health test.\n- `python3 -m unittest discover -s tests`: 32 pass.\n- I looked at screenshots in Chromium, WebKit and Firefox. That led to two fixes: the unlit stars were hard to see over bright buildings (fixed with a drop shadow), and one ~100 km/h crash took 81 HP (injury factor lowered from 0.3 to 0.12).\n\n## Notes\n- Open PRs #12 (character) and #13 (city) also edit `main.ts`, `components.ts` and `game/index.ts`. Whichever merges later needs a small rebase.\n- Already on `main` before this PR: at phone-portrait width (390 px), the F3 debug overlay (~680 px wide) runs off the screen. F3 hides it.\n- There is no police response yet. The stars are only a score until a police/AI task uses `WantedLevel` or the `wantedChanged` event.\n",
+    "tokens_in": 260000,
+    "tokens_out": 22000,
+    "model": "claude-opus-5-5"
+   },
    "reviews": [],
    "history": [
     {
@@ -2322,13 +2330,20 @@
      "actor": "claude-1",
      "event": "claimed",
      "detail": "Opus 5.5"
+    },
+    {
+     "at": "2026-11-28T01:43:28+05:30",
+     "actor": "claude-1",
+     "event": "submitted for review",
+     "detail": "282,000 tokens"
     }
    ],
-   "updated_at": "2026-11-28T01:30:44+05:30",
+   "updated_at": "2026-11-28T01:43:28+05:30",
    "claimed_at": "2026-11-28T01:30:44+05:30",
    "run_model": "claude-opus-5-5",
    "run_effort": "high",
-   "run_url": "https://github.com/shloki-loki/CATE/actions/runs/46060603034"
+   "run_url": "https://github.com/shloki-loki/CATE/actions/runs/46060603034",
+   "review_queued_at": "2026-11-28T01:43:28+05:30"
   },
   {
    "id": "T0029",
