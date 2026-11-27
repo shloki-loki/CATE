@@ -6,15 +6,19 @@ import { AssetRegistry } from './assets';
 import { NullAudio } from './audio';
 import { createClock, EventBus, GameLoop, log, Settings, TimeOfDay, World } from './core';
 import {
+  Character,
   createDemoScene,
-  OrbitCameraSystem,
+  createPlayer,
+  FollowCameraSystems,
   PhysicsStepSystem,
+  PlayerSystems,
   PhysicsSyncSystem,
   TimeOfDaySystem,
+  Transform,
   ViewSyncSystem,
 } from './game';
 import type { GameEvents } from './game';
-import { KeyboardMouseInput } from './input';
+import { DEFAULT_BINDINGS, KeyboardMouseInput } from './input';
 import { RapierPhysics } from './physics';
 import { hasWebGL2, ThreeRenderer } from './render';
 import type { Services } from './services';
@@ -30,6 +34,9 @@ export interface BootStatus {
   triangles: number;
   bodies: number;
   error: string | null;
+  /** Player capsule centre and on-foot state (T0021). */
+  player: { x: number; y: number; z: number; state: string; grounded: boolean } | null;
+  camera: { x: number; y: number; z: number } | null;
 }
 
 declare global {
@@ -48,6 +55,8 @@ const status: BootStatus = {
   triangles: 0,
   bodies: 0,
   error: null,
+  player: null,
+  camera: null,
 };
 window.__neon = status;
 
@@ -98,7 +107,7 @@ async function boot(): Promise<void> {
     physics,
     render,
     audio: new NullAudio(),
-    input: new KeyboardMouseInput(canvas),
+    input: new KeyboardMouseInput(canvas, DEFAULT_BINDINGS, true),
     assets,
     events: new EventBus<GameEvents>((type, err) => log.error(`event ${String(type)}`, err)),
     settings,
@@ -117,12 +126,15 @@ async function boot(): Promise<void> {
   world.addSystem(PhysicsStepSystem);
   world.addSystem(PhysicsSyncSystem);
   world.addSystem(TimeOfDaySystem);
-  for (const sys of OrbitCameraSystem()) world.addSystem(sys);
+  // Camera control before player control (both preSim): movement uses this tick's camera yaw.
+  for (const sys of FollowCameraSystems()) world.addSystem(sys);
+  for (const sys of PlayerSystems()) world.addSystem(sys);
   world.addSystem(ViewSyncSystem);
   await world.init(services);
 
   const scene = createDemoScene(world, services);
   log.info(`demo scene: ${scene.buildings} buildings, ${scene.dynamic.length} dynamic bodies`);
+  const player = createPlayer(world, services, scene.playerSpawn, scene.playerYaw);
   render.setTimeOfDay(services.time.hours);
 
   const overlay = new DebugOverlay(app, true);
@@ -148,6 +160,18 @@ async function boot(): Promise<void> {
       status.drawCalls = st.drawCalls;
       status.triangles = st.triangles;
       status.bodies = physics.bodyCount;
+      const pt = world.get(player, Transform);
+      const pc = world.get(player, Character);
+      if (pt && pc) {
+        const p = (status.player ??= { x: 0, y: 0, z: 0, state: '', grounded: false });
+        p.x = pt.position.x;
+        p.y = pt.position.y;
+        p.z = pt.position.z;
+        p.state = pc.state;
+        p.grounded = pc.grounded;
+      }
+      const cp = render.camera.position;
+      status.camera = { x: cp.x, y: cp.y, z: cp.z };
       overlay.update(frameDt, {
         fps,
         drawCalls: st.drawCalls,

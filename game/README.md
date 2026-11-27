@@ -27,9 +27,22 @@ npm run build
 npm run preview    # http://localhost:4173
 ```
 
-Controls in the skeleton scene: drag with the mouse to orbit, mouse wheel to
-zoom, WASD/arrow keys to move the view, Shift to move faster, F3 to toggle
-the debug overlay.
+Controls (on foot, T0021):
+
+| Input             | Action                                                                   |
+| ----------------- | ------------------------------------------------------------------------ |
+| WASD / arrow keys | Move (relative to the camera)                                            |
+| Shift             | Sprint                                                                   |
+| Space             | Jump                                                                     |
+| F                 | Enter / exit the nearest vehicle, or use the nearest interactable object |
+| Click the game    | Capture the mouse for mouse look (Esc releases it). Dragging also works. |
+| Mouse wheel       | Camera distance                                                          |
+| F3                | Debug overlay                                                            |
+
+You spawn east of downtown next to a small test playground: stairs, a ramp, a
+too-steep slope, a 1 m ledge to jump onto, a low roof, a long wall and some
+crates to push. The pink car near the central crossing can be entered with F
+(it does not drive until the vehicle task, T0020).
 
 ## Scripts
 
@@ -67,9 +80,10 @@ game/
       components.ts  ALL shared component types
       events.ts      ALL event types
       shared/        physics step/sync, view sync, time-of-day systems
-      camera/        debug orbit camera (replaced by T0020/T0021 cameras)
-      demo/          the skeleton scene (replaced by T0022's procedural city)
-      world/ player/ vehicles/ ai/ combat/ wanted/ missions/ save/   (owned by later tasks)
+      camera/        follow camera (spring arm + collision, T0021); debug orbit camera
+      player/        on-foot controller, jump, interaction, enter/exit vehicle, mannequin view (T0021)
+      demo/          the skeleton scene + on-foot playground (replaced by T0022's procedural city)
+      world/ vehicles/ ai/ combat/ wanted/ missions/ save/   (owned by later tasks)
   tests/
     unit/            Vitest
     e2e/             Playwright smoke test
@@ -86,6 +100,34 @@ game/
 5. `game/<a>/` never imports `game/<b>/`. Use `game/components.ts`,
    `game/events.ts` and `game/shared/`.
 6. Another module is imported only through its `index.ts`.
+
+## Character controller and follow camera (T0021)
+
+- **Physics** (`PhysicsAPI`): `createCharacter` makes a kinematic capsule driven by
+  Rapier's `KinematicCharacterController` (autostep 0.45 m, 50° slope limit,
+  snap-to-ground, pushes dynamic bodies); `moveCharacter(handle, delta, yaw)`
+  collides, slides and steps; `placeCharacter` teleports; `castSphere` sweeps a
+  sphere (camera arm, exit clearance); `setBodyEnabled` parks the capsule while
+  the player is in a car.
+- **Player** (`game/player/`): `createPlayer` + `PlayerSystems()`. Movement maths
+  are in `motor.ts` (`MOTOR` holds all tuning: jog 4.6 m/s, sprint 7.2 m/s,
+  acceleration, 1.15 m jump, coyote time, jump buffer). States live on the
+  `Character` component (`idle/walk/run/sprint/jump/fall/inVehicle`, plus
+  `aim`/`dead` for later tasks). Falling below y = -30 respawns.
+- **Camera** (`game/camera/followCamera.ts`): `FollowCameraSystems()` reads mouse
+  look into the `CameraRig` component (preSim) and places the camera (camera
+  phase) behind the interpolated target, sweeping a sphere against
+  `WORLD_STATIC` so it never goes inside buildings or under the ground.
+- **Contract for vehicles (T0020)**: pressing F next to an entity with `Vehicle` +
+  `Transform` sets `Driver { mode: 'player' }` on it, adds the player to
+  `occupants`, emits `vehicleEntered`, hides the player and points
+  `CameraRig.follow` at the car (the in-car camera preset can be changed on the
+  rig). Pressing F again places the player beside the car (driver side first,
+  then other sides if blocked), sets `Driver { mode: 'none' }` and emits
+  `vehicleExited`.
+- **Other interactions**: give an entity `Interactable { kind, prompt, radius }`
+  and listen for the `interact` event. The nearest target and its prompt text
+  are on `Character.focus` / `Character.prompt` for the HUD (T0023).
 
 ## Frame order
 

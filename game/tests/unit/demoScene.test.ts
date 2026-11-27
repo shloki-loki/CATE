@@ -60,9 +60,10 @@ describe('demo scene (headless integration: ECS + Rapier + view sync)', () => {
 
     const scene = createDemoScene(world, s, 1986);
     expect(scene.buildings).toBeGreaterThan(10);
-    expect(scene.dynamic.length).toBe(11);
+    expect(scene.dynamic.length).toBe(15);
+    expect(scene.playground).toBeGreaterThan(10);
     expect(render.added.length).toBeGreaterThan(scene.buildings);
-    expect(physics.bodyCount).toBe(1 + scene.buildings + scene.dynamic.length);
+    expect(physics.bodyCount).toBe(1 + scene.buildings + scene.playground + scene.dynamic.length);
 
     for (let i = 0; i < 60 * 8; i++) world.runSim(s, 1 / 60);
     s.clock.alpha = 1;
