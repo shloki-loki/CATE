@@ -1196,6 +1196,15 @@
    "title": "PR #8 merged",
    "detail": "review, tests and build passed",
    "ref": "T0020"
+  },
+  {
+   "id": "J0134",
+   "at": "2026-11-27T14:21:30+05:30",
+   "by": "cate",
+   "kind": "update",
+   "title": "PR #7 blocked",
+   "detail": "it conflicts with main",
+   "ref": "T0021"
   }
  ]
 }
