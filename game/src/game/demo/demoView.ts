@@ -118,3 +118,12 @@ export function palmView(height: number): Object3D {
 export function crateView(size: number): Object3D {
   return shadowed(new Mesh(new BoxGeometry(size, size, size), mats.crate));
 }
+
+const blockMats = new Map<number, MeshStandardMaterial>();
+
+/** Plain box (playground stairs, ramps, ledges), one shared material per colour. */
+export function blockView(w: number, h: number, d: number, color: number): Object3D {
+  let mat = blockMats.get(color);
+  if (!mat) blockMats.set(color, (mat = new MeshStandardMaterial({ color, roughness: 0.8 })));
+  return shadowed(new Mesh(new BoxGeometry(w, h, d), mat));
+}

@@ -4,6 +4,7 @@ import type { GameWorld, Services } from '../../services';
 import { CollisionGroup } from '../../physics';
 import { makeTransform, PrevTransform, RigidBody, Transform, View } from '../components';
 import { buildingView, crateView, groundView, palmView, roadView } from './demoView';
+import { createPlayground } from './playground';
 
 /** Small seeded PRNG (mulberry32) so the demo scene is identical on every load. */
 export function mulberry32(seed: number): () => number {
@@ -24,7 +25,20 @@ const BLOCK = 36;
 export interface DemoScene {
   dynamic: Entity[];
   buildings: number;
+  /** Static bodies of the on-foot playground next to the spawn. */
+  playground: number;
+  /** Where the player starts (capsule centre) and which way they face. */
+  playerSpawn: { x: number; y: number; z: number };
+  playerYaw: number;
 }
+
+/**
+ * Player spawn: on the avenue's west edge, beside the driver door of the sports car that
+ * main.ts parks at (-3, 0, 45) facing -Z, so F gets straight in. Faces -Z (the crossing).
+ */
+const SPAWN = { x: -5.2, z: 45.5 };
+/** On-foot test playground on the open grass east of the city. */
+const PLAYGROUND = { x: 100, z: 58 };
 
 /**
  * The skeleton's minimal playable scene: ground, a road cross, a beach, placeholder
@@ -111,7 +125,7 @@ export function createDemoScene(world: GameWorld, s: Services, seed = 1986): Dem
     hy: number,
     hz: number,
     density: number,
-  ): void => {
+  ): Entity => {
     const e = world.createEntity();
     const handle = s.physics.createBody({
       type: 'dynamic',
@@ -132,6 +146,7 @@ export function createDemoScene(world: GameWorld, s: Services, seed = 1986): Dem
     view.quaternion.copy(t.quaternion);
     s.render.addToWorld(view, 'dynamic');
     dynamic.push(e);
+    return e;
   };
 
   for (let i = 0; i < 10; i++) {
@@ -148,5 +163,27 @@ export function createDemoScene(world: GameWorld, s: Services, seed = 1986): Dem
     );
   }
 
-  return { dynamic, buildings };
+  const playground = createPlayground(s, PLAYGROUND.x, PLAYGROUND.z);
+  // Light crates to push around next to the playground.
+  for (let i = 0; i < 4; i++) {
+    const size = 0.8 + rand() * 0.4;
+    spawn(
+      crateView(size),
+      PLAYGROUND.x - 6 + i * 1.6,
+      0.6 + size / 2,
+      PLAYGROUND.z + 2,
+      size / 2,
+      size / 2,
+      size / 2,
+      0.4,
+    );
+  }
+
+  return {
+    dynamic,
+    buildings,
+    playground,
+    playerSpawn: { x: SPAWN.x, y: 0.95, z: SPAWN.z },
+    playerYaw: 0,
+  };
 }

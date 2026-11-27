@@ -27,7 +27,23 @@ npm run build
 npm run preview    # http://localhost:4173
 ```
 
-Controls (you start in a sports car on the avenue, facing the central crossing):
+You start **on foot** on the avenue sidewalk, right next to a parked sports car,
+facing the central crossing (-Z). Walk up to the car and press **F** to get in;
+press **F** again to get out.
+
+On foot (T0021/T0026):
+
+| Input             | Action                                                                   |
+| ----------------- | ------------------------------------------------------------------------ |
+| WASD / arrow keys | Move (relative to the camera)                                            |
+| Shift             | Sprint                                                                   |
+| Space             | Jump                                                                     |
+| F                 | Enter the nearest vehicle, or use the nearest interactable object        |
+| Click the game    | Capture the mouse for mouse look (Esc releases it). Dragging also works. |
+| Mouse wheel       | Camera distance                                                          |
+| F3                | Debug overlay                                                            |
+
+In a car (T0020):
 
 | Key                 | Action                                                   |
 | ------------------- | -------------------------------------------------------- |
@@ -36,8 +52,12 @@ Controls (you start in a sports car on the avenue, facing the central crossing):
 | A / D, Left / Right | Steer                                                    |
 | Space               | Handbrake (locks the rear and lets the tail slide)       |
 | R                   | Put the car back on its wheels (when nearly stopped)     |
+| F                   | Get out (on the driver's side if it is clear)            |
 | Mouse drag / wheel  | Look around the car / zoom (recenters after 1.5 s)       |
-| F3                  | Toggle the debug overlay                                 |
+
+East of downtown (around x = 100, z = 58) there is a small on-foot test
+playground: stairs, a ramp, a too-steep slope, a 1 m ledge to jump onto, a low
+roof, a long wall and some crates to push.
 
 ## Scripts
 
@@ -75,10 +95,11 @@ game/
       components.ts  ALL shared component types
       events.ts      ALL event types
       shared/        physics step/sync, view sync, time-of-day systems
-      camera/        chase camera for vehicles (T0020); debug orbit camera (unused, kept for debugging)
+      camera/        follow camera on foot (spring arm + collision, T0021/T0026); chase camera in cars (T0020); debug orbit camera
+      player/        on-foot controller, jump, interaction, enter/exit vehicle, mannequin view (T0021/T0026)
       vehicles/      VehicleDef data, DriveController, spawn, drive/collision/damage systems, car view (T0020)
-      demo/          the skeleton scene (replaced by T0022's procedural city)
-      world/ player/ ai/ combat/ wanted/ missions/ save/   (owned by later tasks)
+      demo/          the skeleton scene + on-foot playground (replaced by T0022's procedural city)
+      world/ ai/ combat/ wanted/ missions/ save/   (owned by later tasks)
   tests/
     unit/            Vitest
     e2e/             Playwright smoke test
@@ -95,6 +116,34 @@ game/
 5. `game/<a>/` never imports `game/<b>/`. Use `game/components.ts`,
    `game/events.ts` and `game/shared/`.
 6. Another module is imported only through its `index.ts`.
+
+## Character controller and follow camera (T0021)
+
+- **Physics** (`PhysicsAPI`): `createCharacter` makes a kinematic capsule driven by
+  Rapier's `KinematicCharacterController` (autostep 0.45 m, 50° slope limit,
+  snap-to-ground, pushes dynamic bodies); `moveCharacter(handle, delta, yaw)`
+  collides, slides and steps; `placeCharacter` teleports; `castSphere` sweeps a
+  sphere (camera arm, exit clearance); `setBodyEnabled` parks the capsule while
+  the player is in a car.
+- **Player** (`game/player/`): `createPlayer` + `PlayerSystems()`. Movement maths
+  are in `motor.ts` (`MOTOR` holds all tuning: jog 4.6 m/s, sprint 7.2 m/s,
+  acceleration, 1.15 m jump, coyote time, jump buffer). States live on the
+  `Character` component (`idle/walk/run/sprint/jump/fall/inVehicle`, plus
+  `aim`/`dead` for later tasks). Falling below y = -30 respawns.
+- **Camera** (`game/camera/followCamera.ts`): `FollowCameraSystems()` reads mouse
+  look into the `CameraRig` component (preSim) and places the camera (camera
+  phase) behind the interpolated target, sweeping a sphere against
+  `WORLD_STATIC` so it never goes inside buildings or under the ground.
+- **Contract for vehicles (T0020)**: pressing F next to an entity with `Vehicle` +
+  `Transform` sets `Driver { mode: 'player' }` on it, adds the player to
+  `occupants`, emits `vehicleEntered`, hides the player and points
+  `CameraRig.follow` at the car (the in-car camera preset can be changed on the
+  rig). Pressing F again places the player beside the car (driver side first,
+  then other sides if blocked), sets `Driver { mode: 'none' }` and emits
+  `vehicleExited`.
+- **Other interactions**: give an entity `Interactable { kind, prompt, radius }`
+  and listen for the `interact` event. The nearest target and its prompt text
+  are on `Character.focus` / `Character.prompt` for the HUD (T0023).
 
 ## Frame order
 
