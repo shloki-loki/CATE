@@ -13,12 +13,14 @@ import {
   Driver,
   PhysicsStepSystem,
   PhysicsSyncSystem,
+  PlayerHealthSystem,
   spawnVehicle,
   TimeOfDaySystem,
   Transform,
   Vehicle,
   VehicleSystems,
   ViewSyncSystem,
+  WantedSystem,
 } from './game';
 import type { GameEvents } from './game';
 import { KeyboardMouseInput } from './input';
@@ -58,6 +60,9 @@ export interface BootStatus {
     /** World position at the minimap's centre. */
     mapX: number | null;
     mapZ: number | null;
+    /** Player health 0..100 and the wanted stars lit on screen (T0028). */
+    health: number | null;
+    wanted: number | null;
   };
   error: string | null;
 }
@@ -79,7 +84,7 @@ const status: BootStatus = {
   bodies: 0,
   vehicle: null,
   collisions: 0,
-  hud: { speed: null, mission: null, objective: null, mapX: null, mapZ: null },
+  hud: { speed: null, mission: null, objective: null, mapX: null, mapZ: null, health: null, wanted: null },
   error: null,
 };
 window.__neon = status;
@@ -152,6 +157,8 @@ async function boot(): Promise<void> {
   for (const sys of VehicleSystems()) world.addSystem(sys);
   world.addSystem(TimeOfDaySystem);
   world.addSystem(CheckpointRunSystem());
+  world.addSystem(WantedSystem());
+  world.addSystem(PlayerHealthSystem());
   for (const sys of ChaseCameraSystem()) world.addSystem(sys);
   world.addSystem(ViewSyncSystem);
   await world.init(services);
@@ -197,6 +204,8 @@ async function boot(): Promise<void> {
     status.hud.objective = m.mission?.objective ?? null;
     status.hud.mapX = m.player ? hud.minimap.centre.x : null;
     status.hud.mapZ = m.player ? hud.minimap.centre.z : null;
+    status.hud.health = m.status ? Math.ceil(m.status.health * 100) : null;
+    status.hud.wanted = m.status ? hud.status.wantedShown : null;
   };
   render.setTimeOfDay(services.time.hours);
 

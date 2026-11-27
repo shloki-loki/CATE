@@ -103,3 +103,31 @@ export interface MissionStatusData {
   banner: string | null;
 }
 export const MissionStatus = defineComponent<MissionStatusData>('MissionStatus');
+
+/**
+ * The player's wanted level (T0028). One entity, written by game/wanted, read by the HUD
+ * bridge. `stars` is what the HUD shows (0..5); `heat` is the exact score behind it.
+ */
+export interface WantedLevelData {
+  /** 0..MAX_WANTED_STARS, always floor(heat) capped at the maximum. */
+  stars: number;
+  heat: number;
+  /** Seconds since the last offence. */
+  quiet: number;
+  /** Seconds until the next star is lost, or null at zero stars. */
+  coolDownIn: number | null;
+  /** Bumped whenever the star count goes up (the HUD flashes once). */
+  revision: number;
+  /** Offences counted since boot (each counted crash is one). */
+  offences: number;
+}
+export const WantedLevel = defineComponent<WantedLevelData>('WantedLevel');
+
+/**
+ * The player's own health (T0028), separate from their car's damage. One entity with
+ * this marker and a Health component, created by game/shared's PlayerHealthSystem
+ * until the on-foot character (T0021/T0026) owns its Health.
+ */
+export const PlayerRecord = defineComponent<{ maxHp: number; maxArmor: number; hurtAt: number }>(
+  'PlayerRecord',
+);

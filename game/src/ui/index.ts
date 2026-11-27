@@ -9,6 +9,7 @@ export {
   type HudPlayer,
   type MinimapBlip,
   type MissionHud,
+  type StatusHud,
 } from './hud/hudModel';
 export {
   clampToDisc,
@@ -24,3 +25,4 @@ export {
   type MinimapView,
 } from './hud/minimap';
 export { formatDistance, formatTime, MissionPanel } from './hud/missionPanel';
+export { LOW_HEALTH, StatusPanel } from './hud/statusPanel';

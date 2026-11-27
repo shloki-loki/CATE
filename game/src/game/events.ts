@@ -19,6 +19,8 @@ export interface GameEvents {
   damage: { target: Entity; amount: number; source: Entity | null; kind: string };
   death: { entity: Entity; cause: string };
   zoneEntered: { zone: string };
+  /** The player's wanted level changed (T0028). `cause` is 'crash', 'police' or 'cooldown'. */
+  wantedChanged: { stars: number; previous: number; cause: string };
   missionStarted: { id: string };
   /** The player reached step `step` (1-based) of `steps`. */
   missionStep: { id: string; step: number; steps: number };
