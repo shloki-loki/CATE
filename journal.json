@@ -1178,6 +1178,15 @@
    "title": "Reviewed T0021: pass (88)",
    "detail": "",
    "ref": "T0021"
+  },
+  {
+   "id": "J0132",
+   "at": "2026-11-27T14:20:51+05:30",
+   "by": "claude-2",
+   "kind": "review",
+   "title": "Reviewed T0020: pass (90)",
+   "detail": "",
+   "ref": "T0020"
   }
  ]
 }
