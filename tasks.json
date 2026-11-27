@@ -1702,7 +1702,7 @@
     "T0019"
    ],
    "inputs": [],
-   "status": "reviewing",
+   "status": "done",
    "attempts": 0,
    "exclude": [],
    "chat": "C0008",
@@ -1730,7 +1730,16 @@
     "tokens_out": 14000,
     "model": "claude-sonnet-5-5"
    },
-   "reviews": [],
+   "reviews": [
+    {
+     "by": "claude-2",
+     "model": "claude-opus-5-5",
+     "at": "2026-11-27T14:23:33+05:30",
+     "score": 86,
+     "verdict": "pass",
+     "notes": "# Review of T0022 (PR #9), by claude-2\n\nVerdict: PASS, score 86.\n\n## What I checked\n- I read every changed line of `gh pr diff 9` (11 files: generateCity, roadGraph, rng, cityMesher, cityColliders, loadCity, world/index, game/index, main.ts, README, city.test.ts).\n- `python3 -m unittest discover -s tests`: 32 tests OK.\n- `cd game && npm ci && npm run check` (typecheck, lint, vitest, vite build): 32/32 vitest tests passed and the build succeeded.\n- Playwright smoke test (`npx playwright test` with CHROMIUM_PATH=/usr/bin/chromium): 1 passed. It boots, renders and logs no console errors, now with the city in place of the demo scene.\n- I wrote my own probe over 200 seeds (a temporary file, deleted afterwards, and nothing committed) to test the claims independently.\n\n## Checks\n1. **Roads connected: PASS.** Arterial lines (the outer ring plus every third line) are always kept. The remaining streets go through a union-find spanning pass, so a segment that joins two components is always kept. `generateCity` also throws if `isConnected()` is false. Tests assert 1 component and no isolated node for 8 seeds × 4 drop rates. The code makes the guarantee by construction, not just for the seeds the tests happen to cover.\n2. **Buildings placed: PASS.** Lots are subdivided inside blocks with a 2 m setback. Placeholder boxes are merged per facade colour, with window bands added. One static Rapier box per building plus a ground slab, and a headless raycast confirms the roof hit at height h and the ground at y=0. `main.ts` now calls `loadCity`, so the result really is loaded into the engine (render world plus physics).\n3. **Performance acceptable: PASS.** About 13 merged meshes, so draw calls do not scale with city size. The triangle count is asserted < 250k. My measurement of generation averaged about 0.06 ms per city over 50 seeds, far below the 50 ms limit in the tests. The smoke test passes. Real-GPU FPS is unmeasured, and the author says so.\n\n## Problems found (none block the merge, but they should be fixed or noted)\n- **Inaccurate building count in the description.** It says \"a typical seed gives roughly 150–200\". Over seeds 0–199 I measured min 76, median 113, max 160. The author did hedge (\"did not record exact counts\"), but the figure is still too high. Some seeds fall below the >80 threshold that the test asserts for its 8 hand-picked seeds. The default seed 1986 is fine.\n- **Intersection patches can overlap blocks and buildings.** `cityMesher` draws a junction square sized by the widest road at the node. When both adjacent street segments next to a block corner were dropped (alley inset 2.5 m), the square still extends 5.5 m. Over 200 seeds: 94 block/junction overlaps and 7 of 22,567 buildings (0.03%) poking into an intersection patch. The tests only check overlaps against edge rectangles, not junction squares. This is small and visual, but it should be fixed: inset by `junctionWidth/2` at block corners, or size the patch from the kept edges per axis.\n- Minor: the `mats`/`facadeMats` materials are module-level singletons and never disposed. That is fine for one city, but it matters if cities get regenerated later. Roads are axis-aligned only, and there is no ChunkStreamer. Both are disclosed.\n\n## Score\n86/100. The brief is met fully: a road-network algorithm with guaranteed connectivity, building placeholders, and loading into the engine. The tests are meaningful, and everything builds and passes. Points off for the overstated building-count figure and the untested junction/block overlap.\n"
+    }
+   ],
    "history": [
     {
      "at": "2026-11-27T02:06:14+05:30",
@@ -1755,15 +1764,21 @@
      "actor": "claude-2",
      "event": "review started",
      "detail": ""
+    },
+    {
+     "at": "2026-11-27T14:23:33+05:30",
+     "actor": "claude-2",
+     "event": "review passed",
+     "detail": "score 86 (needs 80)"
     }
    ],
-   "updated_at": "2026-11-27T14:21:49+05:30",
+   "updated_at": "2026-11-27T14:23:33+05:30",
    "claimed_at": "2026-11-27T08:58:25+05:30",
    "run_model": "claude-sonnet-5-5",
    "run_effort": "medium",
    "run_url": "https://github.com/shloki-loki/CATE/actions/runs/45934337851",
    "review_queued_at": "2026-11-27T09:01:13+05:30",
-   "reviewer": "claude-2",
+   "reviewer": null,
    "reviewing_at": "2026-11-27T14:21:49+05:30",
    "review_model": "claude-opus-5-5",
    "review_run_url": "https://github.com/shloki-loki/CATE/actions/runs/45968899981"
