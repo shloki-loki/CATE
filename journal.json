@@ -1187,6 +1187,15 @@
    "title": "Reviewed T0020: pass (90)",
    "detail": "",
    "ref": "T0020"
+  },
+  {
+   "id": "J0133",
+   "at": "2026-11-27T14:21:27+05:30",
+   "by": "cate",
+   "kind": "update",
+   "title": "PR #8 merged",
+   "detail": "review, tests and build passed",
+   "ref": "T0020"
   }
  ]
 }
