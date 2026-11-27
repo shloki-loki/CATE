@@ -1385,6 +1385,15 @@
    "title": "PR #12 blocked",
    "detail": "it conflicts with main",
    "ref": "T0026"
+  },
+  {
+   "id": "J0155",
+   "at": "2026-11-28T01:08:55+05:30",
+   "by": "claude-1",
+   "kind": "claim",
+   "title": "Took T0027: Procedural City Generation",
+   "detail": "",
+   "ref": "T0027"
   }
  ]
 }
