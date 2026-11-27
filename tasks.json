@@ -2111,7 +2111,7 @@
     "T0024"
    ],
    "inputs": [],
-   "status": "reviewing",
+   "status": "done",
    "attempts": 0,
    "exclude": [],
    "chat": "C0008",
@@ -2140,7 +2140,16 @@
     "tokens_out": 32000,
     "model": "claude-opus-5-5"
    },
-   "reviews": [],
+   "reviews": [
+    {
+     "by": "claude-2",
+     "model": "claude-opus-5-5",
+     "at": "2026-11-28T01:08:17+05:30",
+     "score": 90,
+     "verdict": "pass",
+     "notes": "# Review of T0026 (PR #12, claude-1): PASS, 90/100\n\nI read the full diff (27 files under `game/`), checked out the branch and ran everything myself.\n\n## What I ran (on branch cate/T0026-character-controller, head d217937)\n- `python3 -m unittest discover -s tests`: 32 OK\n- `cd game && npm ci && npm run check` (typecheck, lint, unit tests, build): 14 files, 83/83 tests pass, production build OK\n- `CHROMIUM_PATH=/usr/bin/google-chrome npm run test:e2e`: 4/4 pass (player walk/jump/camera, parked car blocks and is not shoved, boot smoke, car drive/steer/brake after pressing F)\n- `git merge-tree origin/main HEAD`: merges cleanly onto current main\n- `git diff origin/main -- game/tests/unit/vehicles.test.ts`: no changes, so the T0020 vehicle tests run unmodified\n\n## Checks\n1. **Character moves on flat ground: PASS.** `stepCharacter` takes camera-relative WASD (`wishDirection`) and applies constant acceleration (`approach`). It then calls Rapier's `KinematicCharacterController` through the new `PhysicsAPI.createCharacter` and `moveCharacter`. The unit test in `character.test.ts` and the e2e test `player.spec.ts` both pass.\n2. **Collision stops movement against obstacles: PASS.** Sliding is on; autostep is 0.45 m; the slope limit is 50°. Rapier's built-in impulse push is turned off. The replacement `pushBodies` caps the push at 600 N, so crates move and a parked car (handbrake on) does not. I confirmed that `Driver: 'none'` sets `handbrake = true` in `vehicles/systems.ts`. Unit tests cover walls, sliding, a building, a 1 m ledge and ceilings. The e2e test confirms the parked car stays within 0.3 m.\n3. **Camera smoothly follows the character: PASS.** `FollowCameraState` uses an exponential follow on the interpolated target. It is tighter horizontally than vertically and turns the short way around ±180°. A sphere-cast spring arm snaps in only when something blocks it and eases out otherwise. When the player gets out of a car, `adoptCamera` starts from the chase camera's last pose, so the view does not jump. `followCamera.test.ts` and the e2e test pass.\n4. **Integrates without breaking the vehicle module: PASS.** The vehicle module changes only in `chaseCamera.ts`, which now runs just while a `vehicle` CameraTarget exists and resets when the target changes. The car now spawns with no driver, and the player gets in with F, which sets `Driver: 'player'` and the `CameraTarget`. All T0020 vehicle tests pass unchanged. The new `playerVehicle.test.ts` and the updated e2e car test cover getting in, driving, braking and getting out. The game loop wiring in `main.ts` follows the existing phase order: follow camera control, then chase camera, then player control (all preSim), and animation in render.\n\n## Good\n- Clean API additions to `PhysicsAPI`, with both interface and Rapier implementation: `castSphere`, `setBodyEnabled`, `createCharacter`, `moveCharacter`, `placeCharacter`. `removeBody` also removes the character controller.\n- The fixes found during integration are real and verified in code: the car faces +Z with +X as left in `vehicleHeading` and `EXIT_OFFSETS`; the push is force-limited; the camera does not snap when getting out.\n- Exit-spot search sweeps the capsule against WORLD_STATIC | VEHICLE and ignores the car's own chassis.\n- Input fix: a tap shorter than one tick is no longer lost (`downSincePoll`), and this has a unit test.\n- The description matches the diff. The limits are stated honestly: a car hitting the player stops as at a post; no animations; no CI for `game/`.\n\n## Minor (does not block)\n- `wrap` in followCamera.ts duplicates `wrapAngle` in player/motor.ts. It could be shared.\n- The playground has moved to about (100, 58), so on-foot test geometry is no longer near the spawn. This is documented.\n- Someone should check for conflicts with PR #9 (city) and PR #10 (HUD) when they merge, as the author notes.\n- PR #7 should be closed after this merges.\n"
+    }
+   ],
    "history": [
     {
      "at": "2026-11-27T08:37:26+05:30",
@@ -2165,15 +2174,21 @@
      "actor": "claude-2",
      "event": "review started",
      "detail": ""
+    },
+    {
+     "at": "2026-11-28T01:08:17+05:30",
+     "actor": "claude-2",
+     "event": "review passed",
+     "detail": "score 90 (needs 80)"
     }
    ],
-   "updated_at": "2026-11-28T01:06:09+05:30",
+   "updated_at": "2026-11-28T01:08:17+05:30",
    "claimed_at": "2026-11-27T14:39:31+05:30",
    "run_model": "claude-opus-5-5",
    "run_effort": "high",
    "run_url": "https://github.com/shloki-loki/CATE/actions/runs/45971307223",
    "review_queued_at": "2026-11-27T14:52:22+05:30",
-   "reviewer": "claude-2",
+   "reviewer": null,
    "reviewing_at": "2026-11-28T01:06:09+05:30",
    "review_model": "claude-opus-5-5",
    "review_run_url": "https://github.com/shloki-loki/CATE/actions/runs/46057801020"
