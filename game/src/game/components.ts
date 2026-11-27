@@ -85,3 +85,21 @@ export const CameraTarget = defineComponent<{ preset: 'vehicle' | 'onFoot' }>('C
 export const Blip = defineComponent<{ icon: string; color: string }>('Blip');
 /** Entity is removed together with its streamed chunk. */
 export const Streamed = defineComponent<{ chunkId: string }>('Streamed');
+
+/**
+ * The running mission as the HUD shows it (T0023). Written by game/missions on one
+ * entity, read by game/shared/hud.ts. Same shape as ui's MissionHud.
+ */
+export interface MissionStatusData {
+  id: string;
+  /** Bumped whenever the objective changes (the HUD flashes once). */
+  revision: number;
+  title: string;
+  objective: string;
+  step: number;
+  steps: number;
+  target: { x: number; z: number } | null;
+  elapsed: number | null;
+  banner: string | null;
+}
+export const MissionStatus = defineComponent<MissionStatusData>('MissionStatus');

@@ -1,6 +1,7 @@
 import { Euler, Quaternion } from 'three';
 import type { Entity } from '../../core';
 import type { GameWorld, Services } from '../../services';
+import type { MapRect, MinimapMap } from '../../ui';
 import { CollisionGroup } from '../../physics';
 import { makeTransform, PrevTransform, RigidBody, Transform, View } from '../components';
 import { buildingView, crateView, groundView, palmView, roadView } from './demoView';
@@ -24,6 +25,8 @@ const BLOCK = 36;
 export interface DemoScene {
   dynamic: Entity[];
   buildings: number;
+  /** Top-down layout for the minimap (same numbers as the meshes and colliders). */
+  map: MinimapMap;
 }
 
 /**
@@ -50,7 +53,19 @@ export function createDemoScene(world: GameWorld, s: Services, seed = 1986): Dem
   // Roads every 2 blocks in both directions.
   const step = BLOCK * 2 + ROAD_WIDTH;
   const roadLines = [-step, 0, step];
+  const map: MinimapMap = {
+    bounds: { minX: -half, minZ: -half, maxX: half, maxZ: half },
+    outside: 'water',
+    // Matches groundView: a 60 m beach strip on the east edge, the sea beyond it.
+    areas: [{ kind: 'sand', x: half - 30, z: 0, w: 60, d: WORLD_SIZE }],
+    roads: [],
+    buildings: [],
+  };
+  const buildingRects: MapRect[] = map.buildings;
   for (const c of roadLines) {
+    // The minimap draws roads with square caps, so stop half a width short of the beach.
+    map.roads.push({ ax: -half, az: c, bx: half - 60 - ROAD_WIDTH / 2, bz: c, width: ROAD_WIDTH });
+    map.roads.push({ ax: c, az: -half, bx: c, bz: half, width: ROAD_WIDTH });
     const rx = roadView(WORLD_SIZE - 60, ROAD_WIDTH, true);
     rx.position.set(-30, 0, c);
     const rz = roadView(WORLD_SIZE, ROAD_WIDTH, false);
@@ -86,6 +101,7 @@ export function createDemoScene(world: GameWorld, s: Services, seed = 1986): Dem
         const v = buildingView(w, h, d, Math.floor(rand() * 6));
         v.position.set(x, 0, z);
         s.render.addToWorld(v, 'static');
+        buildingRects.push({ x, z, w, d });
         buildings++;
       }
     }
@@ -148,5 +164,5 @@ export function createDemoScene(world: GameWorld, s: Services, seed = 1986): Dem
     );
   }
 
-  return { dynamic, buildings };
+  return { dynamic, buildings, map };
 }
