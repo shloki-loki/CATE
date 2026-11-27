@@ -2037,7 +2037,7 @@
     "T0024"
    ],
    "inputs": [],
-   "status": "claimed",
+   "status": "review",
    "attempts": 0,
    "exclude": [],
    "chat": "C0008",
@@ -2056,8 +2056,16 @@
    "created_by": "owner (chat)",
    "created_at": "2026-11-27T08:37:26+05:30",
    "queued_at": "2026-11-27T08:37:26+05:30",
-   "claimed_by": "claude-1",
-   "result": null,
+   "claimed_by": null,
+   "result": {
+    "by": "claude-1",
+    "at": "2026-11-27T14:52:22+05:30",
+    "file": "outputs/T0026.md",
+    "text": "# T0026: Character controller (done)\n\n**Pull request: https://github.com/shloki-loki/CATE/pull/12** (branch `cate/T0026-character-controller`, targets `main`; the owner reviews and merges)\n\n**It replaces PR #7.** The character controller from T0021 (PR #7) could not merge because it conflicts with the vehicle PR #8. This PR merges that work onto current `main`, resolves the conflicts, and wires the character to the real T0020 vehicles. PR #7 can be closed once #12 is merged.\n\n## What it does (in `game/`)\n- **Movement:**\n  - A capsule driven by Rapier's `KinematicCharacterController`.\n  - WASD moves relative to the camera. Jog 4.6 m/s, Shift to sprint at 7.2 m/s, with smooth acceleration.\n  - It steps up curbs and stairs up to 0.45 m and climbs slopes up to 50°.\n- **Jumping:** Space jumps 1.15 m. A jump still works for a moment after walking off a ledge, and a press just before landing is remembered. Hitting a ceiling stops the rise.\n- **Collision:**\n  - Walls, buildings and parked cars block the player, who slides along them.\n  - Crates get pushed. The push is capped at 600 N, so a parked car stays put.\n- **Camera:**\n  - On foot, a spring-arm follow camera with mouse look and zoom. It sweeps a sphere so it never goes inside walls.\n  - In a car, T0020's chase camera takes over. Getting out hands the view back with no cut.\n- **Game loop:** the player and camera systems are added in `main.ts` in the existing phase order.\n- **Vehicles:** the player starts on foot beside the sports car. F gets in and the car drives as before; F gets out on the driver side. Exit spots that are blocked by a building or another car are skipped. The empty car holds its handbrake.\n\n## Fixes found while integrating\n- **Car direction mix-up:** T0021 assumed cars face -Z, but T0020 cars face +Z with +X as their left side. The player's facing after getting out and the side they got out on were both mirrored. Fixed.\n- **Pushing:** Rapier's built-in pushing shoved a parked 1.4 t car about 3 m when the player walked into it. The new integration test caught this. It is replaced by the force-limited push.\n- **Camera snap on getting out:** the spring arm snapped in instantly whenever it got shorter, which made the camera jump 2.7 m when leaving a car. Now only a real obstruction snaps it; otherwise it eases.\n\n## Evidence for each check\n- **Character moves on flat ground:**\n  - Unit test (headless, real Rapier, same systems and order as `main.ts`): W moves the player more than 7 m in 2 s. It stays on a straight line within 5 cm and at ground height within 2 cm, then returns to `idle`.\n  - Browser test (production build, headless Chrome): holding W runs the player forward in a straight line.\n- **Collision stops movement against obstacles:**\n  - Unit tests: walls block and slide; 5 s of sprinting into a building does not get through; a 1 m wall needs a jump; ceilings stop jumps.\n  - Strafing into the parked sports car for 2 s stops at its side, and the car moves less than 0.3 m.\n  - Browser test: the same push into the parked car is blocked, and the car is still at its parked spot (within 0.3 m).\n- **Camera smoothly follows the character:**\n  - Unit tests: the camera stays behind; while running, no frame-to-frame step is larger than 2× the per-tick run distance.\n  - Handing the view back after getting out moves the camera at most 0.6 m per frame (measured about 0.16 m); the FOV goes back to 60°.\n  - Older T0021 tests cover the short-way turn across ±180° and the snap after a teleport.\n  - Browser test: the camera stays behind the running player, and a mouse drag orbits it.\n- **Controller integrates without breaking the vehicle module:**\n  - All 28 T0020 vehicle unit tests pass unchanged.\n  - New integration test: the player gets in with F; the car reaches more than 40 km/h with the player riding along and the chase camera behind it; it brakes to a stop; the player gets out on the driver side; the car then ignores the throttle.\n  - The browser car test now presses F first, then drives, steers and brakes. It also checks getting out.\n\n## Tests run in this job\n- `npm run check` (typecheck, lint, unit tests, build): **83/83 pass**, 14 test files.\n- `CHROMIUM_PATH=/usr/bin/google-chrome npm run test:e2e`: **4/4 pass**.\n- `python3 -m unittest discover -s tests`: 32 OK.\n- `prettier --check`: clean.\n- I also looked at screenshots of the running build: the player beside the car, the in-car chase view, and the player standing at the driver door after getting out.\n\n## Limits\n- **Cars hitting the player:** a moving car that hits the on-foot player stops as if it hit a post, because the capsule is kinematic. Knockdown and damage are for the combat or pedestrian tasks.\n- **No animations:** there is no get-in or get-out animation, and the mannequin is still a placeholder (T0018). No gamepad.\n- **Playground location:** the T0021 on-foot playground (stairs, ramps, ledge) is now at about (100, 58), east of downtown, rather than at the spawn.\n- **No CI for `game/`:** agents cannot edit `.github/workflows/`; all tests above were run locally.\n- **Other open PRs:** I did not check whether PR #9 (procedural city) or PR #10 (HUD) conflict with this branch. Both touch the demo scene and `main.ts`, so whichever merges later may need a rebase.\n",
+    "tokens_in": 260000,
+    "tokens_out": 32000,
+    "model": "claude-opus-5-5"
+   },
    "reviews": [],
    "history": [
     {
@@ -2071,13 +2079,20 @@
      "actor": "claude-1",
      "event": "claimed",
      "detail": "Opus 5.5"
+    },
+    {
+     "at": "2026-11-27T14:52:22+05:30",
+     "actor": "claude-1",
+     "event": "submitted for review",
+     "detail": "292,000 tokens"
     }
    ],
-   "updated_at": "2026-11-27T14:39:31+05:30",
+   "updated_at": "2026-11-27T14:52:22+05:30",
    "claimed_at": "2026-11-27T14:39:31+05:30",
    "run_model": "claude-opus-5-5",
    "run_effort": "high",
-   "run_url": "https://github.com/shloki-loki/CATE/actions/runs/45971307223"
+   "run_url": "https://github.com/shloki-loki/CATE/actions/runs/45971307223",
+   "review_queued_at": "2026-11-27T14:52:22+05:30"
   },
   {
    "id": "T0027",

@@ -1295,6 +1295,15 @@
    "title": "Finished T0025: Implement Vehicle Physics",
    "detail": "355,000 tokens; now review",
    "ref": "T0025"
+  },
+  {
+   "id": "J0145",
+   "at": "2026-11-27T14:52:22+05:30",
+   "by": "claude-1",
+   "kind": "submit",
+   "title": "Finished T0026: Implement Character Controller",
+   "detail": "292,000 tokens; now review",
+   "ref": "T0026"
   }
  ]
 }
