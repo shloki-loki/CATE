@@ -1544,7 +1544,7 @@
     "T0019"
    ],
    "inputs": [],
-   "status": "claimed",
+   "status": "review",
    "attempts": 0,
    "exclude": [],
    "chat": "C0008",
@@ -1562,8 +1562,16 @@
    "created_by": "owner (chat)",
    "created_at": "2026-11-27T02:06:14+05:30",
    "queued_at": "2026-11-27T02:06:14+05:30",
-   "claimed_by": "claude-2",
-   "result": null,
+   "claimed_by": null,
+   "result": {
+    "by": "claude-2",
+    "at": "2026-11-27T08:54:13+05:30",
+    "file": "outputs/T0021.md",
+    "text": "# T0021: Character Controller (done)\n\n**Pull request:** https://github.com/shloki-loki/CATE/pull/7 (branch `cate/T0021-character-controller`, opened against `main`, not merged).\n\n## What was built (in `game/`)\n- **Physics:** a kinematic capsule driven by Rapier's `KinematicCharacterController`, through new `PhysicsAPI` methods: `createCharacter`, `moveCharacter`, `placeCharacter`, `castSphere` and `setBodyEnabled`. It steps up curbs and stairs (up to 0.45 m), walks up slopes up to 50° and slides down steeper ones, stays snapped to the ground, slides along walls and pushes crates.\n- **Player** (`src/game/player/`):\n  - Movement is relative to the camera. Speed ramps up and down at a constant rate: jog 4.6 m/s, Shift to sprint at 7.2 m/s. The body turns smoothly toward the direction of movement.\n  - Space jumps 1.15 m. A jump still works for a moment after walking off a ledge, and a press just before landing is remembered. Hitting a ceiling stops the rise. Falling out of the world respawns you.\n  - A state machine on the `Character` component.\n  - F enters or exits the nearest vehicle, or fires an `interact` event for an `Interactable`.\n  - A placeholder mannequin with a procedural walk/run cycle.\n- **Follow camera** (`src/game/camera/followCamera.ts`):\n  - Spring arm behind the player, following the interpolated position with light smoothing.\n  - Mouse look (click to capture the mouse, or drag) and wheel zoom.\n  - A sphere sweep against buildings and ground pulls the camera in at once when something is in the way, so it never goes inside walls. When the player is in a car it follows the car.\n- **Input bug fixed:** a quick tap between two simulation ticks used to be lost (Space did not jump during slow frames).\n- **Demo:** the player spawns next to a small test playground (stairs, ramps, steep slope, 1 m ledge, low roof, wall, crates). The demo car can be entered with F; it cannot be driven until T0020.\n- The README documents the controls, the API, and the enter/exit contract for T0020 (`Driver`/`occupants`/`vehicleEntered`/`vehicleExited`/`CameraRig.follow`).\n\n## Against the checks\n- **Movement smooth:**\n  - A unit test checks that speed never changes by more than the acceleration allows in one 60 Hz tick.\n  - This test caught a real problem, which I fixed. Pushing the capsule down while grounded made Rapier drop whole ticks of movement, which would show as a hitch. Separately, using the post-collision speed as the next speed stopped the capsule on curbs.\n  - Rendering interpolates between ticks.\n- **Camera follows:**\n  - Unit tests: it sits behind and looks at the player; it follows a sprinting target with no backward motion, no jumps and less than 0.5 m of lag; it turns the short way across ±180°; it snaps after a teleport.\n  - Browser test: the camera stays behind the running player, and a mouse drag swings it around the player.\n- **Environment collision works:** unit tests with real Rapier cover:\n  - walls block and slide; 5 s of sprinting into a 40 m building does not get through;\n  - stairs and curbs are climbed, but a 1 m wall is not unless you jump;\n  - ceilings stop a jump; gentle ramps can be climbed and steep ones cannot;\n  - crates get pushed; vehicle exit picks the free side when one side is against a wall;\n  - the camera is never inside a building or under the ground.\n\n## Testing (all run in this job)\n- `npm run check` (typecheck, lint, unit tests, build): 52/52 unit tests pass, 26 of them new.\n- `npm run test:e2e` with system Chrome (SwiftShader): 2/2 pass. One is the existing smoke test. The new `player.spec.ts` drives the production build with real keyboard and mouse events (walk, idle, jump, orbit) and checks there are no console errors.\n- `python3 -m unittest discover -s tests`: 32 OK.\n- I also looked at screenshots of the running build: the camera is behind the mannequin, the stairs are climbed and the crates get pushed.\n\n## Limitations and notes\n- No on-screen interaction prompt yet: the text is in `Character.prompt` for the HUD task (T0023).\n- The mannequin is a primitive placeholder until T0018's character model. No gamepad yet.\n- T0020 (vehicles) is being built at the same time and edits some of the same files (`PhysicsAPI.ts`, `RapierPhysics.ts`, `components.ts`, `main.ts`, `demo/index.ts`). My changes there are additions only, but whichever PR merges second may need a small rebase.\n",
+    "tokens_in": 420000,
+    "tokens_out": 45000,
+    "model": "claude-opus-5-5"
+   },
    "reviews": [],
    "history": [
     {
@@ -1577,13 +1585,20 @@
      "actor": "claude-2",
      "event": "claimed",
      "detail": "Opus 5.5"
+    },
+    {
+     "at": "2026-11-27T08:54:13+05:30",
+     "actor": "claude-2",
+     "event": "submitted for review",
+     "detail": "465,000 tokens"
     }
    ],
-   "updated_at": "2026-11-27T08:36:43+05:30",
+   "updated_at": "2026-11-27T08:54:13+05:30",
    "claimed_at": "2026-11-27T08:36:43+05:30",
    "run_model": "claude-opus-5-5",
    "run_effort": "high",
-   "run_url": "https://github.com/shloki-loki/CATE/actions/runs/45932197922"
+   "run_url": "https://github.com/shloki-loki/CATE/actions/runs/45932197922",
+   "review_queued_at": "2026-11-27T08:54:13+05:30"
   },
   {
    "id": "T0022",
