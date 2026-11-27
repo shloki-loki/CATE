@@ -775,6 +775,151 @@
      "text": "please continue",
      "at": "2026-11-27T08:35:01+05:30",
      "files": []
+    },
+    {
+     "id": "M0017",
+     "at": "2026-11-27T08:35:09+05:30",
+     "role": "supervisor",
+     "by": "supervisor (openai/gpt-oss-120b)",
+     "text": "Continuing from the current status, here is a concise plan that moves the browser‑based GTA‑style game forward. The work is split across all the models you selected, matching task complexity to each model’s capability. Each step includes clear checks and cross‑reviews where the output matters.",
+     "plan": {
+      "summary": "Advance browser GTA‑style game development using all selected models",
+      "steps": [
+       {
+        "title": "Review Asset Pipeline Design",
+        "kind": "review",
+        "agent": "claude-1",
+        "model": "claude-opus-5-5",
+        "modelLabel": "Opus 5.5",
+        "brief": "Read the Asset Pipeline Design (T0018) and confirm it covers glTF export, compression, naming, and integration with the Three.js + Rapier stack. Mark as approved or request fixes.",
+        "review": "cross",
+        "checks": [
+         "Design includes glTF 2.0 specs",
+         "Compression method (meshopt) described",
+         "Pipeline steps from creation to runtime are ordered",
+         "Compatibility with Three.js and Rapier verified"
+        ],
+        "after": [],
+        "inputs": []
+       },
+       {
+        "title": "Implement Vehicle Physics",
+        "kind": "code",
+        "agent": "gpt-1",
+        "model": "gpt-6.2-astra",
+        "modelLabel": "GPT-6.2 Astra",
+        "brief": "Add a vehicle physics module using Rapier: wheel colliders, suspension, steering, acceleration, braking. Export a `Vehicle` class usable from the game loop.",
+        "review": "cross",
+        "checks": [
+         "Vehicle can be instantiated and added to scene",
+         "Basic forward/reverse and steering work in a test arena",
+         "Physics bodies are correctly synchronized with Three.js meshes",
+         "No runtime errors during a 30‑second drive test"
+        ],
+        "after": [
+         0
+        ],
+        "inputs": []
+       },
+       {
+        "title": "Implement Character Controller",
+        "kind": "code",
+        "agent": "gpt-1",
+        "model": "gpt-6.2-astra",
+        "modelLabel": "GPT-6.2 Astra",
+        "brief": "Create a third‑person character controller: movement, jumping, collision with Rapier, and camera follow. Hook into the existing game loop.",
+        "review": "cross",
+        "checks": [
+         "Character moves on flat ground",
+         "Collision stops movement against obstacles",
+         "Camera smoothly follows the character",
+         "Controller integrates without breaking the vehicle module"
+        ],
+        "after": [
+         0
+        ],
+        "inputs": []
+       },
+       {
+        "title": "Procedural City Generation",
+        "kind": "code",
+        "agent": "claude-1",
+        "model": "claude-opus-5-5",
+        "modelLabel": "Opus 5.5",
+        "brief": "Generate a simple grid‑based city layout (blocks, streets, building footprints) at runtime. Export geometry as glTF meshes compatible with the asset pipeline.",
+        "review": "cross",
+        "checks": [
+         "City loads within 5 seconds",
+         "Streets are navigable by vehicle and character",
+         "Building meshes follow the naming convention from T0018",
+         "No overlapping geometry"
+        ],
+        "after": [
+         1,
+         2
+        ],
+        "inputs": []
+       },
+       {
+        "title": "UI and HUD",
+        "kind": "code",
+        "agent": "claude-2",
+        "model": "claude-opus-5-5",
+        "modelLabel": "Opus 5.5",
+        "brief": "Add a minimal HUD: speedometer, mini‑map, health/wanted level indicators. Use HTML/CSS overlay on the canvas.",
+        "review": "cross",
+        "checks": [
+         "Speed updates in real time",
+         "Mini‑map shows player position",
+         "Wanted level increments on collisions",
+         "Responsive layout on common browsers"
+        ],
+        "after": [
+         1,
+         2
+        ],
+        "inputs": []
+       },
+       {
+        "title": "Generate Building Assets",
+        "kind": "code",
+        "agent": "gpt-1",
+        "model": "gpt-6.2-astra",
+        "modelLabel": "GPT-6.2 Astra",
+        "brief": "Procedurally create low‑poly building meshes and textures (JSON‑driven) and export as glTF files for the city generator to consume.",
+        "review": "cross",
+        "checks": [
+         "At least 10 distinct building variants",
+         "Textures are UV‑mapped correctly",
+         "File size per building < 200 KB",
+         "Assets load without errors in the browser"
+        ],
+        "after": [
+         3
+        ],
+        "inputs": []
+       },
+       {
+        "title": "Generate Vehicle Assets",
+        "kind": "code",
+        "agent": "gpt-1",
+        "model": "gpt-6.2-astra",
+        "modelLabel": "GPT-6.2 Astra",
+        "brief": "Create a set of simple vehicle models (car, bike, truck) with separate wheel nodes for the physics module. Export as glTF.",
+        "review": "cross",
+        "checks": [
+         "Wheel nodes named wheel_FL/FR/RL/RR",
+         "Materials include basic albedo and metalness",
+         "Each model < 150 KB",
+         "Vehicles load and attach to the physics class without crashes"
+        ],
+        "after": [
+         3
+        ],
+        "inputs": []
+       }
+      ]
+     }
     }
    ],
    "selection": [
@@ -839,7 +984,7 @@
      "kind": ""
     }
    ],
-   "updated_at": "2026-11-27T08:35:01+05:30"
+   "updated_at": "2026-11-27T08:35:09+05:30"
   }
  ],
  "usage": {
@@ -847,7 +992,7 @@
    "groq": 8
   },
   "2026-11-27": {
-   "groq": 6
+   "groq": 7
   }
  }
 }
