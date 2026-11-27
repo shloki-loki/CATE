@@ -1628,7 +1628,7 @@
     "T0019"
    ],
    "inputs": [],
-   "status": "claimed",
+   "status": "review",
    "attempts": 0,
    "exclude": [],
    "chat": "C0008",
@@ -1646,8 +1646,16 @@
    "created_by": "owner (chat)",
    "created_at": "2026-11-27T02:06:14+05:30",
    "queued_at": "2026-11-27T02:06:14+05:30",
-   "claimed_by": "claude-1",
-   "result": null,
+   "claimed_by": null,
+   "result": {
+    "by": "claude-1",
+    "at": "2026-11-27T09:01:13+05:30",
+    "file": "outputs/T0022.md",
+    "text": "# T0022 — Procedural city generation\n\nPull request: https://github.com/shloki-loki/CATE/pull/9 (branch `cate/T0022-procedural-city`)\n\n## What was built (game/src/game/world/)\n- `generateCity.ts` (pure, seeded): irregular 6x6 grid of intersections. The outer ring and every third line are wide arterials (16 m). The rest are streets (11 m). A random spanning tree plus most of the remaining segments are kept, so the network is always connected. Dropped streets leave 5 m alleys between blocks. Blocks are split into lots, and some blocks become parks. Buildings get taller toward the centre (downtown, midrise and suburb).\n- `roadGraph.ts`: `RoadGraph` with nodes, edges, `isConnected()`, `componentCount()` and `nearestNode()`.\n- `cityMesher.ts`: roads, intersections, dashed centre lines, sidewalks, parks, ground/beach/sea and buildings, merged by material (placeholder boxes with window bands).\n- `cityColliders.ts`: one ground slab plus one static box collider per building.\n- `loadCity.ts`: generates the city and loads meshes into the render world and colliders into Rapier. `main.ts` now calls it in place of the demo scene (the demo is kept so its test still runs).\n\n## Checks\n- Roads connected: tests assert exactly 1 connected component for 8 seeds at drop rates 0, 0.18, 0.6 and 0.95, and no isolated node.\n- Buildings placed: the default city has more than 80 buildings (a typical seed gives roughly 150–200; I did not record exact counts). Tests verify no building overlaps a road or another building across 8 seeds. A headless Rapier ray hits a roof at its building height and the ground at y=0.\n- Performance: the whole city renders as fewer than 20 merged meshes (draw calls do not grow with city size) and fewer than 250k triangles. Generation takes under 50 ms on average, and generate + load takes under 2 s in the test (both limits are asserted).\n\n## How I tested\n- `npm run check` in game/ (typecheck, lint, 32 unit tests including the module-boundary rules, vite build): all passed.\n- Playwright smoke test with system Chromium (`CHROMIUM_PATH=/usr/bin/chromium`): passed. It boots, renders a non-blank scene and logs no console errors.\n- `python3 -m unittest discover -s tests`: 32 tests OK.\n\n## Limits (stated honestly)\n- Roads are axis-aligned, with no curves or diagonals.\n- There is no ChunkStreamer: the city (about 330 m across) loads whole.\n- Buildings are placeholder boxes. Real models come from T0018.\n- I did not visually inspect a screenshot of the city, and I measured real GPU frame rate only through the smoke test's pass criteria. Frame rate on real hardware is unmeasured.\n",
+    "tokens_in": 60000,
+    "tokens_out": 14000,
+    "model": "claude-sonnet-5-5"
+   },
    "reviews": [],
    "history": [
     {
@@ -1661,13 +1669,20 @@
      "actor": "claude-1",
      "event": "claimed",
      "detail": "Sonnet 5.5"
+    },
+    {
+     "at": "2026-11-27T09:01:13+05:30",
+     "actor": "claude-1",
+     "event": "submitted for review",
+     "detail": "74,000 tokens"
     }
    ],
-   "updated_at": "2026-11-27T08:58:25+05:30",
+   "updated_at": "2026-11-27T09:01:13+05:30",
    "claimed_at": "2026-11-27T08:58:25+05:30",
    "run_model": "claude-sonnet-5-5",
    "run_effort": "medium",
-   "run_url": "https://github.com/shloki-loki/CATE/actions/runs/45934337851"
+   "run_url": "https://github.com/shloki-loki/CATE/actions/runs/45934337851",
+   "review_queued_at": "2026-11-27T09:01:13+05:30"
   },
   {
    "id": "T0023",
