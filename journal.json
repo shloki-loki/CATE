@@ -1376,6 +1376,15 @@
    "title": "Reviewed T0026: pass (90)",
    "detail": "",
    "ref": "T0026"
+  },
+  {
+   "id": "J0154",
+   "at": "2026-11-28T01:08:39+05:30",
+   "by": "cate",
+   "kind": "update",
+   "title": "PR #12 blocked",
+   "detail": "it conflicts with main",
+   "ref": "T0026"
   }
  ]
 }
