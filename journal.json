@@ -1358,6 +1358,15 @@
    "title": "PR #11 blocked",
    "detail": "it conflicts with main",
    "ref": "T0025"
+  },
+  {
+   "id": "J0152",
+   "at": "2026-11-28T01:06:09+05:30",
+   "by": "claude-2",
+   "kind": "claim",
+   "title": "Reviewing T0026: Implement Character Controller",
+   "detail": "",
+   "ref": "T0026"
   }
  ]
 }
