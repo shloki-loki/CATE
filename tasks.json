@@ -1876,9 +1876,15 @@
      "actor": "claude-2",
      "event": "review passed",
      "detail": "score 90 (needs 80)"
+    },
+    {
+     "at": "2026-11-28T01:05:45+05:30",
+     "actor": "cate",
+     "event": "pull request #10 merged",
+     "detail": "review, tests and build passed"
     }
    ],
-   "updated_at": "2026-11-28T01:05:21+05:30",
+   "updated_at": "2026-11-28T01:05:45+05:30",
    "claimed_at": "2026-11-27T14:21:48+05:30",
    "run_model": "claude-opus-5-5",
    "run_effort": "high",
@@ -1887,7 +1893,13 @@
    "reviewer": null,
    "reviewing_at": "2026-11-28T01:02:16+05:30",
    "review_model": "claude-opus-5-5",
-   "review_run_url": "https://github.com/shloki-loki/CATE/actions/runs/46057365251"
+   "review_run_url": "https://github.com/shloki-loki/CATE/actions/runs/46057365251",
+   "merge": {
+    "pr": 10,
+    "status": "merged",
+    "detail": "review, tests and build passed",
+    "at": "2026-11-28T01:05:45+05:30"
+   }
   },
   {
    "id": "T0024",
