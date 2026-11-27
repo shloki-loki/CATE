@@ -68,8 +68,8 @@ game/
       events.ts      ALL event types
       shared/        physics step/sync, view sync, time-of-day systems
       camera/        debug orbit camera (replaced by T0020/T0021 cameras)
-      demo/          the skeleton scene (replaced by T0022's procedural city)
-      world/ player/ vehicles/ ai/ combat/ wanted/ missions/ save/   (owned by later tasks)
+      demo/          the skeleton scene (kept for tests; the game now loads the T0022 city)
+      world/ (procedural city, T0022) player/ vehicles/ ai/ combat/ wanted/ missions/ save/   (owned by later tasks)
   tests/
     unit/            Vitest
     e2e/             Playwright smoke test

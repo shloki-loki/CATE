@@ -6,7 +6,7 @@ import { AssetRegistry } from './assets';
 import { NullAudio } from './audio';
 import { createClock, EventBus, GameLoop, log, Settings, TimeOfDay, World } from './core';
 import {
-  createDemoScene,
+  loadCity,
   OrbitCameraSystem,
   PhysicsStepSystem,
   PhysicsSyncSystem,
@@ -121,8 +121,10 @@ async function boot(): Promise<void> {
   world.addSystem(ViewSyncSystem);
   await world.init(services);
 
-  const scene = createDemoScene(world, services);
-  log.info(`demo scene: ${scene.buildings} buildings, ${scene.dynamic.length} dynamic bodies`);
+  const { city } = loadCity(services);
+  log.info(
+    `city: ${city.roads.nodes.length} intersections, ${city.roads.edges.length} roads, ${city.buildings.length} buildings`,
+  );
   render.setTimeOfDay(services.time.hours);
 
   const overlay = new DebugOverlay(app, true);
