@@ -4,12 +4,19 @@ import type { Quaternion, Vector3 } from 'three';
  * Physics contract (T0016 §4.3). Only src/physics/rapier/ talks to Rapier;
  * everyone else uses this interface.
  *
- * T0019 implements bodies, transforms, impulses and raycasts. Vehicles
- * (T0020: createVehicle/setVehicleInput/getVehicleState), characters
- * (T0021: createCharacter/moveCharacter), shape casts and contact events are
- * added to this interface by those tasks.
+ * T0019 implements bodies, transforms, impulses and raycasts. T0020 adds
+ * raycast vehicles (createVehicle/setVehicleControls/getVehicleState), body
+ * velocities and contact events. Characters (T0021: createCharacter/moveCharacter)
+ * and shape casts are added by later tasks.
  */
 export type BodyHandle = number & { readonly __brand: 'Body' };
+export type VehicleHandle = number & { readonly __brand: 'Vehicle' };
+
+export interface Vec3 {
+  x: number;
+  y: number;
+  z: number;
+}
 
 /** Collision groups (bit index). Rapier allows 16. */
 export const CollisionGroup = {
@@ -46,6 +53,8 @@ export interface BodyDesc {
   restitution?: number;
   /** Enable continuous collision detection (fast cars, projectiles). */
   ccd?: boolean;
+  /** Report contacts of this body whose summed force exceeds this many newtons (see PhysicsAPI.contacts). */
+  contactForceThreshold?: number;
 }
 
 export interface Transform {
@@ -60,6 +69,93 @@ export interface RayHit {
   normal: { x: number; y: number; z: number };
 }
 
+/**
+ * One wheel of a raycast vehicle, in chassis space. The chassis body's local axes are
+ * +X left, +Y up, +Z forward (the glTF convention used by the assets, T0016 §3.8).
+ */
+export interface WheelDesc {
+  /** Suspension mount point (top of the suspension) in chassis space. */
+  connection: Vec3;
+  radius: number;
+  /** Suspension length at rest (m). */
+  restLength: number;
+  /** Maximum compression from rest (m). */
+  maxTravel: number;
+  /** Spring stiffness, scaled by chassis mass like Bullet's btRaycastVehicle (typical 20-60). */
+  stiffness: number;
+  /** Damping while compressing / extending (typical 0.2-0.5 x 2*sqrt(stiffness)). */
+  compression: number;
+  relaxation: number;
+  /** Longitudinal friction coefficient (tyre grip; ~1-2 for road tyres in this model). */
+  frictionSlip: number;
+  /** Lateral grip relative to longitudinal (1 = same). */
+  sideFrictionStiffness: number;
+  /** Cap on the suspension force (N). */
+  maxSuspensionForce: number;
+}
+
+export interface VehicleDesc {
+  position: Vec3;
+  rotation?: { x: number; y: number; z: number; w: number };
+  /** Chassis collision box half extents and its offset from the body origin. */
+  chassisHalfExtents: Vec3;
+  chassisOffset?: Vec3;
+  mass: number;
+  /** Centre of mass relative to the body origin. Keep it low for stability. */
+  centerOfMass?: Vec3;
+  wheels: WheelDesc[];
+  friction?: number;
+  restitution?: number;
+  /** Small angular damping keeps airborne cars from spinning forever. */
+  angularDamping?: number;
+  /** Contact-force threshold (N) for collision reporting. Default 2000 N. */
+  contactForceThreshold?: number;
+  group?: number;
+  collidesWith?: number;
+}
+
+/** Per-wheel command for one tick. Forces are in newtons, steering in radians (+ = left). */
+export interface WheelControl {
+  engineForce: number;
+  brakeForce: number;
+  steering: number;
+  /** Multiplier on the wheel's side grip this tick (handbrake slides). Default 1. */
+  sideGrip?: number;
+}
+
+export interface WheelState {
+  inContact: boolean;
+  /** Current suspension length (m), for drawing the wheel. */
+  suspensionLength: number;
+  /** Accumulated spin angle (rad). */
+  rotation: number;
+  steering: number;
+  /** Impulses the tyre applied last step (N*s): forward (traction/braking) and sideways (cornering). */
+  forwardImpulse: number;
+  sideImpulse: number;
+  suspensionForce: number;
+}
+
+export interface VehicleState {
+  /** Signed speed along the chassis forward axis (m/s). */
+  forwardSpeed: number;
+  /** World-space linear velocity (m/s). */
+  velocity: Vec3;
+  angularVelocity: Vec3;
+  wheels: WheelState[];
+}
+
+/** A contact whose force crossed a body's threshold during the last step. */
+export interface ContactEvent {
+  a: BodyHandle | null;
+  b: BodyHandle | null;
+  /** Summed contact force magnitude (N) and the matching impulse (N*s = force * dt). */
+  force: number;
+  impulse: number;
+  /** A world-space contact point, if the pair still touches after the step. */
+  point: Vec3 | null;
+}
+
 export interface PhysicsAPI {
   /** Loads the physics WASM. Must resolve before anything else is called. */
   init(): Promise<void>;
@@ -70,6 +166,19 @@ export interface PhysicsAPI {
   getTransform(h: BodyHandle, out: Transform): Transform;
   setTransform(h: BodyHandle, t: Transform): void;
   applyImpulse(h: BodyHandle, impulse: { x: number; y: number; z: number }): void;
+  /** Writes into `out` and returns it. */
+  getLinearVelocity(h: BodyHandle, out: Vec3): Vec3;
+  setVelocity(h: BodyHandle, linear: Vec3, angular: Vec3): void;
+
+  /** Raycast vehicle (T0020): a dynamic chassis body plus suspension/tyre rays. */
+  createVehicle(d: VehicleDesc): { vehicle: VehicleHandle; body: BodyHandle };
+  removeVehicle(v: VehicleHandle): void;
+  /** Commands applied on every following step until changed. `wheels[i]` matches VehicleDesc.wheels[i]. */
+  setVehicleControls(v: VehicleHandle, wheels: readonly WheelControl[]): void;
+  /** Writes into `out` (reusing its arrays) and returns it. */
+  getVehicleState(v: VehicleHandle, out: VehicleState): VehicleState;
+  /** Contacts reported during the last step() (cleared at the start of each step). */
+  readonly contacts: readonly ContactEvent[];
   raycast(
     from: { x: number; y: number; z: number },
     dir: { x: number; y: number; z: number },
@@ -77,5 +186,6 @@ export interface PhysicsAPI {
     mask?: number,
   ): RayHit | null;
   readonly bodyCount: number;
+  readonly vehicleCount: number;
   dispose(): void;
 }

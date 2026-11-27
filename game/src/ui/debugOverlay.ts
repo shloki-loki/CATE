@@ -38,7 +38,7 @@ export class DebugOverlay {
     this.el.textContent =
       `${s.fps.toFixed(0)} fps | ${s.drawCalls} draws | ${(s.triangles / 1000).toFixed(1)}k tris\n` +
       `${s.bodies} bodies | ${s.entities} entities | ${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')} | ${s.quality}\n` +
-      `drag: look | wheel: zoom | WASD: move | F3: hide`;
+      `WASD/arrows: drive | Space: handbrake | R: reset car | drag: look | wheel: zoom | F3: hide`;
   }
 
   dispose(): void {

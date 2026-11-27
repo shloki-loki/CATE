@@ -12,7 +12,8 @@ export interface Vec3Like {
 
 export interface GameEvents {
   [key: string]: unknown;
-  collision: { a: Entity; b: Entity; impulse: number; point: Vec3Like };
+  /** A hard contact. `b` is null when `a` hit static world geometry (buildings, ground). */
+  collision: { a: Entity; b: Entity | null; impulse: number; point: Vec3Like | null };
   vehicleEntered: { entity: Entity; vehicle: Entity; stolen: boolean };
   vehicleExited: { entity: Entity; vehicle: Entity };
   damage: { target: Entity; amount: number; source: Entity | null; kind: string };

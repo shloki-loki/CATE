@@ -27,9 +27,17 @@ npm run build
 npm run preview    # http://localhost:4173
 ```
 
-Controls in the skeleton scene: drag with the mouse to orbit, mouse wheel to
-zoom, WASD/arrow keys to move the view, Shift to move faster, F3 to toggle
-the debug overlay.
+Controls (you start in a sports car on the avenue, facing the central crossing):
+
+| Key                 | Action                                                   |
+| ------------------- | -------------------------------------------------------- |
+| W / Up              | Throttle                                                 |
+| S / Down            | Brake; hold it at a standstill to reverse (max ~30 km/h) |
+| A / D, Left / Right | Steer                                                    |
+| Space               | Handbrake (locks the rear and lets the tail slide)       |
+| R                   | Put the car back on its wheels (when nearly stopped)     |
+| Mouse drag / wheel  | Look around the car / zoom (recenters after 1.5 s)       |
+| F3                  | Toggle the debug overlay                                 |
 
 ## Scripts
 
@@ -67,9 +75,10 @@ game/
       components.ts  ALL shared component types
       events.ts      ALL event types
       shared/        physics step/sync, view sync, time-of-day systems
-      camera/        debug orbit camera (replaced by T0020/T0021 cameras)
+      camera/        chase camera for vehicles (T0020); debug orbit camera (unused, kept for debugging)
+      vehicles/      VehicleDef data, DriveController, spawn, drive/collision/damage systems, car view (T0020)
       demo/          the skeleton scene (replaced by T0022's procedural city)
-      world/ player/ vehicles/ ai/ combat/ wanted/ missions/ save/   (owned by later tasks)
+      world/ player/ ai/ combat/ wanted/ missions/ save/   (owned by later tasks)
   tests/
     unit/            Vitest
     e2e/             Playwright smoke test
@@ -100,3 +109,24 @@ frame with interpolation:
 - F3 overlay: fps, draw calls, triangles, physics bodies, entities, game time.
 - `window.__neon`: read-only boot status (all builds; used by the smoke test).
 - `window.__game`: full `{ services, world, loop }` handle in dev builds only.
+
+## Vehicles (T0020)
+
+Cars use Rapier's `DynamicRayCastVehicleController` (raycast suspension and tyre
+friction) behind `PhysicsAPI.createVehicle / setVehicleControls / getVehicleState`.
+All handling is data in `src/game/vehicles/defs.ts` (five classes: compact, sports,
+sedan, van, police). `drive.ts` turns throttle/brake/steer/handbrake into per-wheel
+forces: torque curve, automatic gearbox, rev limiter, engine braking, brake bias,
+reverse on held brake, speed-sensitive and rate-limited steering with Ackermann
+geometry, and a parking brake. The vehicle systems add air drag and rolling
+resistance, turn Rapier contact-force events into `collision` events (with `b = null`
+for static world geometry), and apply collision `damage` (a wrecked car loses drive
+and emits `death`). The chassis uses continuous collision detection, so fast cars do
+not tunnel through thin walls.
+
+`tests/unit/vehicles.test.ts` checks headless at 60 Hz that 0-100 km/h times,
+top speeds and 100-0 km/h braking distances are in realistic ranges for each class,
+and that full-lock cornering at 100 km/h does not roll any class over.
+
+To tune a car, edit its def and run `npm test`. The plausibility tests will flag
+values that are out of range.

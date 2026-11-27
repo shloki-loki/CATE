@@ -2,15 +2,23 @@
  * Boot only (T0016 §4.1): check the browser, build services, create the world,
  * start the loop. No game logic lives here.
  */
+import { Vector3 } from 'three';
 import { AssetRegistry } from './assets';
 import { NullAudio } from './audio';
 import { createClock, EventBus, GameLoop, log, Settings, TimeOfDay, World } from './core';
 import {
+  ChaseCameraSystem,
   createDemoScene,
-  OrbitCameraSystem,
+  Driver,
+  getVehicleDef,
   PhysicsStepSystem,
   PhysicsSyncSystem,
+  spawnVehicle,
   TimeOfDaySystem,
+  Transform,
+  Vehicle,
+  VehicleSystems,
+  VehicleTelemetry,
   ViewSyncSystem,
 } from './game';
 import type { GameEvents } from './game';
@@ -18,7 +26,7 @@ import { KeyboardMouseInput } from './input';
 import { RapierPhysics } from './physics';
 import { hasWebGL2, ThreeRenderer } from './render';
 import type { Services } from './services';
-import { DebugOverlay, showFatal } from './ui';
+import { DebugOverlay, showFatal, Speedometer, type SpeedoModel } from './ui';
 import './style.css';
 
 /** Read-only status for the smoke test and for humans in DevTools (all builds). */
@@ -29,6 +37,19 @@ export interface BootStatus {
   drawCalls: number;
   triangles: number;
   bodies: number;
+  /** The player's car (T0020), for the smoke test and DevTools. */
+  vehicle: {
+    x: number;
+    y: number;
+    z: number;
+    heading: number;
+    speedKmh: number;
+    gear: number;
+    health: number;
+    upY: number;
+  } | null;
+  /** `collision` events seen since boot. */
+  collisions: number;
   error: string | null;
 }
 
@@ -47,6 +68,8 @@ const status: BootStatus = {
   drawCalls: 0,
   triangles: 0,
   bodies: 0,
+  vehicle: null,
+  collisions: 0,
   error: null,
 };
 window.__neon = status;
@@ -116,13 +139,57 @@ async function boot(): Promise<void> {
   world.addSystem(inputPoll);
   world.addSystem(PhysicsStepSystem);
   world.addSystem(PhysicsSyncSystem);
+  for (const sys of VehicleSystems()) world.addSystem(sys);
   world.addSystem(TimeOfDaySystem);
-  for (const sys of OrbitCameraSystem()) world.addSystem(sys);
+  for (const sys of ChaseCameraSystem()) world.addSystem(sys);
   world.addSystem(ViewSyncSystem);
   await world.init(services);
 
   const scene = createDemoScene(world, services);
-  log.info(`demo scene: ${scene.buildings} buildings, ${scene.dynamic.length} dynamic bodies`);
+  // The player's car on the north-south avenue, facing the central crossing (-Z),
+  // with parked cars to weave through or crash into. The crates sit at the crossing.
+  const player = spawnVehicle(world, services, 'sports', -3, 0, 45, { driver: 'player', yaw: Math.PI });
+  spawnVehicle(world, services, 'police', 3.5, 0, 28, { yaw: 0 });
+  spawnVehicle(world, services, 'van', 3.5, 0, 62, { yaw: 0 });
+  spawnVehicle(world, services, 'compact', -3, 0, 80, { yaw: Math.PI });
+  spawnVehicle(world, services, 'sedan', -3, 0, -40, { yaw: Math.PI });
+  log.info(
+    `demo scene: ${scene.buildings} buildings, ${scene.dynamic.length} crates, ${physics.vehicleCount} vehicles`,
+  );
+  services.events.on('collision', () => status.collisions++);
+  const speedo = new Speedometer(app);
+  const speedoModel: SpeedoModel = { speedKmh: 0, gear: 1, rpm: 0, redlineRpm: 1, health: 1 };
+  const fwd = new Vector3();
+  const up = new Vector3();
+  const readPlayerVehicle = (): void => {
+    const e = world.isAlive(player) && world.get(player, Driver)?.mode === 'player' ? player : null;
+    const tel = e === null ? undefined : world.get(e, VehicleTelemetry);
+    if (e === null || !tel) {
+      status.vehicle = null;
+      speedo.update(null);
+      return;
+    }
+    const v = world.require(e, Vehicle);
+    const t = world.require(e, Transform);
+    fwd.set(0, 0, 1).applyQuaternion(t.quaternion);
+    up.set(0, 1, 0).applyQuaternion(t.quaternion);
+    speedoModel.speedKmh = tel.speed * 3.6;
+    speedoModel.gear = tel.drive.gear;
+    speedoModel.rpm = tel.drive.rpm;
+    speedoModel.redlineRpm = getVehicleDef(v.defId).engine.redlineRpm;
+    speedoModel.health = v.health / v.maxHealth;
+    speedo.update(speedoModel);
+    status.vehicle = {
+      x: t.position.x,
+      y: t.position.y,
+      z: t.position.z,
+      heading: Math.atan2(fwd.x, fwd.z),
+      speedKmh: speedoModel.speedKmh,
+      gear: tel.drive.gear,
+      health: v.health,
+      upY: up.y,
+    };
+  };
   render.setTimeOfDay(services.time.hours);
 
   const overlay = new DebugOverlay(app, true);
@@ -148,6 +215,7 @@ async function boot(): Promise<void> {
       status.drawCalls = st.drawCalls;
       status.triangles = st.triangles;
       status.bodies = physics.bodyCount;
+      readPlayerVehicle();
       overlay.update(frameDt, {
         fps,
         drawCalls: st.drawCalls,
