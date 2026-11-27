@@ -1241,6 +1241,15 @@
    "title": "Finished T0023: UI and HUD",
    "detail": "290,000 tokens; now review",
    "ref": "T0023"
+  },
+  {
+   "id": "J0139",
+   "at": "2026-11-27T14:37:48+05:30",
+   "by": "cate",
+   "kind": "update",
+   "title": "PR #9 blocked",
+   "detail": "it conflicts with main",
+   "ref": "T0022"
   }
  ]
 }
