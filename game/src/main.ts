@@ -9,8 +9,10 @@ import { createClock, EventBus, GameLoop, log, Settings, TimeOfDay, World } from
 import {
   ChaseCameraSystem,
   CheckpointRunSystem,
-  createDemoScene,
+  cityMinimap,
   Driver,
+  generateCity,
+  loadCity,
   PhysicsStepSystem,
   PhysicsSyncSystem,
   spawnVehicle,
@@ -19,6 +21,7 @@ import {
   Vehicle,
   VehicleSystems,
   ViewSyncSystem,
+  WARMUP_LAP,
 } from './game';
 import type { GameEvents } from './game';
 import { KeyboardMouseInput } from './input';
@@ -50,6 +53,17 @@ export interface BootStatus {
   } | null;
   /** `collision` events seen since boot. */
   collisions: number;
+  /** The procedural city (T0027): what was generated and how long loading it took. */
+  city: {
+    seed: number;
+    buildings: number;
+    roads: number;
+    chunks: number;
+    /** Generate + build meshes + create colliders, in milliseconds. */
+    loadMs: number;
+    /** From navigation start until the city was in the scene, in milliseconds. */
+    readyAtMs: number;
+  } | null;
   /** What the HUD shows (T0023), for the smoke test and DevTools. */
   hud: {
     speed: string | null;
@@ -79,6 +93,7 @@ const status: BootStatus = {
   bodies: 0,
   vehicle: null,
   collisions: 0,
+  city: null,
   hud: { speed: null, mission: null, objective: null, mapX: null, mapZ: null },
   error: null,
 };
@@ -151,25 +166,42 @@ async function boot(): Promise<void> {
   world.addSystem(PhysicsSyncSystem);
   for (const sys of VehicleSystems()) world.addSystem(sys);
   world.addSystem(TimeOfDaySystem);
-  world.addSystem(CheckpointRunSystem());
+  // The city is pure data first (fast), so the warm-up lap can follow its arterials.
+  const city = generateCity();
+  world.addSystem(CheckpointRunSystem({ ...WARMUP_LAP, checkpoints: city.lap }));
   for (const sys of ChaseCameraSystem()) world.addSystem(sys);
   world.addSystem(ViewSyncSystem);
   await world.init(services);
 
-  const scene = createDemoScene(world, services);
-  // The player's car on the north-south avenue, facing the central crossing (-Z),
-  // with parked cars to weave through or crash into. The crates sit at the crossing.
-  const player = spawnVehicle(world, services, 'sports', -3, 0, 45, { driver: 'player', yaw: Math.PI });
-  spawnVehicle(world, services, 'police', 3.5, 0, 28, { yaw: 0 });
-  spawnVehicle(world, services, 'van', 3.5, 0, 62, { yaw: 0 });
-  spawnVehicle(world, services, 'compact', -3, 0, 80, { yaw: Math.PI });
-  spawnVehicle(world, services, 'sedan', -3, 0, -40, { yaw: Math.PI });
+  const loaded = loadCity(services, city);
+  status.city = {
+    seed: city.seed,
+    buildings: city.buildings.length,
+    roads: city.roads.edges.length,
+    chunks: city.chunks.length,
+    loadMs: Math.round(loaded.timings.total),
+    readyAtMs: Math.round(performance.now()),
+  };
+  // The player's car on an arterial, facing north (-Z) towards the first checkpoint,
+  // with parked cars at the kerbs.
+  let player: number | null = null;
+  for (const sp of city.spawnPoints) {
+    const e = spawnVehicle(world, services, sp.vehicle, sp.x, 0, sp.z, {
+      yaw: sp.yaw,
+      ...(sp.kind === 'player' ? { driver: 'player' as const } : {}),
+    });
+    if (sp.kind === 'player') player = e;
+  }
+  if (player === null) throw new Error('city has no player spawn point');
   log.info(
-    `demo scene: ${scene.buildings} buildings, ${scene.dynamic.length} crates, ${physics.vehicleCount} vehicles`,
+    `city seed ${city.seed}: ${city.buildings.length} buildings, ${city.roads.edges.length} roads, ` +
+      `${city.chunks.length} chunks, ${loaded.bodies.length} static bodies, loaded in ${Math.round(loaded.timings.total)} ms ` +
+      `(generate ${Math.round(loaded.timings.generate)}, meshes ${Math.round(loaded.timings.mesh)}, colliders ${Math.round(loaded.timings.colliders)}); ` +
+      `${physics.vehicleCount} vehicles`,
   );
   services.events.on('collision', () => status.collisions++);
   const hud = new Hud(app);
-  hud.setMap(scene.map);
+  hud.setMap(cityMinimap(city));
   const readHud = createHudReader(world);
   const up = new Vector3();
   const updateHud = (frameDt: number): void => {

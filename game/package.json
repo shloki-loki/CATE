@@ -18,6 +18,7 @@
     "format:check": "prettier --check .",
     "test": "vitest run",
     "test:e2e": "playwright test",
+    "city:export": "node tools/export-city.mjs",
     "check": "npm run typecheck && npm run lint && npm run test && vite build"
   },
   "dependencies": {
@@ -31,6 +32,7 @@
     "@types/three": "0.187.0",
     "eslint": "10.15.0",
     "globals": "17.14.0",
+    "gltf-validator": "2.0.0-dev.3.10",
     "prettier": "3.10.1",
     "typescript": "6.0.3",
     "typescript-eslint": "8.74.0",
