@@ -1491,7 +1491,7 @@
     "T0019"
    ],
    "inputs": [],
-   "status": "claimed",
+   "status": "review",
    "attempts": 0,
    "exclude": [],
    "chat": "C0008",
@@ -1509,8 +1509,16 @@
    "created_by": "owner (chat)",
    "created_at": "2026-11-27T02:06:14+05:30",
    "queued_at": "2026-11-27T02:06:14+05:30",
-   "claimed_by": "claude-1",
-   "result": null,
+   "claimed_by": null,
+   "result": {
+    "by": "claude-1",
+    "at": "2026-11-27T08:57:44+05:30",
+    "file": "outputs/T0020.md",
+    "text": "# T0020: Vehicle physics — done\n\n**Pull request: https://github.com/shloki-loki/CATE/pull/8** (branch `cate/T0020-vehicle-physics`, targets `main`; the owner reviews and merges)\n\nThe game is now drivable in the browser. You start in a sports car on the avenue, with four parked cars and the crates at the crossing to drive through or crash into. Controls: W/S throttle and brake (hold S at a standstill to reverse), A/D steer, Space handbrake, R to put the car back on its wheels, mouse drag to look, F3 for the overlay.\n\n**Physics engine:** the brief said \"Ammo.js or Cannon.js\". The approved architecture (T0016) picked **Rapier**, and the merged skeleton (T0019, PR #6) already runs on it. So I used Rapier's `DynamicRayCastVehicleController`, the same raycast-vehicle model as Ammo.js's `btRaycastVehicle`. Adding a second physics engine to the same world would not work well.\n\n## Evidence for each check\n- **Vehicle responds to input:**\n  - Headless tests: the car stays still with no input; drives forward on throttle; steers right and left the correct way; brakes from 100 km/h in 30–55 m (measured 38–53 m) and then reverses; R rights an upside-down car.\n  - In the real browser build (Playwright, headless Chromium): holding W takes it above 25 km/h, D turns it right, and S stops it. No console errors.\n- **Collision detection works:**\n  - A wall hit stops the car at the wall face (under 5 cm penetration), sends a `collision` event (other side `null` = static world) with a contact point, and applies damage.\n  - At 216 km/h the car does not pass through a 20 cm wall (continuous collision detection is on).\n  - Car into a parked car: both cars get the event and damage, and the parked car is shoved.\n  - Pushing against a wall sends no events and does no damage. A wrecked car emits `death` and loses drive.\n  - In the browser run, the car really hit a parked sedan (health 1000 → 802).\n- **Physics stable:**\n  - 30 s at rest: under 1 mm of movement per tick.\n  - Full-lock cornering at 100 km/h rolls none of the 5 classes over.\n  - A ramp jump of about 5 m plus kerbs lands upright.\n  - 2 minutes of random driving with 5 cars among walls: no NaN, nothing falls through the ground, no runaway speed.\n\nTest totals:\n- `npm run check`: typecheck, lint and build pass; 54/54 unit tests (28 of them new).\n- `npm run test:e2e`: 2/2 pass.\n- Repo Python tests: 32 OK.\n\nMeasured handling (headless, 60 Hz, flat ground):\n\n| class | 0–100 km/h | top speed | 100–0 km/h | steady cornering |\n|---|---|---|---|---|\n| compact | 9.2 s | 187 km/h | 43.2 m | 0.94 g |\n| sedan | 7.8 s | 211 km/h | 43.0 m | 0.90 g |\n| sports | 3.9 s | 288 km/h | 37.8 m | 1.10 g |\n| van | 11.9 s | 167 km/h | 53.1 m | 0.81 g |\n| police | 5.8 s | 239 km/h | 41.9 m | 0.97 g |\n\n## Limits\n- There is still **no CI job for `game/`**: agents cannot edit `.github/workflows/`. Everything above was run locally in this job.\n- Not done here:\n  - Wheels have no simulated spin of their own, so there is no wheelspin or ABS.\n  - Rapier's side-friction stiffness barely changes steady cornering. It is the friction-slip (`grip`) value that sets cornering, so the handbrake slide comes mainly from the locked rear.\n  - Damage is health only: no smoke, fire or deformation, and no engine sound.\n  - No lil-gui tuning panel, no headlights at night, no on-foot enter/exit (T0021).\n- Speeds and grip are tuned against typical real-car figures. I have not checked the feel on a real GPU or with a human driver; SwiftShader ran at about 6–34 fps.\n- The car models are placeholder boxes (T0018 will replace them). Paint is non-metallic until there is an environment map.\n\n\n",
+    "tokens_in": 420000,
+    "tokens_out": 60000,
+    "model": "claude-opus-5-5"
+   },
    "reviews": [],
    "history": [
     {
@@ -1524,13 +1532,20 @@
      "actor": "claude-1",
      "event": "claimed",
      "detail": "Opus 5.5"
+    },
+    {
+     "at": "2026-11-27T08:57:44+05:30",
+     "actor": "claude-1",
+     "event": "submitted for review",
+     "detail": "480,000 tokens"
     }
    ],
-   "updated_at": "2026-11-27T08:36:41+05:30",
+   "updated_at": "2026-11-27T08:57:44+05:30",
    "claimed_at": "2026-11-27T08:36:41+05:30",
    "run_model": "claude-opus-5-5",
    "run_effort": "high",
-   "run_url": "https://github.com/shloki-loki/CATE/actions/runs/45932197922"
+   "run_url": "https://github.com/shloki-loki/CATE/actions/runs/45932197922",
+   "review_queued_at": "2026-11-27T08:57:44+05:30"
   },
   {
    "id": "T0021",
