@@ -27,7 +27,8 @@ npm run build
 npm run preview    # http://localhost:4173
 ```
 
-Controls (you start in a sports car on the avenue, facing the central crossing):
+Controls (you start in a sports car on the avenue, facing the central crossing;
+drive through the yellow checkpoints for a timed warm-up lap):
 
 | Key                 | Action                                                   |
 | ------------------- | -------------------------------------------------------- |
@@ -70,7 +71,8 @@ game/
     render/          RenderAPI + Three.js WebGL2 renderer, lighting, view sync
     audio/           AudioAPI (NullAudio until the audio task)
     assets/          AssetAPI + manifest registry
-    ui/              DOM overlay (debug overlay, fatal screen)
+    ui/              DOM overlay: HUD (speedometer, minimap, mission panel), debug overlay, fatal screen
+    hudBridge.ts     builds the HudModel snapshot from the world each frame (joins game/ and ui/)
     game/
       components.ts  ALL shared component types
       events.ts      ALL event types
@@ -78,7 +80,8 @@ game/
       camera/        chase camera for vehicles (T0020); debug orbit camera (unused, kept for debugging)
       vehicles/      VehicleDef data, DriveController, spawn, drive/collision/damage systems, car view (T0020)
       demo/          the skeleton scene (replaced by T0022's procedural city)
-      world/ player/ ai/ combat/ wanted/ missions/ save/   (owned by later tasks)
+      missions/      checkpoint run (warm-up lap) feeding the HUD mission panel (T0023)
+      world/ player/ ai/ combat/ wanted/ save/   (owned by later tasks)
   tests/
     unit/            Vitest
     e2e/             Playwright smoke test
@@ -130,3 +133,33 @@ and that full-lock cornering at 100 km/h does not roll any class over.
 
 To tune a car, edit its def and run `npm test`. The plausibility tests will flag
 values that are out of range.
+
+## HUD (T0023)
+
+Plain DOM + CSS over the canvas, plus a 2D `<canvas>` minimap (T0016 §3.8). The HUD
+never imports `game/`: `src/hudBridge.ts` fills a `HudModel` snapshot once per render
+frame and `Hud.update(model, dt)` draws it.
+
+- **Speedometer** (bottom right, only in a car): speed in km/h, gear, rev bar, damage bar.
+- **Minimap** (bottom left): player-centred and heading-up (your direction of travel is
+  always up; the **N** marker rides the rim). It zooms out with speed. The static map
+  (roads, buildings, beach, sea) is drawn once into an off-screen canvas from the
+  `MinimapMap` layout the world provides (`createDemoScene(...).map` now; the procedural
+  city can pass its RoadGraph edges and building rects the same way), so a frame is one
+  `drawImage` plus the blips. The objective blip sticks to the rim when it is off the map.
+  Entities with a `Blip` component also appear on it.
+- **Mission panel** (top right; under the debug overlay on narrow windows): title, step
+  `n/N`, timer, objective text and distance to the objective. It flashes when the
+  objective changes, and a centred banner shows the result. Text nodes are only written
+  when their string changes, numbers use tabular figures (no jitter), and the HUD layer
+  has `pointer-events: none` so mouse look still works.
+- The mission source for now is `game/missions` `CheckpointRun` (the **warm-up lap**:
+  6 checkpoints, clock starts when you move, best time kept, restarts after 5 s). It
+  writes a `MissionStatus` component and emits `missionStarted`, `missionStep` and
+  `missionPassed`. The mission-system task replaces it with data-driven missions using
+  the same component.
+
+`window.__neon.hud` exposes what the HUD shows (speed text, mission, objective, minimap
+centre) for tests. `tests/e2e/hud.spec.ts` checks in Chromium that speed and minimap
+follow the car, the mission step advances at the first checkpoint, and that no two HUD
+elements overlap or leave the screen from 1920x1080 down to 800x500.

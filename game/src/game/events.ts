@@ -19,6 +19,10 @@ export interface GameEvents {
   damage: { target: Entity; amount: number; source: Entity | null; kind: string };
   death: { entity: Entity; cause: string };
   zoneEntered: { zone: string };
+  missionStarted: { id: string };
+  /** The player reached step `step` (1-based) of `steps`. */
+  missionStep: { id: string; step: number; steps: number };
+  missionPassed: { id: string; time: number; best: boolean };
   chunkLoaded: { chunkId: string };
   chunkUnloaded: { chunkId: string };
   'ui:pause': Record<string, never>;

@@ -8,9 +8,9 @@ import { NullAudio } from './audio';
 import { createClock, EventBus, GameLoop, log, Settings, TimeOfDay, World } from './core';
 import {
   ChaseCameraSystem,
+  CheckpointRunSystem,
   createDemoScene,
   Driver,
-  getVehicleDef,
   PhysicsStepSystem,
   PhysicsSyncSystem,
   spawnVehicle,
@@ -18,7 +18,6 @@ import {
   Transform,
   Vehicle,
   VehicleSystems,
-  VehicleTelemetry,
   ViewSyncSystem,
 } from './game';
 import type { GameEvents } from './game';
@@ -26,7 +25,8 @@ import { KeyboardMouseInput } from './input';
 import { RapierPhysics } from './physics';
 import { hasWebGL2, ThreeRenderer } from './render';
 import type { Services } from './services';
-import { DebugOverlay, showFatal, Speedometer, type SpeedoModel } from './ui';
+import { createHudReader } from './hudBridge';
+import { DebugOverlay, Hud, showFatal } from './ui';
 import './style.css';
 
 /** Read-only status for the smoke test and for humans in DevTools (all builds). */
@@ -50,6 +50,15 @@ export interface BootStatus {
   } | null;
   /** `collision` events seen since boot. */
   collisions: number;
+  /** What the HUD shows (T0023), for the smoke test and DevTools. */
+  hud: {
+    speed: string | null;
+    mission: string | null;
+    objective: string | null;
+    /** World position at the minimap's centre. */
+    mapX: number | null;
+    mapZ: number | null;
+  };
   error: string | null;
 }
 
@@ -70,6 +79,7 @@ const status: BootStatus = {
   bodies: 0,
   vehicle: null,
   collisions: 0,
+  hud: { speed: null, mission: null, objective: null, mapX: null, mapZ: null },
   error: null,
 };
 window.__neon = status;
@@ -141,6 +151,7 @@ async function boot(): Promise<void> {
   world.addSystem(PhysicsSyncSystem);
   for (const sys of VehicleSystems()) world.addSystem(sys);
   world.addSystem(TimeOfDaySystem);
+  world.addSystem(CheckpointRunSystem());
   for (const sys of ChaseCameraSystem()) world.addSystem(sys);
   world.addSystem(ViewSyncSystem);
   await world.init(services);
@@ -157,38 +168,35 @@ async function boot(): Promise<void> {
     `demo scene: ${scene.buildings} buildings, ${scene.dynamic.length} crates, ${physics.vehicleCount} vehicles`,
   );
   services.events.on('collision', () => status.collisions++);
-  const speedo = new Speedometer(app);
-  const speedoModel: SpeedoModel = { speedKmh: 0, gear: 1, rpm: 0, redlineRpm: 1, health: 1 };
-  const fwd = new Vector3();
+  const hud = new Hud(app);
+  hud.setMap(scene.map);
+  const readHud = createHudReader(world);
   const up = new Vector3();
-  const readPlayerVehicle = (): void => {
+  const updateHud = (frameDt: number): void => {
+    const m = readHud();
+    hud.update(m, frameDt);
     const e = world.isAlive(player) && world.get(player, Driver)?.mode === 'player' ? player : null;
-    const tel = e === null ? undefined : world.get(e, VehicleTelemetry);
-    if (e === null || !tel) {
+    if (e === null || !m.vehicle || !m.player) {
       status.vehicle = null;
-      speedo.update(null);
-      return;
+    } else {
+      const t = world.require(e, Transform);
+      up.set(0, 1, 0).applyQuaternion(t.quaternion);
+      status.vehicle = {
+        x: t.position.x,
+        y: t.position.y,
+        z: t.position.z,
+        heading: m.player.heading,
+        speedKmh: m.vehicle.speedKmh,
+        gear: m.vehicle.gear,
+        health: world.require(e, Vehicle).health,
+        upY: up.y,
+      };
     }
-    const v = world.require(e, Vehicle);
-    const t = world.require(e, Transform);
-    fwd.set(0, 0, 1).applyQuaternion(t.quaternion);
-    up.set(0, 1, 0).applyQuaternion(t.quaternion);
-    speedoModel.speedKmh = tel.speed * 3.6;
-    speedoModel.gear = tel.drive.gear;
-    speedoModel.rpm = tel.drive.rpm;
-    speedoModel.redlineRpm = getVehicleDef(v.defId).engine.redlineRpm;
-    speedoModel.health = v.health / v.maxHealth;
-    speedo.update(speedoModel);
-    status.vehicle = {
-      x: t.position.x,
-      y: t.position.y,
-      z: t.position.z,
-      heading: Math.atan2(fwd.x, fwd.z),
-      speedKmh: speedoModel.speedKmh,
-      gear: tel.drive.gear,
-      health: v.health,
-      upY: up.y,
-    };
+    status.hud.speed = m.vehicle ? String(Math.round(Math.abs(m.vehicle.speedKmh))) : null;
+    status.hud.mission = m.mission?.title ?? null;
+    status.hud.objective = m.mission?.objective ?? null;
+    status.hud.mapX = m.player ? hud.minimap.centre.x : null;
+    status.hud.mapZ = m.player ? hud.minimap.centre.z : null;
   };
   render.setTimeOfDay(services.time.hours);
 
@@ -215,7 +223,7 @@ async function boot(): Promise<void> {
       status.drawCalls = st.drawCalls;
       status.triangles = st.triangles;
       status.bodies = physics.bodyCount;
-      readPlayerVehicle();
+      updateHud(frameDt);
       overlay.update(frameDt, {
         fps,
         drawCalls: st.drawCalls,
