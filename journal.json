@@ -1070,6 +1070,15 @@
    "title": "Took T0020: Vehicle Physics Implementation",
    "detail": "",
    "ref": "T0020"
+  },
+  {
+   "id": "J0120",
+   "at": "2026-11-27T08:36:43+05:30",
+   "by": "claude-2",
+   "kind": "claim",
+   "title": "Took T0021: Character Controller",
+   "detail": "",
+   "ref": "T0021"
   }
  ]
 }
