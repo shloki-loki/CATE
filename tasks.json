@@ -1672,6 +1672,314 @@
     }
    ],
    "updated_at": "2026-11-27T02:06:14+05:30"
+  },
+  {
+   "id": "T0024",
+   "title": "Review Asset Pipeline Design",
+   "brief": "Read the Asset Pipeline Design (T0018) and confirm it covers glTF export, compression, naming, and integration with the Three.js + Rapier stack. Mark as approved or request fixes.",
+   "kind": "review",
+   "prefer": "agent:claude-1",
+   "model": "claude-opus-5-5",
+   "priority": 2,
+   "after": [],
+   "inputs": [],
+   "status": "queued",
+   "attempts": 0,
+   "exclude": [],
+   "chat": "C0008",
+   "group": "",
+   "review": {
+    "mode": "cross",
+    "pass_score": 80,
+    "checks": [
+     "Design includes glTF 2.0 specs",
+     "Compression method (meshopt) described",
+     "Pipeline steps from creation to runtime are ordered",
+     "Compatibility with Three.js and Rapier verified"
+    ]
+   },
+   "parent": null,
+   "created_by": "owner (chat)",
+   "created_at": "2026-11-27T08:37:26+05:30",
+   "queued_at": "2026-11-27T08:37:26+05:30",
+   "claimed_by": null,
+   "result": null,
+   "reviews": [],
+   "history": [
+    {
+     "at": "2026-11-27T08:37:26+05:30",
+     "actor": "owner",
+     "event": "created",
+     "detail": "claude-opus-5-5"
+    }
+   ],
+   "updated_at": "2026-11-27T08:37:26+05:30"
+  },
+  {
+   "id": "T0025",
+   "title": "Implement Vehicle Physics",
+   "brief": "Add a vehicle physics module using Rapier: wheel colliders, suspension, steering, acceleration, braking. Export a `Vehicle` class usable from the game loop.",
+   "kind": "code",
+   "prefer": "agent:gpt-1",
+   "model": "gpt-6.2-sol",
+   "priority": 2,
+   "after": [
+    "T0024"
+   ],
+   "inputs": [],
+   "status": "queued",
+   "attempts": 0,
+   "exclude": [],
+   "chat": "C0008",
+   "group": "",
+   "review": {
+    "mode": "cross",
+    "pass_score": 80,
+    "checks": [
+     "Vehicle can be instantiated and added to scene",
+     "Basic forward/reverse and steering work in a test arena",
+     "Physics bodies are correctly synchronized with Three.js meshes",
+     "No runtime errors during a 30‑second drive test"
+    ]
+   },
+   "parent": null,
+   "created_by": "owner (chat)",
+   "created_at": "2026-11-27T08:37:26+05:30",
+   "queued_at": "2026-11-27T08:37:26+05:30",
+   "claimed_by": null,
+   "result": null,
+   "reviews": [],
+   "history": [
+    {
+     "at": "2026-11-27T08:37:26+05:30",
+     "actor": "owner",
+     "event": "created",
+     "detail": "gpt-6.2-sol"
+    }
+   ],
+   "updated_at": "2026-11-27T08:37:26+05:30"
+  },
+  {
+   "id": "T0026",
+   "title": "Implement Character Controller",
+   "brief": "Create a third‑person character controller: movement, jumping, collision with Rapier, and camera follow. Hook into the existing game loop.",
+   "kind": "code",
+   "prefer": "agent:gpt-1",
+   "model": "gpt-6.2-sol",
+   "priority": 2,
+   "after": [
+    "T0024"
+   ],
+   "inputs": [],
+   "status": "queued",
+   "attempts": 0,
+   "exclude": [],
+   "chat": "C0008",
+   "group": "",
+   "review": {
+    "mode": "cross",
+    "pass_score": 80,
+    "checks": [
+     "Character moves on flat ground",
+     "Collision stops movement against obstacles",
+     "Camera smoothly follows the character",
+     "Controller integrates without breaking the vehicle module"
+    ]
+   },
+   "parent": null,
+   "created_by": "owner (chat)",
+   "created_at": "2026-11-27T08:37:26+05:30",
+   "queued_at": "2026-11-27T08:37:26+05:30",
+   "claimed_by": null,
+   "result": null,
+   "reviews": [],
+   "history": [
+    {
+     "at": "2026-11-27T08:37:26+05:30",
+     "actor": "owner",
+     "event": "created",
+     "detail": "gpt-6.2-sol"
+    }
+   ],
+   "updated_at": "2026-11-27T08:37:26+05:30"
+  },
+  {
+   "id": "T0027",
+   "title": "Procedural City Generation",
+   "brief": "Generate a simple grid‑based city layout (blocks, streets, building footprints) at runtime. Export geometry as glTF meshes compatible with the asset pipeline.",
+   "kind": "code",
+   "prefer": "agent:claude-1",
+   "model": "claude-opus-5-5",
+   "priority": 2,
+   "after": [
+    "T0025",
+    "T0026"
+   ],
+   "inputs": [],
+   "status": "queued",
+   "attempts": 0,
+   "exclude": [],
+   "chat": "C0008",
+   "group": "",
+   "review": {
+    "mode": "cross",
+    "pass_score": 80,
+    "checks": [
+     "City loads within 5 seconds",
+     "Streets are navigable by vehicle and character",
+     "Building meshes follow the naming convention from T0018",
+     "No overlapping geometry"
+    ]
+   },
+   "parent": null,
+   "created_by": "owner (chat)",
+   "created_at": "2026-11-27T08:37:26+05:30",
+   "queued_at": "2026-11-27T08:37:26+05:30",
+   "claimed_by": null,
+   "result": null,
+   "reviews": [],
+   "history": [
+    {
+     "at": "2026-11-27T08:37:26+05:30",
+     "actor": "owner",
+     "event": "created",
+     "detail": "claude-opus-5-5"
+    }
+   ],
+   "updated_at": "2026-11-27T08:37:26+05:30"
+  },
+  {
+   "id": "T0028",
+   "title": "UI and HUD",
+   "brief": "Add a minimal HUD: speedometer, mini‑map, health/wanted level indicators. Use HTML/CSS overlay on the canvas.",
+   "kind": "code",
+   "prefer": "agent:claude-2",
+   "model": "claude-opus-5-5",
+   "priority": 2,
+   "after": [
+    "T0025",
+    "T0026"
+   ],
+   "inputs": [],
+   "status": "queued",
+   "attempts": 0,
+   "exclude": [],
+   "chat": "C0008",
+   "group": "",
+   "review": {
+    "mode": "cross",
+    "pass_score": 80,
+    "checks": [
+     "Speed updates in real time",
+     "Mini‑map shows player position",
+     "Wanted level increments on collisions",
+     "Responsive layout on common browsers"
+    ]
+   },
+   "parent": null,
+   "created_by": "owner (chat)",
+   "created_at": "2026-11-27T08:37:26+05:30",
+   "queued_at": "2026-11-27T08:37:26+05:30",
+   "claimed_by": null,
+   "result": null,
+   "reviews": [],
+   "history": [
+    {
+     "at": "2026-11-27T08:37:26+05:30",
+     "actor": "owner",
+     "event": "created",
+     "detail": "claude-opus-5-5"
+    }
+   ],
+   "updated_at": "2026-11-27T08:37:26+05:30"
+  },
+  {
+   "id": "T0029",
+   "title": "Generate Building Assets",
+   "brief": "Procedurally create low‑poly building meshes and textures (JSON‑driven) and export as glTF files for the city generator to consume.",
+   "kind": "code",
+   "prefer": "agent:gpt-1",
+   "model": "gpt-6.2-sol",
+   "priority": 2,
+   "after": [
+    "T0027"
+   ],
+   "inputs": [],
+   "status": "queued",
+   "attempts": 0,
+   "exclude": [],
+   "chat": "C0008",
+   "group": "",
+   "review": {
+    "mode": "cross",
+    "pass_score": 80,
+    "checks": [
+     "At least 10 distinct building variants",
+     "Textures are UV‑mapped correctly",
+     "File size per building < 200 KB",
+     "Assets load without errors in the browser"
+    ]
+   },
+   "parent": null,
+   "created_by": "owner (chat)",
+   "created_at": "2026-11-27T08:37:26+05:30",
+   "queued_at": "2026-11-27T08:37:26+05:30",
+   "claimed_by": null,
+   "result": null,
+   "reviews": [],
+   "history": [
+    {
+     "at": "2026-11-27T08:37:26+05:30",
+     "actor": "owner",
+     "event": "created",
+     "detail": "gpt-6.2-sol"
+    }
+   ],
+   "updated_at": "2026-11-27T08:37:26+05:30"
+  },
+  {
+   "id": "T0030",
+   "title": "Generate Vehicle Assets",
+   "brief": "Create a set of simple vehicle models (car, bike, truck) with separate wheel nodes for the physics module. Export as glTF.",
+   "kind": "code",
+   "prefer": "agent:gpt-1",
+   "model": "gpt-6.2-sol",
+   "priority": 2,
+   "after": [
+    "T0027"
+   ],
+   "inputs": [],
+   "status": "queued",
+   "attempts": 0,
+   "exclude": [],
+   "chat": "C0008",
+   "group": "",
+   "review": {
+    "mode": "cross",
+    "pass_score": 80,
+    "checks": [
+     "Wheel nodes named wheel_FL/FR/RL/RR",
+     "Materials include basic albedo and metalness",
+     "Each model < 150 KB",
+     "Vehicles load and attach to the physics class without crashes"
+    ]
+   },
+   "parent": null,
+   "created_by": "owner (chat)",
+   "created_at": "2026-11-27T08:37:26+05:30",
+   "queued_at": "2026-11-27T08:37:26+05:30",
+   "claimed_by": null,
+   "result": null,
+   "reviews": [],
+   "history": [
+    {
+     "at": "2026-11-27T08:37:26+05:30",
+     "actor": "owner",
+     "event": "created",
+     "detail": "gpt-6.2-sol"
+    }
+   ],
+   "updated_at": "2026-11-27T08:37:26+05:30"
   }
  ]
 }
