@@ -11,6 +11,7 @@ export const BUTTONS = [
   'aim',
   'handbrake',
   'horn',
+  'reset',
   'map',
   'pause',
   'debug',

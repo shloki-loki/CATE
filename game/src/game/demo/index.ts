@@ -3,7 +3,7 @@ import type { Entity } from '../../core';
 import type { GameWorld, Services } from '../../services';
 import { CollisionGroup } from '../../physics';
 import { makeTransform, PrevTransform, RigidBody, Transform, View } from '../components';
-import { buildingView, carView, crateView, groundView, palmView, roadView } from './demoView';
+import { buildingView, crateView, groundView, palmView, roadView } from './demoView';
 
 /** Small seeded PRNG (mulberry32) so the demo scene is identical on every load. */
 export function mulberry32(seed: number): () => number {
@@ -28,8 +28,9 @@ export interface DemoScene {
 
 /**
  * The skeleton's minimal playable scene: ground, a road cross, a beach, placeholder
- * buildings with colliders, palms, and a few dynamic bodies that fall and settle
- * (to prove physics, interpolation and rendering are wired together).
+ * buildings with colliders, palms, and a few dynamic crates that fall and settle
+ * (to prove physics, interpolation and rendering are wired together). Vehicles are
+ * spawned by main.ts through game/vehicles (T0020).
  * T0022 replaces this with the procedural city.
  */
 export function createDemoScene(world: GameWorld, s: Services, seed = 1986): DemoScene {
@@ -146,7 +147,6 @@ export function createDemoScene(world: GameWorld, s: Services, seed = 1986): Dem
       1,
     );
   }
-  spawn(carView(), 3, 3, 14, 0.95, 0.35, 2.2, 2);
 
   return { dynamic, buildings };
 }

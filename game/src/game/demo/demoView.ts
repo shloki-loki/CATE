@@ -25,7 +25,6 @@ const mats = {
   trunk: new MeshStandardMaterial({ color: 0x8a6a45, roughness: 0.9 }),
   leaves: new MeshStandardMaterial({ color: 0x2f8f4e, roughness: 0.8, flatShading: true }),
   crate: new MeshStandardMaterial({ color: 0xc58b4c, roughness: 0.75 }),
-  car: new MeshStandardMaterial({ color: 0xe0245e, roughness: 0.25, metalness: 0.6 }),
   glass: new MeshStandardMaterial({ color: 0x223344, roughness: 0.1, metalness: 0.8 }),
 };
 
@@ -118,14 +117,4 @@ export function palmView(height: number): Object3D {
 
 export function crateView(size: number): Object3D {
   return shadowed(new Mesh(new BoxGeometry(size, size, size), mats.crate));
-}
-
-/** Placeholder car body (a box with a cabin) until T0018 generates vehicle models. */
-export function carView(): Object3D {
-  const g = new Group();
-  const body = shadowed(new Mesh(new BoxGeometry(1.9, 0.7, 4.4), mats.car));
-  const cabin = shadowed(new Mesh(new BoxGeometry(1.6, 0.55, 2.2), mats.glass));
-  cabin.position.set(0, 0.6, -0.2);
-  g.add(body, cabin);
-  return g;
 }

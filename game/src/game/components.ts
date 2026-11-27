@@ -1,7 +1,7 @@
 import { Quaternion, Vector3 } from 'three';
 import type { Object3D } from 'three';
 import { defineComponent, type Entity } from '../core';
-import type { BodyHandle } from '../physics';
+import type { BodyHandle, VehicleHandle } from '../physics';
 
 /**
  * ALL shared component types live here (T0016 §4.4). Feature folders
@@ -28,7 +28,60 @@ export const View = defineComponent<{ object3D: Object3D }>('View');
 export const Health = defineComponent<{ hp: number; armor: number }>('Health');
 export const PlayerTag = defineComponent<Record<string, never>>('PlayerTag');
 export const Driver = defineComponent<{ mode: 'player' | 'ai' | 'none' }>('Driver');
-export const Vehicle = defineComponent<{ defId: string; health: number; occupants: Entity[] }>('Vehicle');
+/** A raycast vehicle (T0020). `handle` is the physics vehicle; the chassis body is in RigidBody. */
+export const Vehicle = defineComponent<{
+  defId: string;
+  handle: VehicleHandle;
+  health: number;
+  maxHealth: number;
+  occupants: Entity[];
+}>('Vehicle');
+
+/** Driver intent for a vehicle, written by player input or AI. steer: -1 left .. +1 right. */
+export interface VehicleControlData {
+  throttle: number;
+  brake: number;
+  steer: number;
+  handbrake: boolean;
+}
+export const VehicleControl = defineComponent<VehicleControlData>('VehicleControl');
+
+/** Drivetrain state kept between ticks by the vehicle drive system. gear: -1 reverse, 1..n forward. */
+export interface DriveState {
+  gear: number;
+  rpm: number;
+  steerAngle: number;
+  shiftTimer: number;
+  wrecked: boolean;
+}
+
+/** Read-only per-tick vehicle telemetry for HUD, camera, audio and the wheel views. */
+export interface VehicleTelemetryData {
+  drive: DriveState;
+  /** Signed forward speed (m/s) and world velocity. */
+  speed: number;
+  velocity: Vector3;
+  wheelsInContact: number;
+  braking: boolean;
+  /** Per wheel (FL, FR, RL, RR): suspension length, spin angle, steering angle. */
+  suspension: number[];
+  spin: number[];
+  steer: number[];
+}
+export const VehicleTelemetry = defineComponent<VehicleTelemetryData>('VehicleTelemetry');
+
+/** Scene parts of a vehicle view that move on their own (created by vehicleView.ts). */
+export const VehicleParts = defineComponent<{
+  /** Per wheel: pivot (steering + suspension) and the spinning wheel inside it. */
+  wheelPivots: Object3D[];
+  wheelSpinners: Object3D[];
+  /** Chassis-space mount points, for placing the pivots. */
+  mounts: { x: number; y: number; z: number }[];
+  brakeLights: { emissiveIntensity: number } | null;
+}>('VehicleParts');
+
+/** The entity the gameplay camera follows. T0021 adds the 'onFoot' preset. */
+export const CameraTarget = defineComponent<{ preset: 'vehicle' | 'onFoot' }>('CameraTarget');
 export const Blip = defineComponent<{ icon: string; color: string }>('Blip');
 /** Entity is removed together with its streamed chunk. */
 export const Streamed = defineComponent<{ chunkId: string }>('Streamed');

@@ -22,6 +22,7 @@ export const DEFAULT_BINDINGS: KeyBindings = {
     aim: ['Mouse2'],
     handbrake: ['Space'],
     horn: ['KeyH'],
+    reset: ['KeyR'],
     map: ['KeyM'],
     pause: ['Escape', 'KeyP'],
     debug: ['F3'],

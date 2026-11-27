@@ -87,3 +87,68 @@ body {
   margin: 0;
   line-height: 1.5;
 }
+
+.speedo {
+  position: absolute;
+  right: 16px;
+  bottom: 46px;
+  min-width: 170px;
+  padding: 8px 12px 10px;
+  background: rgba(8, 10, 30, 0.6);
+  border-radius: 8px;
+  pointer-events: none;
+  user-select: none;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+}
+
+.speedo-main {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+}
+
+.speedo-speed {
+  font-size: 34px;
+  font-weight: 800;
+  min-width: 2.2em;
+  text-align: right;
+}
+
+.speedo-unit {
+  font-size: 12px;
+  opacity: 0.7;
+}
+
+.speedo-gear {
+  margin-left: auto;
+  font-size: 22px;
+  font-weight: 800;
+  color: #ff7ac8;
+}
+
+.speedo-bar {
+  height: 5px;
+  margin-top: 5px;
+  background: rgba(255, 255, 255, 0.15);
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.speedo-rev,
+.speedo-hp {
+  height: 100%;
+  width: 0;
+  background: #47e0ff;
+}
+
+.speedo-rev.speedo-redline {
+  background: #ff3b5c;
+}
+
+.speedo-hp {
+  background: #7be07b;
+}
+
+.speedo-hp.speedo-low {
+  background: #ff9f1a;
+}
