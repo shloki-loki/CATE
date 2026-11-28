@@ -1011,6 +1011,13 @@
       "T0031"
      ],
      "text": "**Honest status (correcting the last update):** on main so far: the game skeleton (PR #6), driving (PR #8), the HUD (PR #10) and HUD health/wanted stars (PR #14). The character controller and the city are **not** merged yet: the same features were built twice in parallel and their pull requests clash. **Fix:** T0031 has claude-2 (Opus 5.5) combine them into one working build and close the duplicates. The asset steps (T0029, T0030) start after that."
+    },
+    {
+     "id": "M0029",
+     "role": "system",
+     "by": "cate",
+     "text": "✓ Merged pull request #15 after review, tests and build passed. It goes live in about a minute.",
+     "at": "2026-11-28T19:18:01+05:30"
     }
    ],
    "selection": [
@@ -1075,7 +1082,7 @@
      "kind": ""
     }
    ],
-   "updated_at": "2026-11-28T18:37:33+05:30"
+   "updated_at": "2026-11-28T19:18:01+05:30"
   },
   {
    "id": "C0009",
