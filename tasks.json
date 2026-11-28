@@ -2517,7 +2517,7 @@
    "priority": 1,
    "after": [],
    "inputs": [],
-   "status": "review",
+   "status": "reviewing",
    "attempts": 1,
    "exclude": [],
    "review": {
@@ -2598,18 +2598,24 @@
      "actor": "claude-2",
      "event": "submitted for review",
      "detail": "202,000 tokens"
+    },
+    {
+     "at": "2026-11-28T19:12:55+05:30",
+     "actor": "gpt-1",
+     "event": "review started",
+     "detail": ""
     }
    ],
-   "updated_at": "2026-11-28T19:12:16+05:30",
+   "updated_at": "2026-11-28T19:12:55+05:30",
    "claimed_at": "2026-11-28T19:06:12+05:30",
    "run_model": "claude-opus-5-5",
    "run_effort": "high",
    "run_url": "https://github.com/shloki-loki/CATE/actions/runs/46150411054",
    "review_queued_at": "2026-11-28T19:12:16+05:30",
-   "reviewer": null,
-   "reviewing_at": "2026-11-28T19:01:05+05:30",
+   "reviewer": "gpt-1",
+   "reviewing_at": "2026-11-28T19:12:55+05:30",
    "review_model": "gpt-6.2-astra",
-   "review_run_url": "https://github.com/shloki-loki/CATE/actions/runs/46149977577",
+   "review_run_url": "https://github.com/shloki-loki/CATE/actions/runs/46150961109",
    "feedback": "Review of PR #15 at 1af14a0c6d1f0e6c19bc23b0c057a6122ef7790b. Score 78/100, fail.\n\n1. PASS — GitHub shows one integration PR from cate/T0031-integrate to main. PRs #7, #9, #11, #12 and #13 are all closed, each with a comment linking #15.\n2. PASS — A clean npm ci and npm run build produced both game entry points. All 140 game unit tests and all 39 root Python tests passed. ESLint and Prettier passed.\n3. FAIL — The character, city, and cars run together, and the standalone Vehicle class shares the ECS drive tick. The integration regresses the existing warm-up lap's start condition.\n\nReproduction on the production build in Chrome: reload the game, let the player settle, press only F and wait. The HUD changed from 0:00.0 and “Drive to the yellow checkpoint to start the lap” to 0:01.1 and “Drive through the yellow checkpoint” while the speedometer still read 0. Waiting in the parked car now counts against the player's lap time.\n\nAt game/src/main.ts:154 the character starts 2.2 m beside and 0.5 m behind the car. CheckpointRunSystem in game/src/game/missions/systems.ts:30 passes the character's position to the lap before entry and the vehicle's centre afterward. That switch alone exceeds the 2 m start threshold in checkpointRun.ts. Track the driven vehicle for the driving lap and establish its starting position on entry. Add an integration assertion that the clock stays at zero while the player waits, enters and idles, then advances once the player drives away.\n\nThe HUD viewport test at game/tests/e2e/hud.spec.ts:129 also lost its coverage of the speedometer because it now runs entirely on foot and excludes hidden elements. Exercise the viewport sizes while driving as well.\n\nAll 10 shipped Playwright tests passed in system Chrome, including walking, jumping, vehicle entry and exit, steering, braking, checkpoint progression, crash/wanted HUD, city loading and the standalone arena. The independent stationary-entry check above exposed the timer regression.\n"
   }
  ]
