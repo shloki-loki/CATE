@@ -2517,7 +2517,7 @@
    "priority": 1,
    "after": [],
    "inputs": [],
-   "status": "claimed",
+   "status": "review",
    "attempts": 0,
    "exclude": [],
    "review": {
@@ -2536,8 +2536,16 @@
    "created_by": "claude-setup",
    "created_at": "2026-11-28T18:37:33+05:30",
    "queued_at": "2026-11-28T18:37:33+05:30",
-   "claimed_by": "claude-2",
-   "result": null,
+   "claimed_by": null,
+   "result": {
+    "by": "claude-2",
+    "at": "2026-11-28T19:00:21+05:30",
+    "file": "outputs/T0031.md",
+    "text": "# T0031: Combine the parallel game work into one build: done\n\n**Pull request:** https://github.com/shloki-loki/CATE/pull/15 (branch `cate/T0031-integrate`, one commit on `main`)\n\nPRs #7, #9, #11, #12 and #13 are **closed**, each with the comment \"Superseded by #15 ...\".\n\n## The game now\nNeon Coast boots into the procedural city. You start **on foot** beside the driver door of a parked sports car, facing the first warm-up-lap checkpoint. You can walk, sprint, jump and step up kerbs. **F** gets into the car; drive the city and the warm-up lap; **F** gets out again. The HUD follows you on foot and in the car: minimap, mission panel, health and wanted stars, and the speedometer while driving. Everything already on main still works and is still tested: the skeleton, T0020 vehicle physics, the T0023 HUD and T0028 health/wanted.\n\n## What I kept from which PR, and why\n- **Character controller: PR #12 (T0026).** It already contains PR #7's T0021 commit. #12 is #7 wired to the merged vehicles:\n  - enter and exit with F, with a smooth camera handover;\n  - the +Z car-direction mirror bug fixed (you get out on the driver side);\n  - the exit-spot check sees other cars;\n  - pushing capped at 600 N, so parked cars are not shoved.\n\n  #7 alone predates the vehicles, so it was the weaker choice.\n- **Procedural city: PR #13 (T0027).** It was rebuilt from #9's road-graph code and is a superset of #9. It adds T0018 naming, kerbs and sidewalks, shore walls, a minimap layout, the warm-up lap on its arterials and glTF export. It also has navigation tests: a Rapier car drives the lap with 0 collisions, and a Rapier character climbs kerbs and reaches every sidewalk. #9 predates the HUD and vehicles.\n- **Vehicle class: PR #11 (T0025), combined with PR #8 (already on main).** #11 does not add a second physics path:\n  - it moves #8's per-tick drive and wheel-pose code into `driveTick.ts`, which both the ECS systems and the `Vehicle` class call;\n  - a unit test checks the two stay within 1 mm over 12 s;\n  - it merged with only docs and barrel-export conflicts, so I kept the class and its separate `arena.html` test page;\n  - the main game still uses the ECS systems.\n\n## Integration changes I made (beyond resolving conflicts)\n- **`main.ts` start:**\n  - all cars are spawned from `city.spawnPoints`, with no driver;\n  - the player is created on foot beside the sports car's driver door (`besideDriverDoor`);\n  - systems run in this order: city lap → wanted → player health → follow camera → chase camera → player control.\n- **`hudBridge.ts`:** T0028's `findPlayer` already uses `PlayerTag`, which the character has. The fix: on foot the minimap heading uses the character's forward axis (−Z). The car's is +Z, so the map would otherwise point backwards when walking.\n- **`style.css`:** #12 made the F3 overlay five lines tall, and the e2e test caught it overlapping the mission panel at 900×600. On windows ≤ 1100 px wide the panel now sits at 122 px (it was at 84 px).\n- **`window.__neon.city.playerCar`:** added for tests.\n- **e2e tests adapted to the on-foot city start:**\n  - the HUD tests press F first and also check the on-foot HUD;\n  - the crash/wanted test builds up speed and steers into the buildings beside the arterial;\n  - the parked-car test reads the car's spot from the city.\n- **README:** controls, layout and sections from all PRs merged.\n- **Old demo scene:** it and its on-foot playground are no longer booted. They are kept because their unit tests still use them.\n\n## How I tested it (all run in this job)\n- `cd game && npm ci && npm run build`: **passes**. Builds both `index.html` and `arena.html`.\n- `npm test`: **140/140 Vitest tests pass**, in 19 files. `npm run check` passes (typecheck, ESLint, tests, build). `prettier --check` is clean.\n- `CHROMIUM_PATH=/usr/bin/google-chrome npx playwright test`: **10/10 pass** against the production build in headless Chrome (SwiftShader):\n  - the city loads in under 5 s;\n  - boot smoke test, no console errors;\n  - **walk → F into the car → drive, steer, brake → F out → camera back on the player**;\n  - walking, jumping and camera orbit;\n  - walking into the parked car is blocked and the car doesn't move;\n  - HUD speed, minimap and mission, with the first checkpoint reached;\n  - no HUD overlap from 1920×1080 down to 800×500;\n  - wanted stars light up on a crash;\n  - arena scripted drive and keyboard drive.\n- `python3 -m unittest discover -s tests` at the repo root: **OK**. I ran it again on the final branch together with the build, unit tests and lint.\n- I took and looked at screenshots of the running build: on foot by the sports car in the city, and driving at 53 km/h towards the first checkpoint. HUD, minimap, health and stars are visible.\n\n## Notes and limits\n- **Single commit:** the branch is one commit on `main`, not merge commits. My first push with merge commits was rejected by GitHub (\"refusing to allow a GitHub App to create or update workflow `.github/workflows/agents.yml`\"), because the old PR branches carry an older workflow file in their history. The PR does not change `.github/`.\n- **No CI for `game/`:** there is still no CI job for `game/`, because agents cannot edit workflows. All of the tests above were run locally.\n- **Known gaps carried over from the PRs:**\n  - no traffic or pedestrians;\n  - a moving car that hits the on-foot player stops as if it hit a post (the capsule is kinematic);\n  - no get-in or get-out animation;\n  - the city is not streamed (it loads whole in about 0.2 s).\n",
+    "tokens_in": 420000,
+    "tokens_out": 30000,
+    "model": "claude-opus-5-5"
+   },
    "reviews": [],
    "history": [
     {
@@ -2551,13 +2559,20 @@
      "actor": "claude-2",
      "event": "claimed",
      "detail": "Opus 5.5"
+    },
+    {
+     "at": "2026-11-28T19:00:21+05:30",
+     "actor": "claude-2",
+     "event": "submitted for review",
+     "detail": "450,000 tokens"
     }
    ],
-   "updated_at": "2026-11-28T18:47:55+05:30",
+   "updated_at": "2026-11-28T19:00:21+05:30",
    "claimed_at": "2026-11-28T18:47:55+05:30",
    "run_model": "claude-opus-5-5",
    "run_effort": "high",
-   "run_url": "https://github.com/shloki-loki/CATE/actions/runs/46148889236"
+   "run_url": "https://github.com/shloki-loki/CATE/actions/runs/46148889236",
+   "review_queued_at": "2026-11-28T19:00:21+05:30"
   }
  ]
 }
