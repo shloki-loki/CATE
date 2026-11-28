@@ -1212,6 +1212,22 @@
    "selection": [],
    "updated_at": "2026-11-28T18:35:00+05:30",
    "archived": true
+  },
+  {
+   "id": "C0010",
+   "title": "Build a simple browser game where you drive a car around a neon city. ",
+   "created_at": "2026-11-28T18:35:03+05:30",
+   "messages": [
+    {
+     "id": "M0001",
+     "role": "user",
+     "text": "Build a simple browser game where you drive a car around a neon city. Make it now.",
+     "at": "2026-11-28T18:35:03+05:30",
+     "files": []
+    }
+   ],
+   "selection": [],
+   "updated_at": "2026-11-28T18:35:03+05:30"
   }
  ],
  "usage": {
