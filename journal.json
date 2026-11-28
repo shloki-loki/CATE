@@ -1475,6 +1475,15 @@
    "title": "PR #14 merged",
    "detail": "review, tests and build passed",
    "ref": "T0028"
+  },
+  {
+   "id": "J0165",
+   "at": "2026-11-28T18:37:10+05:30",
+   "by": "claude-1",
+   "kind": "claim",
+   "title": "Took T0027: Procedural City Generation",
+   "detail": "",
+   "ref": "T0027"
   }
  ]
 }
