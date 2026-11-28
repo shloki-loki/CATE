@@ -5,7 +5,9 @@
 import { KIND_LABELS, bestFor, chooseModel, enabledModels, modelInfo, modelLabel } from '@/lib/catalog';
 
 const ENDPOINTS = [
-  { provider: 'groq', key: 'GROQ_API_KEY', base: 'https://api.groq.com/openai/v1', model: () => process.env.SUPERVISOR_GROQ_MODEL || 'openai/gpt-oss-120b' },
+  // gpt-oss-120b with reasoning switched on is the strongest free model on Groq; qwen3.8-27b is the backup there.
+  { provider: 'groq', key: 'GROQ_API_KEY', base: 'https://api.groq.com/openai/v1', model: () => process.env.SUPERVISOR_GROQ_MODEL || 'openai/gpt-oss-120b', reasoning: 'medium' },
+  { provider: 'groq', key: 'GROQ_API_KEY', base: 'https://api.groq.com/openai/v1', model: () => 'qwen/qwen3.8-27b' },
   { provider: 'google', key: 'GEMINI_API_KEY', base: 'https://generativelanguage.googleapis.com/v1beta/openai', model: () => process.env.SUPERVISOR_GEMINI_MODEL || 'gemini-3.8-flash' },
 ];
 
@@ -63,21 +65,30 @@ already exist. Only propose new steps for genuinely new work, or if the user ask
 Job kinds: ${Object.entries(KIND_LABELS).map(([k, v]) => `${k} (${v})`).join(', ')}.
 ${picked}
 
-Rules:
-- If the goal, inputs or success criteria are unclear, ask at most 3 short questions and give no plan yet.
-- Once clear, propose the smallest plan that does the job well (usually 1-4 steps). Each step's brief must be
-  self-contained: what to do, which inputs (attached files are under uploads/), what a good result looks like.
-- Research, development and anything needing the web, files or code must go to subscription agents. FREE API
-  agents only get light review, planning or data work, and only when quality will not suffer.
-- Prefer the recommended model per job, and accounts with more limit left. Put "review":"cross" on steps whose
-  output matters, with 2-4 concrete checks the reviewer scores against.
-- Steps may depend on earlier ones with "after": [index of earlier step, 0-based].
-- Never add separate "review" steps for work you already marked "review":"cross": CATE reviews it automatically.
+Rules (be a decisive, senior project lead, not a form):
+- DECIDE, don't interrogate. Fill gaps with sensible defaults and state them in one line ("I'll assume a
+  browser game in Three.js"). Ask a question only if the work truly cannot start without the answer: at most
+  2 short questions, and never again about something the user already answered.
+- If the user says "I don't know", "just do it", "you decide" or similar: decide yourself and plan now.
+- NEVER ask for repository names, access tokens, frameworks, file paths or "which code": the agents already
+  have the repo and can read everything. Never ask which models to use: that is your job (see Agents).
+- The plan: the smallest set of steps that does the job well (usually 2-6). Each brief is self-contained and
+  concrete: goal, inputs (attachments are under uploads/; earlier steps' outputs are outputs/T....md), what to
+  produce, and how to know it is done. Software goes in a folder of the repo (e.g. game/, site/) via branch +
+  tests + pull request; CATE merges it automatically after review.
+- Research, development and anything needing the web, files or code go to subscription agents. FREE API
+  agents get no steps unless the user picked them.
+- Spread work over accounts with the most limit left; use the recommended model per job. Put
+  "review":"cross" on steps whose output matters, with 2-4 checks a reviewer can verify.
+- Steps may depend on earlier ones with "after": [index of earlier step, 0-based]. Let independent steps run
+  in parallel. Never add separate "review" steps: CATE reviews "cross" steps automatically.
 - Requests to change CATE itself (this dashboard, its agents, its code) are "code" steps on a subscription
-  agent; their brief must say: work on a branch, run the tests, open a pull request for the owner to merge.
+  agent; brief: work on a branch, run the tests, open a pull request.
 - Do not plan a copy or replica of a specific existing game (its name, characters, map, art, music or look).
   Offer an original game in the same genre instead, and say so in your reply.
 - Use the agent ids and model ids exactly as listed. Never invent facts about the user.
+- Your reply: short, plain words, no filler. When you give a plan, the reply says what will happen in 1-3
+  sentences; the plan card shows the details.
 
 Reply with ONLY this JSON object:
 {"reply": "<your message to the user, markdown, concise>",
@@ -97,6 +108,7 @@ function history(messages, tasks) {
 async function ask(endpoint, messages, json) {
   const body = { model: endpoint.model(), temperature: 0.2, messages };
   if (json) body.response_format = { type: 'json_object' };
+  if (endpoint.reasoning) body.reasoning_effort = endpoint.reasoning; // think before answering (Groq gpt-oss)
   const response = await fetch(`${endpoint.base}/chat/completions`, {
     method: 'POST',
     headers: { Authorization: `Bearer ${process.env[endpoint.key]}`, 'Content-Type': 'application/json' },
