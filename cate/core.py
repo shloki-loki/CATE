@@ -403,7 +403,25 @@ def record_merge(task_id: str, pr: int, status: str, detail: str) -> None:
     if not task:
         raise Refused(f"No task {task_id}")
     before = task.get("merge") or {}
-    task["merge"] = {"pr": pr, "status": status, "detail": detail[:1000], "at": now_iso()}
+    if status == "conflict":
+        # Send the work back to an agent to bring the branch up to date with main; give up after two tries.
+        tries = int(before.get("conflicts", 0)) + 1
+        if tries <= 2:
+            task["merge"] = {"pr": pr, "status": "conflict", "detail": detail[:1000], "at": now_iso(), "conflicts": tries}
+            task.update(status="queued", queued_at=now_iso(), claimed_by=None, reviewer=None, exclude=[])
+            task["feedback"] = (f"Your pull request #{pr} can't be merged: it conflicts with main (other work was merged "
+                                f"first). Check out its branch, merge origin/main into it, resolve every conflict so both "
+                                f"your change and the newer work keep working, run the tests (and the build if you touched "
+                                f"web/ or game/), push to the SAME branch, and submit again with the pull request link.")
+            history(task, "cate", f"pull request #{pr} conflicts with main: sent back to resolve", f"try {tries} of 2")
+            store.save("tasks", tasks)
+            tell_chat(task, f"Pull request #{pr} ({task['id']}) clashed with newer work on main. "
+                            f"It's back in the queue for an agent to bring up to date (try {tries} of 2).")
+            store.journal("cate", "update", f"PR #{pr} conflicts with main: sent back", f"try {tries} of 2", task_id)
+            return
+        status, detail = "blocked", "it still conflicts with main after two attempts to bring it up to date"
+    task["merge"] = {"pr": pr, "status": status, "detail": detail[:1000], "at": now_iso(),
+                     "conflicts": before.get("conflicts", 0)}
     history(task, "cate", f"pull request #{pr} {status}", detail[:300])
     store.save("tasks", tasks)
     # Tell the chat once per outcome; "waiting" (retry next run) is not news.

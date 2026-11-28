@@ -32,16 +32,21 @@ while read -r task pr; do
   git checkout -q -B automerge origin/main
   if ! git -c user.name="$name" -c user.email="$email" merge -q --no-ff "origin/$head" \
        -m "Merge pull request #$pr from $head" -m "Auto-merged by CATE ($task): review passed; tests and build passed on the merged result."; then
-    git merge --abort 2>/dev/null; record blocked "it conflicts with main"; continue
+    git merge --abort 2>/dev/null; record conflict "it conflicts with main"; continue
   fi
   if ! python3 -m unittest discover -s tests > /tmp/cate-tests.log 2>&1; then
     record blocked "tests failed on the merged result: $(tail -4 /tmp/cate-tests.log | tr '\n' ' ' | cut -c1-300)"; continue
   fi
-  if [[ " $files" == *" web/"* ]]; then
-    if ! (cd web && npm ci --no-audit --no-fund > /tmp/cate-npm.log 2>&1 && npm run build > /tmp/cate-build.log 2>&1); then
-      record blocked "the site build failed: $(tail -6 /tmp/cate-build.log /tmp/cate-npm.log 2>/dev/null | tr '\n' ' ' | cut -c1-300)"; continue
+  # Build (and test, if it has tests) every JavaScript project folder the change touches: web/, game/, site/...
+  failed=""
+  for dir in $(echo "$files" | tr ' ' '\n' | grep / | cut -d/ -f1 | sort -u); do
+    [ -f "$dir/package.json" ] || continue
+    if ! (cd "$dir" && (npm ci --no-audit --no-fund || npm install --no-audit --no-fund) > /tmp/cate-npm.log 2>&1 \
+          && npm run build --if-present > /tmp/cate-build.log 2>&1 && npm test --if-present > /tmp/cate-test.log 2>&1); then
+      failed="$dir: $(tail -6 /tmp/cate-build.log /tmp/cate-test.log /tmp/cate-npm.log 2>/dev/null | tr '\n' ' ' | cut -c1-280)"; break
     fi
-  fi
+  done
+  if [ -n "$failed" ]; then record blocked "the build or tests failed in $failed"; continue; fi
   if git push -q origin automerge:main; then
     gh api "repos/$repo/issues/$pr/comments" -f body="Merged by CATE ($task): another model reviewed the change, and the tests and site build passed on the merged result." > /dev/null || true
     gh api -X DELETE "repos/$repo/git/refs/heads/$head" > /dev/null 2>&1 || true   # tidy: the branch is merged

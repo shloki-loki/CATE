@@ -177,6 +177,10 @@ export async function sendMessage(formData) {
     await addMessage(chatId, {
       role: 'supervisor', by: answer.provider ? `supervisor (${answer.model})` : 'cate', text: answer.reply, plan: answer.plan || null,
     }, answer.provider);
+    // "Continue" and status questions should never leave work idle: nudge the agents if this project has open steps.
+    if ((tasksFile.tasks || []).some((t) => t.chat === chatId && ['queued', 'review'].includes(t.status))) {
+      await wakeAgents(`message in ${chatId}`).catch(() => {});
+    }
     return { ok: true, chatId };
   });
 }

@@ -30,7 +30,13 @@ function projectStatus(messages, tasks) {
   const mine = ids.map((id) => tasks.find((t) => t.id === id)).filter(Boolean);
   if (!mine.length) return '';
   const label = { queued: 'waiting to start', claimed: 'being worked on', review: 'waiting for review', reviewing: 'being reviewed', done: 'done', failed: 'failed', cancelled: 'cancelled', blocked: 'blocked' };
-  return mine.map((t) => `- ${t.id} ${t.title}: ${label[t.status] || t.status}${t.claimed_by || t.reviewer ? ` (${t.claimed_by || t.reviewer})` : ''}${t.after?.length && t.status === 'queued' ? ` (after ${t.after.join(', ')})` : ''}`).join('\n');
+  const merge = (t) => {
+    const m = t.merge || {};
+    if (!m.status) return '';
+    return m.status === 'merged' ? ` [PR #${m.pr} MERGED into main]` : m.status === 'conflict' ? ` [PR #${m.pr} conflicts with main: sent back to fix]`
+      : m.status === 'blocked' ? ` [PR #${m.pr} NOT merged: ${m.detail}]` : ` [PR #${m.pr} ${m.status}]`;
+  };
+  return mine.map((t) => `- ${t.id} ${t.title}: ${label[t.status] || t.status}${t.claimed_by || t.reviewer ? ` (${t.claimed_by || t.reviewer})` : ''}${t.after?.length && t.status === 'queued' ? ` (after ${t.after.join(', ')})` : ''}${merge(t)}`).join('\n');
 }
 
 function system(catalog, agents, selection, status = '') {
@@ -58,9 +64,12 @@ ${roster(catalog, agents)}
 
 ${status ? `This project ALREADY HAS a plan running. Current status of its steps:
 ${status}
-If the user asks about progress, what happened, or where it is stuck: answer from this status in plain,
-simple words (what is done, what is running, what waits for what) and give NO plan. Never re-propose steps that
-already exist. Only propose new steps for genuinely new work, or if the user asks to change or redo the plan.
+If the user asks about progress, what happened, or where it is stuck: answer ONLY from this status, in plain,
+simple words (what is done, what is running, what waits for what) and give NO plan. A step's code is in the
+product only if it says MERGED; never claim something is merged or working otherwise.
+"Continue", "go on", "carry on", "keep going" mean: keep running THIS plan. Reply with a short status and NO plan
+(CATE restarts the agents itself). Never re-propose steps that already exist, even reworded. Only propose new
+steps for genuinely new work the existing steps don't cover, or if the user asks to change or redo the plan.
 ` : ''}
 Job kinds: ${Object.entries(KIND_LABELS).map(([k, v]) => `${k} (${v})`).join(', ')}.
 ${picked}

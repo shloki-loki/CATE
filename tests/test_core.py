@@ -375,3 +375,23 @@ class LimitWindows(unittest.TestCase):
             "models": {"gpt-6.2-astra": {"seven_day": {"used_pct": 100, "resets_at": (now() + timedelta(days=2)).isoformat()}}}}}
         self.assertEqual(core.lowest_left(agent), 100)  # the weekly reading is past its reset
         self.assertNotEqual(core.choose_model(agent, {"kind": "code"})[0], "gpt-6.2-astra")
+
+
+class ConflictLoop(unittest.TestCase):
+    def test_conflict_goes_back_to_an_agent_twice_then_blocks(self):
+        shutil.rmtree(TMP, ignore_errors=True)
+        Path(TMP).mkdir()
+        run("agent", "add", "--id", "claude-1", "--provider", "anthropic", "--runner", "claude-actions")
+        store.save("chats", {"chats": [{"id": "C0001", "title": "x", "messages": []}]})
+        store.transact(lambda: core.add_task("owner", "City", "b", "code", "agent:claude-1", chat="C0001"), "t")
+        tasks = store.load("tasks"); t = store.find(tasks["tasks"], "T0001"); t["status"] = "done"; store.save("tasks", tasks)
+        for attempt in (1, 2):
+            run("merge-record", "--task", "T0001", "--pr", "12", "--status", "conflict", "--detail", "conflicts")
+            t = store.find(store.load("tasks")["tasks"], "T0001")
+            self.assertEqual(t["status"], "queued")
+            self.assertIn("merge origin/main", t["feedback"])
+            t["status"] = "done"; tasks = store.load("tasks"); store.find(tasks["tasks"], "T0001")["status"] = "done"; store.save("tasks", tasks)
+        run("merge-record", "--task", "T0001", "--pr", "12", "--status", "conflict", "--detail", "conflicts")
+        t = store.find(store.load("tasks")["tasks"], "T0001")
+        self.assertEqual(t["merge"]["status"], "blocked")
+        self.assertIn("clashed", store.load("chats")["chats"][0]["messages"][0]["text"])

@@ -427,7 +427,7 @@ def build() -> argparse.ArgumentParser:
     s = sub.add_parser("merge-record")
     s.add_argument("--task", required=True)
     s.add_argument("--pr", type=int, required=True)
-    s.add_argument("--status", choices=["merged", "blocked", "waiting"], required=True)
+    s.add_argument("--status", choices=["merged", "blocked", "waiting", "conflict"], required=True)
     s.add_argument("--detail", default="")
     s.set_defaults(func=cmd_merge_record)
 
