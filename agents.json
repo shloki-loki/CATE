@@ -69,7 +69,17 @@
    "limited_until": null,
    "last_seen": "2026-11-28T18:32:53+05:30",
    "created_at": "2026-11-26T02:02:55+05:30",
-   "limits": {}
+   "limits": {
+    "five_hour": {
+     "used_pct": 18.0,
+     "resets_at": "2026-11-28T23:33:09+05:30"
+    },
+    "seven_day": {
+     "used_pct": 8.0,
+     "resets_at": "2026-12-04T04:24:09+05:30"
+    },
+    "at": "2026-11-28T18:35:35+05:30"
+   }
   },
   {
    "id": "free-gemini",
