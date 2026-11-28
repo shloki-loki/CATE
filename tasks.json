@@ -2429,7 +2429,6 @@
    "model": "gpt-6.2-sol",
    "priority": 2,
    "after": [
-    "T0027",
     "T0031"
    ],
    "inputs": [],
@@ -2474,7 +2473,6 @@
    "model": "gpt-6.2-sol",
    "priority": 2,
    "after": [
-    "T0027",
     "T0031"
    ],
    "inputs": [],
