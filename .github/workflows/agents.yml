@@ -203,6 +203,7 @@ jobs:
           after=$(python3 -m cate fingerprint)
           plan=$(python3 -m cate dispatch --json)
           echo "before: $BEFORE"; echo "after:  $after"; echo "next:   $plan"
+          PLANNED="${PLANNED:-[]}"; BEFORE="${BEFORE:-none}"
           ran=$(echo "$PLANNED" | python3 -c 'import json,sys; print(" ".join(sorted(p["agent"] for p in json.load(sys.stdin))))')
           next=$(echo "$plan" | python3 -c 'import json,sys; print(" ".join(sorted(p["agent"] for p in json.load(sys.stdin))))')
           # Start again if the work moved on, or if different agents are now needed (e.g. one handed a job back).

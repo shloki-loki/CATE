@@ -248,6 +248,19 @@ function waitText(task) {
   return 'Starting an agent… this usually takes 1–3 minutes.';
 }
 
+// Agents' reports can be pages long: show the start, the rest on request, so the conversation stays readable.
+function LongResult({ text }) {
+  const [open, setOpen] = useState(false);
+  const lines = String(text || '').split('\n');
+  if (lines.length <= 14 && String(text || '').length <= 1400) return <Markdown text={text} />;
+  return (
+    <div>
+      <Markdown text={open ? text : lines.slice(0, 12).join('\n').slice(0, 1200) + '\n\n…'} />
+      <button className="button small ghost" onClick={() => setOpen(!open)}>{open ? 'Show less' : `Show the full result (${lines.length} lines)`}</button>
+    </div>
+  );
+}
+
 function TaskCard({ task, agents, models }) {
   const [pending, start] = useTransition();
   const [state, setState] = useState(null);
@@ -272,7 +285,7 @@ function TaskCard({ task, agents, models }) {
       {task.status === 'queued' || task.status === 'review' ? <div className="task-body task-meta">{waitText(task)}</div> : null}
       {task.result ? (
         <div className="task-body">
-          <Markdown text={task.result.text} />
+          <LongResult text={task.result.text} />
           {review ? (
             <details className="box"><summary>{review.verdict === 'pass' ? '✓ Passed review' : '✗ Sent back'} · {review.score}/100 · {agents.find((a) => a.id === review.by)?.label || review.by}{review.model ? ` (${models[review.model]?.label || review.model})` : ''}
               {agents.find((a) => a.id === review.by)?.provider && agents.find((a) => a.id === review.by)?.provider === agents.find((a) => a.id === task.result?.by)?.provider ? <span className="pill warn" style={{ marginLeft: 6 }} title="Reviewed by the same provider (the other provider was unavailable): a weaker check">same provider</span> : null}</summary>
