@@ -1179,10 +1179,38 @@
      "text": "Make the CATE sidebar show how many steps each project has left. I dont know the details, just do it.",
      "at": "2026-11-28T18:34:58+05:30",
      "files": []
+    },
+    {
+     "id": "M0002",
+     "at": "2026-11-28T18:35:00+05:30",
+     "role": "supervisor",
+     "by": "supervisor (openai/gpt-oss-120b)",
+     "text": "I'll add a count of remaining steps per project to the CATE sidebar, updating the UI and tests.",
+     "plan": {
+      "summary": "Add step count display to sidebar",
+      "steps": [
+       {
+        "title": "Update sidebar to show remaining steps",
+        "kind": "code",
+        "agent": "gpt-1",
+        "model": "gpt-6.2-astra",
+        "modelLabel": "GPT-6.2 Astra",
+        "brief": "Modify the sidebar component in web/app/(app)/ to read each project's remaining step count from the store and render it next to the project name. Add/adjust CSS in globals.css for layout. Create unit tests verifying the count appears correctly for mock projects. Run all existing tests, ensure they pass, and open a PR.",
+        "review": "cross",
+        "checks": [
+         "UI shows correct count for each project",
+         "Tests pass",
+         "No lint errors"
+        ],
+        "after": [],
+        "inputs": []
+       }
+      ]
+     }
     }
    ],
    "selection": [],
-   "updated_at": "2026-11-28T18:34:58+05:30"
+   "updated_at": "2026-11-28T18:35:00+05:30"
   }
  ],
  "usage": {
@@ -1193,7 +1221,7 @@
    "groq": 7
   },
   "2026-11-28": {
-   "groq": 1
+   "groq": 2
   }
  }
 }
