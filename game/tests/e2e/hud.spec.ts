@@ -27,6 +27,12 @@ async function enterCar(page: Page): Promise<void> {
   );
 }
 
+/** Waits until the simulation has run `n` more fixed ticks (1/60 s of game time each). */
+async function waitTicks(page: Page, n: number): Promise<void> {
+  const t0 = await page.evaluate(() => window.__neon.ticks);
+  await page.waitForFunction((t) => window.__neon.ticks >= t, t0 + n, { timeout: 60_000 });
+}
+
 async function boxesOverlap(page: Page): Promise<string[]> {
   return page.evaluate(() => {
     const sel = [
@@ -75,7 +81,19 @@ test('HUD shows speed, minimap position and the mission objective, and tracks th
   expect(onFoot.mapX).toBeCloseTo(onFoot.p.x, 1);
   expect(onFoot.mapZ).toBeCloseTo(onFoot.p.z, 1);
 
+  // The warm-up lap is a driving lap: its clock stays at zero while the player waits on foot,
+  // gets in and idles in the parked car, and starts only once the car drives away.
+  const timer = page.locator('.hud-mission-timer');
+  await page.waitForFunction(() => window.__neon.player?.grounded === true, null, { timeout: 30_000 });
+  await waitTicks(page, 120);
+  await expect(timer).toHaveText('0:00.0');
+  await expect(page.locator('.hud-mission-objective')).toContainText('Get in a car');
+
   await enterCar(page);
+  await waitTicks(page, 180); // 3 s of game time idling in the car
+  expect(await page.evaluate(() => Math.abs(window.__neon.vehicle!.speedKmh))).toBeLessThan(1);
+  await expect(timer).toHaveText('0:00.0');
+  await expect(page.locator('.hud-mission-objective')).toContainText('start the lap');
   await expect(page.locator('.speedo')).toBeVisible();
   await expect(page.locator('.hud-mission-title')).toHaveText('WARM-UP LAP');
   await expect(page.locator('.hud-mission-step')).toHaveText('1/6');
@@ -108,6 +126,7 @@ test('HUD shows speed, minimap position and the mission objective, and tracks th
   expect(moving.hud.mapZ).toBeLessThan(start.v.z - 2);
   expect(Math.abs(moving.hud.mapZ! - moving.v.z)).toBeLessThan(5);
   expect(moving.timer).toMatch(/^\d+:\d\d\.\d$/);
+  expect(moving.timer).not.toBe('0:00.0'); // driving away started the clock
   const mapAfter = await page
     .locator('.hud-minimap canvas')
     .evaluate((c: HTMLCanvasElement) => c.toDataURL());
@@ -126,33 +145,60 @@ test('HUD shows speed, minimap position and the mission objective, and tracks th
   expect(problems).toEqual([]);
 });
 
-test('HUD elements never overlap or leave the screen at common window sizes', async ({ page }) => {
+test('HUD elements never overlap or leave the screen at common window sizes, on foot and driving', async ({
+  page,
+}) => {
+  test.setTimeout(150_000);
   const problems = collectProblems(page);
   await page.goto('/');
   await page.waitForFunction(() => window.__neon?.phase === 'running' && window.__neon.frames > 5, null, {
     timeout: 45_000,
   });
-  for (const [width, height] of [
+  const sizes = [
     [1920, 1080],
     [1366, 768],
     [1280, 720],
     [1024, 768],
     [900, 600],
     [800, 500],
-  ] as const) {
-    await page.setViewportSize({ width, height });
-    const f = await page.evaluate(() => window.__neon.frames);
-    await page.waitForFunction((n) => window.__neon.frames > n + 2, f, { timeout: 20_000 });
-    expect(await boxesOverlap(page), `${width}x${height}`).toEqual([]);
-    // The minimap canvas backing store follows its CSS size (sharp, not stretched).
-    const m = await page.locator('.hud-minimap canvas').evaluate((c: HTMLCanvasElement) => ({
-      w: c.width,
-      css: c.getBoundingClientRect().width,
-      dpr: devicePixelRatio,
-    }));
-    expect(Math.abs(m.w - m.css * m.dpr)).toBeLessThanOrEqual(1);
-  }
-  await test.info().attach('hud-800x500.png', { body: await page.screenshot(), contentType: 'image/png' });
+  ] as const;
+  const checkSizes = async (mode: string, speedo: boolean): Promise<void> => {
+    for (const [width, height] of sizes) {
+      const at = `${mode} ${width}x${height}`;
+      await page.setViewportSize({ width, height });
+      const f = await page.evaluate(() => window.__neon.frames);
+      await page.waitForFunction((n) => window.__neon.frames > n + 2, f, { timeout: 20_000 });
+      // In the car the speedometer is on screen and part of the overlap check.
+      if (speedo) await expect(page.locator('.speedo'), at).toBeVisible();
+      else await expect(page.locator('.speedo'), at).toBeHidden();
+      expect(await boxesOverlap(page), at).toEqual([]);
+      // The minimap canvas backing store follows its CSS size (sharp, not stretched).
+      const m = await page.locator('.hud-minimap canvas').evaluate((c: HTMLCanvasElement) => ({
+        w: c.width,
+        css: c.getBoundingClientRect().width,
+        dpr: devicePixelRatio,
+      }));
+      expect(Math.abs(m.w - m.css * m.dpr), at).toBeLessThanOrEqual(1);
+    }
+  };
+
+  await checkSizes('on foot', false);
+  await test
+    .info()
+    .attach('hud-800x500-foot.png', { body: await page.screenshot(), contentType: 'image/png' });
+
+  // Driving: get in at full size, pick up speed (a two-digit speedometer reading), then go
+  // through the sizes again while the car rolls up the empty arterial.
+  await page.setViewportSize({ width: 1920, height: 1080 });
+  await enterCar(page);
+  await page.keyboard.down('KeyW');
+  await page.waitForFunction(() => (window.__neon.vehicle?.speedKmh ?? 0) > 25, null, { timeout: 30_000 });
+  await page.keyboard.up('KeyW');
+  expect(Number(await page.locator('.speedo-speed').textContent())).toBeGreaterThan(9);
+  await checkSizes('driving', true);
+  await test
+    .info()
+    .attach('hud-800x500-driving.png', { body: await page.screenshot(), contentType: 'image/png' });
   expect(problems).toEqual([]);
 });
 

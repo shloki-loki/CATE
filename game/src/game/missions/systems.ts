@@ -7,7 +7,7 @@ import { CheckpointRun, type CheckpointRunDef, WARMUP_LAP } from './checkpointRu
 import { checkpointMarkerView } from './markerView';
 
 /**
- * gameplay: runs a CheckpointRun for the player, keeps a MissionStatus entity up to
+ * gameplay: runs a CheckpointRun for the car the player drives, keeps a MissionStatus entity up to
  * date for the HUD, emits mission events and moves the checkpoint beacon.
  */
 export function CheckpointRunSystem(def: CheckpointRunDef = WARMUP_LAP): GameSystem {
@@ -26,8 +26,9 @@ export function CheckpointRunSystem(def: CheckpointRunDef = WARMUP_LAP): GameSys
       s.render.addToWorld(marker, 'dynamic');
     },
     update(world, s, dt) {
+      // A driving lap: it follows the car the player drives and ignores them on foot.
       const p = findPlayer(world);
-      const pos = p ? { x: p.transform.position.x, z: p.transform.position.z } : null;
+      const pos = p?.inVehicle ? { x: p.transform.position.x, z: p.transform.position.z } : null;
       for (const ev of run.update(dt, pos)) {
         if (ev.kind === 'started') s.events.emit('missionStarted', { id: def.id });
         else if (ev.kind === 'step')

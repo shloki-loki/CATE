@@ -135,6 +135,36 @@ describe('checkpoint run (mission indicator source)', () => {
     expect(run.best).toBe(4);
   });
 
+  it('is a driving lap: on foot does not count, and the clock waits until the car moves from where the player got in', () => {
+    const run = new CheckpointRun(def);
+    // On foot (null): announced only once the player drives; no clock, a "get in" objective.
+    expect(run.update(1, null)).toEqual([]);
+    expect(run.objective).toMatch(/Get in a car/);
+    // Gets in: the car is 2.2 m from where the character stood, which must not start the clock.
+    expect(run.update(0.1, { x: 3, z: 1 })).toEqual([{ kind: 'started' }]);
+    expect(run.objective).toMatch(/start the lap/);
+    run.update(3, { x: 3, z: 1 }); // idling in the parked car
+    run.update(1, { x: 3.5, z: 0 }); // rolling forward a little
+    expect(run.phase).toBe('waiting');
+    expect(run.elapsed).toBe(0);
+    // Gets out and walks to another car 30 m away: the anchor is retaken there.
+    const rev = run.revision;
+    expect(run.update(2, null)).toEqual([]);
+    expect(run.objective).toMatch(/Get in a car/);
+    expect(run.revision).toBeGreaterThan(rev);
+    expect(run.update(0.1, { x: 30, z: 5 })).toEqual([]); // no second 'started'
+    run.update(2, { x: 30, z: 5 });
+    expect(run.elapsed).toBe(0);
+    // Drives away: the clock starts.
+    run.update(0.5, { x: 30, z: 2 });
+    expect(run.phase).toBe('running');
+    expect(run.elapsed).toBe(0.5);
+    // Once running, getting out does not pause the clock, but on foot reaches no checkpoint.
+    run.update(1, null);
+    expect(run.elapsed).toBe(1.5);
+    expect(run.index).toBe(0);
+  });
+
   it('bumps the revision whenever the objective changes', () => {
     const run = new CheckpointRun(def);
     run.update(0.1, { x: 0, z: 0 });

@@ -4,9 +4,11 @@ import {
   CameraTarget,
   Character,
   ChaseCameraSystem,
+  CheckpointRunSystem,
   createPlayer,
   Driver,
   FollowCameraSystems,
+  MissionStatus,
   PhysicsStepSystem,
   PhysicsSyncSystem,
   PlayerSystems,
@@ -47,6 +49,19 @@ describe('player + vehicles + cameras (headless, main.ts system order)', () => {
     world.addSystem(PhysicsStepSystem);
     world.addSystem(PhysicsSyncSystem);
     for (const sys of VehicleSystems()) world.addSystem(sys);
+    // The warm-up lap as main.ts adds it (before the cameras), here straight up -Z.
+    world.addSystem(
+      CheckpointRunSystem({
+        id: 'lap',
+        title: 'LAP',
+        checkpoints: [
+          { x: -3, z: -60 },
+          { x: -3, z: -120 },
+        ],
+        radius: 9,
+        restartDelay: 5,
+      }),
+    );
     for (const sys of FollowCameraSystems()) world.addSystem(sys);
     for (const sys of ChaseCameraSystem()) world.addSystem(sys);
     for (const sys of PlayerSystems()) world.addSystem(sys);
@@ -77,6 +92,10 @@ describe('player + vehicles + cameras (headless, main.ts system order)', () => {
   const pos = (e: number): Vector3 => world.require(e, Transform).position;
   const cam = (): Vector3 => render.camera.position;
   const flat = (a: Vector3, b: Vector3): number => Math.hypot(a.x - b.x, a.z - b.z);
+  const mission = () => {
+    for (const e of world.query(MissionStatus)) return world.require(e, MissionStatus);
+    throw new Error('no MissionStatus');
+  };
   /** Largest camera move between two consecutive frames in the trace since index `from`. */
   const maxCamStep = (from: number): number => {
     let m = 0;
@@ -184,5 +203,34 @@ describe('player + vehicles + cameras (headless, main.ts system order)', () => {
     input.axes.moveY = 0;
     expect(Math.abs(pos(car).z - carZ)).toBeLessThan(0.2);
     expect(flat(pos(p), new Vector3(pos(p).x, 0, pz))).toBeGreaterThan(3);
+  });
+
+  it('the lap clock stays at zero while the player waits, gets in and idles, and starts when the car drives away', () => {
+    // main.ts layout: the character 2.2 m beside and 0.5 m behind the parked car's driver door.
+    const car = spawnVehicle(world, s, 'sports', -3, 0, 45, { yaw: Math.PI, headless: true });
+    const p = createPlayer(world, s, { x: -5.2, y: FEET + 0.05, z: 45.5 }, 0);
+    run(2); // waiting on foot
+    expect(mission().elapsed).toBe(0);
+    expect(mission().objective).toMatch(/Get in a car/);
+    expect(mission().step).toBe(1);
+
+    input.tap('enterExit');
+    run(0.1);
+    expect(world.require(p, Character).state).toBe('inVehicle');
+    run(3); // idling in the parked car
+    expect(Math.abs(world.require(car, VehicleTelemetry).speed)).toBeLessThan(0.1);
+    expect(mission().elapsed).toBe(0);
+    expect(mission().objective).toMatch(/start the lap/);
+
+    input.axes.throttle = 1;
+    input.axes.moveY = 1;
+    run(3);
+    expect(mission().elapsed).toBeGreaterThan(1);
+    expect(mission().objective).not.toMatch(/start the lap/);
+    // Keep driving: the car (not the character) reaches the first checkpoint.
+    for (let i = 0; i < 600 && mission().step === 1; i++) run(DT * 10);
+    input.axes.throttle = 0;
+    input.axes.moveY = 0;
+    expect(mission().step).toBe(2);
   });
 });
