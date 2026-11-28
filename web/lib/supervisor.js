@@ -149,7 +149,12 @@ export async function supervise({ catalog, agents, messages, tasks, selection })
         const text = await ask(endpoint, prompt, json);
         const parsed = parse(text);
         if (parsed && (parsed.reply || parsed.plan)) {
-          return { ...sanitize(parsed, catalog, agents, selection), provider: endpoint.provider, model: endpoint.model() };
+          const existing = messages.flatMap((m) => m.tasks || []).map((id) => tasks.find((t) => t.id === id)).filter(Boolean);
+          const result = sanitize(parsed, catalog, agents, selection, existing);
+          if (parsed.plan?.steps?.length && !result.plan) {
+            result.reply = `${result.reply}\n\n_(Every step it proposed already exists in this project, so nothing new was added.)_`;
+          }
+          return { ...result, provider: endpoint.provider, model: endpoint.model() };
         }
         if (!json && text.trim()) return { reply: text.trim().slice(0, 8000), plan: null, provider: endpoint.provider, model: endpoint.model() };
         errors.push(`${endpoint.provider}: unreadable answer`);
@@ -162,7 +167,15 @@ export async function supervise({ catalog, agents, messages, tasks, selection })
 }
 
 // Keep the plan to agents and models that exist and are enabled; fill gaps with the recommended choice.
-export function sanitize(parsed, catalog, agents, selection) {
+const words = (text) => new Set(String(text || '').toLowerCase().replace(/[^a-z0-9 ]+/g, ' ').split(' ').filter((w) => w.length > 2));
+function similar(a, b) {
+  const x = words(a); const y = words(b);
+  if (!x.size || !y.size) return false;
+  const common = [...x].filter((w) => y.has(w)).length;
+  return common / Math.min(x.size, y.size) >= 0.7;
+}
+
+export function sanitize(parsed, catalog, agents, selection, existing = []) {
   const reply = String(parsed.reply || '').slice(0, 8000);
   const raw = parsed.plan && Array.isArray(parsed.plan.steps) ? parsed.plan.steps.slice(0, 8) : null;
   if (!raw || !raw.length) return { reply, plan: null };
@@ -170,9 +183,19 @@ export function sanitize(parsed, catalog, agents, selection) {
     const kind = Object.keys(KIND_LABELS).includes(s.kind) ? s.kind : 'other';
     let agent = agents.find((a) => a.id === s.agent && a.status !== 'paused');
     if (selection?.length) {
-      const pick = selection.find((p) => p.agent === s.agent && (!p.kind || p.kind === kind)) || selection.find((p) => p.kind === kind) || selection[0];
-      agent = agents.find((a) => a.id === pick.agent) || agent;
-      s.model = pick.agent === agent?.id ? pick.model : s.model;
+      // The picked models are the ALLOWED set: choose the best of them for this job, never just the first pick.
+      const allowedAgents = agents.filter((a) => selection.some((p) => p.agent === a.id) && a.status !== 'paused')
+        .map((a) => ({ ...a, models: selection.filter((p) => p.agent === a.id && (!p.kind || p.kind === kind)).map((p) => p.model) }))
+        .filter((a) => a.models.length);
+      const pool = allowedAgents.length ? allowedAgents : agents.filter((a) => selection.some((p) => p.agent === a.id))
+        .map((a) => ({ ...a, models: selection.filter((p) => p.agent === a.id).map((p) => p.model) }));
+      const named = pool.find((a) => a.id === s.agent);
+      const b = named ? { agent: named.id } : bestFor(catalog, pool, kind, { allowFree: true });
+      const chosen = pool.find((a) => a.id === b?.agent) || pool[0];
+      if (chosen) {
+        agent = agents.find((a) => a.id === chosen.id);
+        s.model = chooseModel(catalog, chosen, kind, chosen.models.includes(s.model) ? s.model : undefined);
+      }
     }
     if (!selection?.length) {
       // No models picked: the account follows CATE's rule (best score for the job, then most limit left).
@@ -193,8 +216,12 @@ export function sanitize(parsed, catalog, agents, selection) {
       after: (Array.isArray(s.after) ? s.after : []).filter((i) => Number.isInteger(i) && i >= 0),
     };
   });
-  // Drop review steps that only re-check a step already marked for automatic cross review.
-  const kept = steps.filter((st, i) => !(st.kind === 'review' && steps.slice(0, i).some((p) => p.review === 'cross')));
+  // Drop review steps that only re-check a step already marked for automatic cross review, and steps that
+  // repeat work this project already has (done or under way): the cause of duplicate builds.
+  const live = existing.filter((t) => t.status !== 'cancelled');
+  const kept = steps.filter((st, i) => !(st.kind === 'review' && steps.slice(0, i).some((p) => p.review === 'cross'))
+    && !live.some((t) => similar(t.title, st.title)));
+  if (!kept.length) return { reply, plan: null };
   const remap = steps.map((st) => kept.indexOf(st));
   for (const st of kept) st.after = st.after.map((i) => remap[i]).filter((i) => i >= 0);
   return { reply, plan: { summary: String(parsed.plan.summary || '').slice(0, 300), steps: kept } };

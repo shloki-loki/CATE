@@ -48,10 +48,21 @@ def when(value: Any) -> str | None:
         return None
 
 
-def pct(value: Any) -> float | None:
+def fraction_pct(value: Any) -> float | None:
+    """Claude's `utilization` is a fraction (0.05 = 5%; it can exceed 1.0 when over the limit)."""
     if not isinstance(value, (int, float)):
         return None
-    return round(value * 100 if value <= 1 else value, 1)
+    return round(value * 100, 1)
+
+
+def percent(value: Any) -> float | None:
+    """Codex's `used_percent` is already a percentage (5 = 5%). Never rescale it: 1.0 means 1%, not 100%."""
+    if not isinstance(value, (int, float)):
+        return None
+    return round(float(value), 1)
+
+
+pct = fraction_pct  # backwards-compatible name
 
 
 def window_name(key: str) -> str | None:
@@ -100,7 +111,7 @@ def parse(path: str | Path) -> dict:
             # ---- Claude: {rateLimitType, utilization (0-1), resetsAt} or unifiedWindows {five_hour: {...}}
             if "utilization" in node:
                 key = str(node.get("rateLimitType") or (where[-1] if where else ""))
-                used = pct(node.get("utilization"))
+                used = fraction_pct(node.get("utilization"))
                 if used is None:
                     continue
                 reading = _reading(used, node.get("resetsAt") or node.get("resets_at"))
@@ -124,7 +135,7 @@ def parse(path: str | Path) -> dict:
                         {"primary": "five_hour", "secondary": "seven_day"}[side]
                     if name is None:
                         continue
-                    used = pct(w.get("used_percent"))
+                    used = percent(w.get("used_percent"))
                     resets = w.get("resets_at")
                     if resets is None and isinstance(w.get("resets_in_seconds"), (int, float)):
                         resets = (now() + timedelta(seconds=w["resets_in_seconds"])).isoformat()

@@ -69,7 +69,6 @@ function AgentCard({ agent, catalogModels, usage, repo }) {
   const [pending, start] = useTransition();
   const [state, setState] = useState(null);
   const [enabled, setEnabled] = useState(agent.models);
-  const [budget, setBudget] = useState(agent.budget || 0);
   const run = (changes) => start(async () => setState(await safe(() => setAgent(agent.id, changes))));
   const toggle = (id) => {
     const next = enabled.includes(id) ? enabled.filter((m) => m !== id) : [...enabled, id];
@@ -127,12 +126,7 @@ function AgentCard({ agent, catalogModels, usage, repo }) {
             <FragmentRole key={kind} kind={kind} label={label} agent={agent} enabled={enabled} name={name} onChange={(model) => run({ role: { kind, model } })} disabled={pending} />
           ))}
         </div>
-        <div className="sub-label">Weekly token budget</div>
-        <div className="button-row">
-          <input className="select num" style={{ width: 140 }} type="number" min="0" step="50000" value={budget} onChange={(e) => setBudget(e.target.value)} aria-label="Weekly token budget" />
-          <button className="button small" disabled={pending} onClick={() => run({ budget })}>Set</button>
-          <span className="faint small-text">0 = no cap; the plan’s own limits still apply.</span>
-        </div>
+        <p className="faint small-text">CATE goes by this plan’s real 5-hour and weekly limits (read after every run); there is no separate token budget.</p>
       </details>
 
       {st.key !== 'bad' ? (

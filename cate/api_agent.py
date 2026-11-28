@@ -38,6 +38,20 @@ REVIEW_FORMAT = """Reply with ONLY a JSON object, no other text:
 
 
 def chat(base: str, key: str, model: str, messages: list[dict]) -> tuple[str, int, int]:
+    """One completion, retried on 'overloaded' / rate-limit answers (503, 429, 500) with growing waits."""
+    import time
+    for attempt in range(3):
+        try:
+            return _chat_once(base, key, model, messages)
+        except RuntimeError as error:
+            if attempt < 2 and any(code in str(error)[:4] for code in ("503", "429", "500", "502")):
+                time.sleep(10 * (attempt + 1) ** 2)
+                continue
+            raise
+    raise AssertionError("unreachable")
+
+
+def _chat_once(base: str, key: str, model: str, messages: list[dict]) -> tuple[str, int, int]:
     body = json.dumps({"model": model, "messages": messages, "temperature": 0.3}).encode()
     request = urllib.request.Request(f"{base.rstrip('/')}/chat/completions", data=body, method="POST", headers={
         "Authorization": f"Bearer {key}", "Content-Type": "application/json", "User-Agent": "cate-agent"})
@@ -100,6 +114,6 @@ def run(agent_id: str) -> str:
         store.transact(lambda: core.submit(agent_id, task["id"], text, t_in, t_out), f"submit: {task['id']}")
         return f"submitted {task['id']} ({t_in + t_out:,} tokens)"
     except Exception as error:  # hand the work back so another agent takes it
-        store.transact(lambda: core.release(agent_id, task["id"], f"API error: {error}"[:300], 60),
+        store.transact(lambda: core.release(agent_id, task["id"], f"API error: {error}"[:300], 15),
                        f"release: {agent_id}")
         return f"released {task['id']}: {error}"

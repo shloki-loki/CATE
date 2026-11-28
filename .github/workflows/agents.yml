@@ -18,14 +18,16 @@ permissions:
   actions: write
   pull-requests: write
 
-concurrency:
-  group: cate-plan
-  cancel-in-progress: false
+# No workflow-wide concurrency: several agents must be able to work at the same time. Only planning is
+# serialised (below); each agent has its own lane (run job), and merging has its own (merge job).
 
 jobs:
   plan:
     runs-on: ubuntu-latest
     timeout-minutes: 5
+    concurrency:
+      group: cate-plan
+      cancel-in-progress: false
     outputs:
       agents: ${{ steps.plan.outputs.agents }}
       before: ${{ steps.plan.outputs.before }}
@@ -56,7 +58,6 @@ jobs:
     env:
       AGENT: ${{ matrix.agent }}
       SECRET_NAME: ${{ matrix.secret }}
-      AGENT_SECRET: ${{ secrets[matrix.secret] }}
       MODEL: ${{ matrix.model }}
       CATE_DEFER_TOKENS: "1"
     steps:
@@ -65,8 +66,12 @@ jobs:
         with: { ref: data, path: data }
       - name: Git identity for code changes
         run: git config --global user.name "cate-agent-${{ matrix.agent }}" && git config --global user.email "cate-agent@users.noreply.github.com"
+      - name: Full history (agents merge main into their branches)
+        run: git fetch -q --unshallow origin 2>/dev/null || true
       - name: Check this agent is connected
         id: secret
+        env:
+          AGENT_SECRET: ${{ secrets[matrix.secret] }}
         run: |
           if [ -z "$AGENT_SECRET" ]; then
             echo "::warning::$AGENT has no GitHub secret $SECRET_NAME; pausing it until you add one"
@@ -97,7 +102,7 @@ jobs:
           [ "$RUNNER" = claude-actions ] || exit 0
           npm install -g @anthropic-ai/claude-code >/dev/null 2>&1
           # Only the tools CATE needs, no plugins or slash commands: a smaller start-up prompt per run.
-          args=(--output-format stream-json --verbose --dangerously-skip-permissions --max-turns 120
+          args=(--output-format stream-json --verbose --dangerously-skip-permissions --max-turns 80
                 --tools "Bash,Read,Write,Edit,Glob,Grep,WebSearch,WebFetch" --disable-slash-commands --strict-mcp-config)
           [[ "$JOB_MODEL" =~ ^[A-Za-z0-9._:/-]+$ ]] && args+=(--model "$JOB_MODEL")
           [[ "$JOB_EFFORT" =~ ^(low|medium|high|xhigh|max)$ ]] && args+=(--effort "$JOB_EFFORT")
@@ -121,6 +126,7 @@ jobs:
           JOB_MODEL: ${{ steps.job.outputs.MODEL }}
           JOB_EFFORT: ${{ steps.job.outputs.EFFORT }}
           GH_TOKEN: ${{ github.token }}
+          AGENT_SECRET: ${{ secrets[matrix.secret] }}
         run: |
           mkdir -p ~/.codex
           [ -s ~/.codex/auth.json ] || printf '%s' "$AGENT_SECRET" > ~/.codex/auth.json

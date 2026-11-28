@@ -27,6 +27,10 @@ while read -r task pr; do
   case "$head" in cate/*) ;; *) record blocked "branch $head is not an agent branch"; continue ;; esac
   if [ "$base" != main ]; then record blocked "it targets $base, not main"; continue; fi
   if [[ " $files" == *" .github/"* ]]; then record blocked "it changes .github/ (workflow changes need the owner)"; continue; fi
+  # CATE's own controls: an agent may propose changes to them, but only the owner merges those.
+  for protected in scripts/ config/settings.toml web/lib/auth.js web/middleware.js; do
+    if [[ " $files" == *" $protected"* ]]; then record blocked "it changes $protected (CATE's own controls need the owner to merge)"; continue 2; fi
+  done
 
   git fetch -q origin main "$head" || { record waiting "could not fetch the branch"; continue; }
   git checkout -q -B automerge origin/main

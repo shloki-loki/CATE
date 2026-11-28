@@ -124,7 +124,6 @@ export async function sendMessage(formData) {
       }
       messageId = nextId(chat.messages, 'M');
       chat.messages.push({ id: messageId, role: 'user', text, at: now, files: files.map((f) => `uploads/${chatId}/${f.name.replace(/[^\w.-]+/g, '_')}`) });
-      chat.selection = selection;
       chat.updated_at = now;
     }, `chat: message`);
 

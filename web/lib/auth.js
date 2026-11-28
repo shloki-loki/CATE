@@ -15,11 +15,12 @@ const sign = (payload) => createHmac('sha256', signingKey()).update(payload).dig
 // No SITE_PASSWORD set = the site is open to anyone with the link (fine only for a local preview).
 // Setting SITE_PASSWORD in the host's environment variables turns the login back on, no code change.
 export function openForLocalPreview() {
-  return !process.env.SITE_PASSWORD;
+  // Open only for a local preview; on the real site a missing password must never mean "no login".
+  return !process.env.SITE_PASSWORD && process.env.NODE_ENV !== 'production' && !process.env.VERCEL;
 }
 
 export function isOpenSite() {
-  return !process.env.SITE_PASSWORD;
+  return openForLocalPreview();
 }
 
 export function passwordIsSet() {

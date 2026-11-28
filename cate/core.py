@@ -65,9 +65,7 @@ def availability(agent: dict, ledger: dict) -> tuple[bool, str]:
     until = parse_iso(agent.get("limited_until"))
     if agent.get("status") == "limited" and until and minutes_since(agent["limited_until"]) < 0:
         return False, f"usage limit reached; resting until {agent['limited_until']}"
-    budget = int(agent.get("weekly_budget_tokens") or 0)
-    if budget and tokens_used(ledger, agent["id"]) >= budget:
-        return False, f"weekly budget of {budget:,} tokens used up"
+    # (Weekly token budgets were a guess and blocked accounts with real limit left: they are display-only now.)
     # The subscription's own limits, as last reported by the CLI after a run.
     for window, ceiling in (("five_hour", cfg("five_hour_stop_pct", 90)), ("seven_day", cfg("seven_day_stop_pct", 97))):
         info = (agent.get("limits") or {}).get(window) or {}
@@ -151,10 +149,21 @@ def choose_model(agent: dict, task: dict) -> tuple[str, str]:
 
 # ---- routing ------------------------------------------------------------------------------------
 
+def landed(task: dict) -> bool:
+    """Done AND, if its result is a pull request, merged (or knowingly superseded). Code that never reached main
+    must not unlock the steps built on top of it."""
+    if task.get("status") != "done":
+        return False
+    if pr_number((task.get("result") or {}).get("text", "")) is None:
+        return True
+    merge = task.get("merge") or {}
+    return merge.get("status") == "merged" or "superseded" in str(merge.get("detail", ""))
+
+
 def deps_done(task: dict, tasks: list[dict]) -> bool:
     for ident in task.get("after", []):
         parent = store.find(tasks, ident)
-        if not parent or parent.get("status") != "done":
+        if not parent or not landed(parent):
             return False
     return True
 
@@ -207,8 +216,15 @@ def can_review(task: dict, agent: dict, agents: list[dict]) -> bool:
     if agent["id"] == worker:
         return False
     if (task.get("review") or {}).get("mode") == "cross" and agent.get("provider") == worker_provider(task, agents):
-        # another provider should check it; fall back to a different account of the same provider after a wait
-        return minutes_since(task.get("review_queued_at")) >= cfg("fallback_minutes", 90)
+        # Another provider should check it. Fall back to another account of the same provider at once if no
+        # other-provider reviewer can work right now (paused, out of limit), else after the wait.
+        if minutes_since(task.get("review_queued_at")) >= cfg("fallback_minutes", 90):
+            return True
+        worker = worker_provider(task, agents)
+        others = [a for a in agents if a.get("provider") != worker and a.get("runner") != "api"
+                  and a.get("status") != "paused" and a["id"] not in task.get("review_exclude", [])]
+        ledger = store.load("ledger")
+        return not any(availability(a, ledger)[0] for a in others)
     return True
 
 
@@ -334,13 +350,56 @@ def supervise(actor: str = "supervisor") -> list[str]:
                     notes.append(f"{task['id']} blocked: {ident} {parent['status']}")
                     break
 
+    # Say why work is waiting when nobody can take it (shown on the task card, posted in the chat once).
+    ledger = store.load("ledger")
+    told = []
+    for task in tasks["tasks"]:
+        if task.get("status") not in ("queued", "review"):
+            task.pop("waiting_reason", None)
+            continue
+        reason = explain_waiting(task, tasks["tasks"], agents["agents"], ledger)
+        if reason != task.get("waiting_reason"):
+            if reason:
+                task["waiting_reason"] = reason
+                told.append((task, reason))
+            else:
+                task.pop("waiting_reason", None)
+
     store.save("agents", agents)
     store.save("tasks", tasks)
     for task, why in failed:
         tell_chat(task, failure_message(task, why))
+    for task, reason in told:
+        tell_chat(task, f"⏸ {task['id']} \u201c{task.get('title', '')}\u201d is waiting: {reason}.")
+        notes.append(f"{task['id']} waiting: {reason}")
     for line in notes:
         store.journal(actor, "supervise", line)
     return notes
+
+
+def explain_waiting(task: dict, tasks: list[dict], agents: list[dict], ledger: dict) -> str:
+    """Why nobody can take this task right now ('' if someone can, or it simply waits its turn)."""
+    for ident in task.get("after", []):
+        parent = store.find(tasks, ident)
+        if parent and parent.get("status") == "done" and not landed(parent):
+            merge = parent.get("merge") or {}
+            if merge.get("status") == "blocked":
+                return f"it builds on {ident}, whose pull request #{merge.get('pr')} can't be merged ({merge.get('detail')})"
+            return ""  # the parent's pull request is on its way to being merged
+        if not parent or parent.get("status") != "done":
+            return ""  # waiting its turn behind an earlier step
+    usable = [a for a in agents if a.get("runner") != "api"]
+    if task.get("status") == "queued":
+        fits = [a for a in usable if can_work(task, a, tasks, agents, ledger) or
+                (task.get("prefer", "").startswith("agent:") and a["id"] == task["prefer"][6:])]
+    else:
+        fits = [a for a in usable if can_review(task, a, agents)]
+    if not fits:
+        return "" if task.get("status") == "queued" else "no account other than the author can review it yet"
+    reasons = [f"{a['id']}: {availability(a, ledger)[1]}" for a in fits if not availability(a, ledger)[0]]
+    if len(reasons) == len(fits):
+        return "every account that could do it is unavailable (" + "; ".join(reasons) + ")"
+    return ""
 
 
 # ---- an agent's turn ----------------------------------------------------------------------------

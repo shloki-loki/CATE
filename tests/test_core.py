@@ -115,7 +115,8 @@ class Pipeline(unittest.TestCase):
         run("tick", "--agent", "claude-1")
         run("submit", "--agent", "claude-1", "--task", "T0001", "--text", "y", "--tokens-in", "900", "--tokens-out", "200")
         run("task", "add", "--title", "b", "--brief", "x")
-        self.assertIn("budget", run("tick", "--agent", "claude-1")[1])
+        # Budgets are display-only now: the plan's real limits decide.
+        self.assertIn("WORK for claude-1: T0002", run("tick", "--agent", "claude-1")[1])
 
     def test_wrong_agent_cannot_submit(self):
         run("task", "add", "--title", "a", "--brief", "x")
@@ -271,8 +272,11 @@ class Models(unittest.TestCase):
         return store.find(store.load("agents")["agents"], ident)
 
     def test_defaults_follow_catalog(self):
-        self.assertEqual(core.choose_model(self.agent("claude-1"), {"kind": "code"})[0], "claude-opus-5-5")
-        self.assertEqual(core.choose_model(self.agent("gpt-1"), {"kind": "code"})[0], "gpt-6.2-astra")
+        # Doing the work: the lighter top model; planning and reviewing: the strongest.
+        self.assertEqual(core.choose_model(self.agent("claude-1"), {"kind": "code"})[0], "claude-sonnet-5-5")
+        self.assertEqual(core.choose_model(self.agent("gpt-1"), {"kind": "code"})[0], "gpt-6.2-sol")
+        self.assertEqual(core.choose_model(self.agent("claude-1"), {"kind": "plan"})[0], "claude-opus-5-5")
+        self.assertEqual(core.choose_model(self.agent("gpt-1"), {"kind": "review"})[0], "gpt-6.2-astra")
         self.assertNotIn("claude-fable-5-2", core.enabled_models(self.agent("claude-1")))  # paid credits
 
     def test_user_choice_and_low_limits(self):
@@ -395,3 +399,41 @@ class ConflictLoop(unittest.TestCase):
         t = store.find(store.load("tasks")["tasks"], "T0001")
         self.assertEqual(t["merge"]["status"], "blocked")
         self.assertIn("clashed", store.load("chats")["chats"][0]["messages"][0]["text"])
+
+
+class JudgeFixes(unittest.TestCase):
+    def setUp(self):
+        shutil.rmtree(TMP, ignore_errors=True)
+        Path(TMP).mkdir()
+        run("agent", "add", "--id", "claude-1", "--provider", "anthropic", "--runner", "claude-actions")
+        run("agent", "add", "--id", "claude-2", "--provider", "anthropic", "--runner", "claude-actions")
+        run("agent", "add", "--id", "gpt-1", "--provider", "openai", "--runner", "codex-actions")
+
+    def test_codex_one_percent_is_one_percent(self):
+        from cate import runs
+        p = Path(TMP) / "c.jsonl"
+        p.write_text(json.dumps({"type": "event_msg", "payload": {"rate_limits": {"limit_id": "codex",
+            "primary": {"used_percent": 0.5, "window_minutes": 300}, "secondary": {"used_percent": 1.0, "window_minutes": 10080}}}}))
+        info = runs.parse(p)
+        self.assertEqual(info["limits"]["seven_day"]["used_pct"], 1.0)
+        self.assertEqual(info["limits"]["five_hour"]["used_pct"], 0.5)
+
+    def test_dependents_wait_for_the_merge(self):
+        from cate.util import settings
+        repo = settings()["repo"]
+        store.transact(lambda: core.add_task("o", "A", "b", "code", "agent:claude-1"), "t")
+        store.transact(lambda: core.add_task("o", "B", "b", "code", "agent:claude-2", after=["T0001"]), "t")
+        run("tick", "--agent", "claude-1")
+        run("submit", "--agent", "claude-1", "--task", "T0001", "--text", f"https://github.com/{repo}/pull/9")
+        self.assertIn("NOTHING TO DO", run("tick", "--agent", "claude-2")[1])  # done but not merged
+        run("merge-record", "--task", "T0001", "--pr", "9", "--status", "merged", "--detail", "ok")
+        self.assertIn("WORK for claude-2: T0002", run("tick", "--agent", "claude-2")[1])
+
+    def test_review_falls_back_at_once_when_other_provider_is_out(self):
+        agents = store.load("agents")
+        store.find(agents["agents"], "gpt-1")["status"] = "paused"
+        store.save("agents", agents)
+        store.transact(lambda: core.add_task("o", "A", "b", "code", "agent:claude-1", review_mode="cross"), "t")
+        run("tick", "--agent", "claude-1")
+        run("submit", "--agent", "claude-1", "--task", "T0001", "--text", "done")
+        self.assertIn("REVIEW for claude-2: T0001", run("tick", "--agent", "claude-2")[1])

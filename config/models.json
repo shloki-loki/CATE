@@ -1,5 +1,5 @@
 {
- "about": "Models CATE can use, and what each is best at. Scores 1-5 per kind of job, from public benchmarks and vendor guidance as of November 2026 (sources below). 'weight' is roughly how fast a model uses a subscription's limits (Haiku = 1). Defaults per job pick the best score among enabled models on accounts with the most limit left; the user can override any choice.",
+ "about": "Models CATE can use, and what each is best at. Scores 1-5 per kind of job, from public benchmarks and vendor guidance as of November 2026 (sources below). 'weight' is roughly how fast a model uses a subscription's limits (Haiku = 1). Defaults per job pick the best score among enabled models on accounts with the most limit left; the user can override any choice. Defaults favour the lighter top model (Sonnet / GPT-6.2 Sol) for doing the work and the strongest (Opus / Astra) for planning and reviewing, to stretch limits.",
  "updated": "2026-11-26",
  "kinds": {
   "plan": "Framing the project, clarifying, splitting work",
@@ -29,7 +29,7 @@
       "data": 4,
       "other": 5
      },
-     "note": "Strongest model included in Pro: 89.9% SWE-bench Pro, top-3 on LMArena text. Uses limits fastest."
+     "note": "Strongest in Pro (89.9% SWE-bench Pro). CATE uses it for planning and reviews by default; pick it for the hardest builds."
     },
     {
      "id": "claude-sonnet-5-5",
@@ -38,14 +38,14 @@
      "effort": "medium",
      "scores": {
       "plan": 4,
-      "research": 4,
+      "research": 5,
       "write": 5,
-      "code": 4,
+      "code": 5,
       "review": 4,
       "data": 4,
       "other": 4
      },
-     "note": "About 95% of Opus on most suites at half the cost; 81.3% SWE-bench Pro. Best everyday default."
+     "note": "Default for development, research and writing: ~95% of Opus on most suites at half the usage; 81.3% SWE-bench Pro."
     },
     {
      "id": "claude-haiku-5-5",
@@ -100,7 +100,7 @@
       "data": 4,
       "other": 5
      },
-     "note": "OpenAI's model for demanding work across code, apps and research."
+     "note": "Strongest OpenAI model; CATE uses it for planning and reviews by default."
     },
     {
      "id": "gpt-6.2-sol",
@@ -109,14 +109,14 @@
      "effort": "medium",
      "scores": {
       "plan": 4,
-      "research": 4,
+      "research": 5,
       "write": 4,
-      "code": 4,
+      "code": 5,
       "review": 4,
       "data": 4,
       "other": 4
      },
-     "note": "Everyday coding, writing and turning notes into plans; cheaper than Astra; 500k context."
+     "note": "Default for everyday coding, research and writing; cheaper than Astra; 500k context."
     },
     {
      "id": "gpt-6.1-sol",

@@ -240,6 +240,14 @@ function PlanCard({ chatId, message, agents, models, tasks }) {
   );
 }
 
+// What a waiting task is waiting for, in plain words (from the engine's waiting_reason, else its dependencies).
+function waitText(task) {
+  if (task.waiting_reason) return `Waiting: ${task.waiting_reason}.`;
+  if (task.status === 'review') return 'Done; waiting for another model to review it (starts within a few minutes).';
+  if (task.after?.length && task.status === 'queued' && task.blockedBy?.length) return `Starts after ${task.blockedBy.join(', ')} ${task.blockedBy.length > 1 ? 'are' : 'is'} finished and merged.`;
+  return 'Starting an agent… this usually takes 1–3 minutes.';
+}
+
 function TaskCard({ task, agents, models }) {
   const [pending, start] = useTransition();
   const [state, setState] = useState(null);
@@ -261,12 +269,13 @@ function TaskCard({ task, agents, models }) {
           {task.merge.status === 'merged' ? `✓ Merged PR #${task.merge.pr}` : task.merge.status === 'blocked' ? `Not merged: PR #${task.merge.pr}` : `Merging PR #${task.merge.pr}…`}</span> : null}
         {(task.status === 'reviewing' ? task.review_run_url : task.run_url) ? <a className="link" style={{ fontSize: 12.5 }} href={task.status === 'reviewing' ? task.review_run_url : task.run_url} target="_blank" rel="noreferrer">View run ↗</a> : null}
       </div>
-      {task.status === 'queued' ? <div className="task-body task-meta">Starting an agent… this usually takes 1–3 minutes.</div> : null}
+      {task.status === 'queued' || task.status === 'review' ? <div className="task-body task-meta">{waitText(task)}</div> : null}
       {task.result ? (
         <div className="task-body">
           <Markdown text={task.result.text} />
           {review ? (
-            <details className="box"><summary>{review.verdict === 'pass' ? '✓ Passed review' : '✗ Sent back'} · {review.score}/100 · {agents.find((a) => a.id === review.by)?.label || review.by}{review.model ? ` (${models[review.model]?.label || review.model})` : ''}</summary>
+            <details className="box"><summary>{review.verdict === 'pass' ? '✓ Passed review' : '✗ Sent back'} · {review.score}/100 · {agents.find((a) => a.id === review.by)?.label || review.by}{review.model ? ` (${models[review.model]?.label || review.model})` : ''}
+              {agents.find((a) => a.id === review.by)?.provider && agents.find((a) => a.id === review.by)?.provider === agents.find((a) => a.id === task.result?.by)?.provider ? <span className="pill warn" style={{ marginLeft: 6 }} title="Reviewed by the same provider (the other provider was unavailable): a weaker check">same provider</span> : null}</summary>
               <Markdown text={review.notes} />
             </details>
           ) : null}
@@ -288,7 +297,7 @@ export default function Chat({ chatId, initial, agents, models, recommended, sup
   const [data, setData] = useState(initial);
   const [text, setText] = useState('');
   const [files, setFiles] = useState([]);
-  const [selection, setSelection] = useState(initial.chat?.selection || []);
+  const [selection, setSelection] = useState([]); // picks apply to the next message only, then clear
   const [compare, setCompare] = useState(false);
   const [open, setOpen] = useState(''); // 'models' | 'usage'
   const [pending, start] = useTransition();
@@ -302,8 +311,12 @@ export default function Chat({ chatId, initial, agents, models, recommended, sup
   const usageAnchor = useRef(null);
 
   const chat = data.chat;
-  const tasks = data.tasks || [];
-  const active = tasks.some((t) => OPEN.includes(t.status));
+  const tasks = (data.tasks || []).map((t, _, all) => ({
+    ...t,
+    blockedBy: (t.after || []).filter((id) => { const p = all.find((x) => x.id === id); return !p || p.status !== 'done' || (p.merge && p.merge.status !== 'merged' && !String(p.merge.detail || '').includes('superseded')); }),
+  }));
+  const active = tasks.some((t) => OPEN.includes(t.status)); // keeps polling fast while work is open
+  const running = tasks.some((t) => ['claimed', 'reviewing'].includes(t.status));
 
   const poll = useCallback(async () => {
     if (!chatId || document.hidden) return;
@@ -377,6 +390,8 @@ export default function Chat({ chatId, initial, agents, models, recommended, sup
       const result = await safe(() => sendMessage(form));
       if (!result?.ok) { setError(result?.error || 'Could not send.'); updateText(sent); setOptimistic(null); return; }
       writeDraft(chatId, '');
+      setSelection([]); // the picks went with this message; the next one starts on "Models: auto"
+      setCompare(false);
       if (!chatId && result.chatId) { router.push(`/c/${result.chatId}`); return; }
       await poll();
       setOptimistic(null);
@@ -390,7 +405,7 @@ export default function Chat({ chatId, initial, agents, models, recommended, sup
   return (
     <div className="chat">
       <TopBar title={chat?.title || 'New project'}>
-        {active ? <span className="pill accent"><span className="spinner" aria-hidden="true" /> Agents working</span> : null}
+        {running ? <span className="pill accent"><span className="spinner" aria-hidden="true" /> Agents working</span> : active ? <span className="pill warn">Waiting</span> : null}
         {chatId ? (
           <button className="icon-btn" title={chat?.archived ? 'Move back to projects' : 'Archive project'} aria-label={chat?.archived ? 'Move back to projects' : 'Archive project'} onClick={() => start(async () => {
             const done = await safe(() => archiveChat(chatId, !chat?.archived));
