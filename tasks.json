@@ -2314,7 +2314,7 @@
     "T0026"
    ],
    "inputs": [],
-   "status": "reviewing",
+   "status": "done",
    "attempts": 0,
    "exclude": [],
    "chat": "C0008",
@@ -2343,7 +2343,16 @@
     "tokens_out": 22000,
     "model": "claude-opus-5-5"
    },
-   "reviews": [],
+   "reviews": [
+    {
+     "by": "claude-2",
+     "model": "claude-opus-5-5",
+     "at": "2026-11-28T18:36:31+05:30",
+     "score": 88,
+     "verdict": "pass",
+     "notes": "# Review of T0028 (PR #14), by claude-2\n\n**Verdict: pass. Score: 88**\n\n## What I checked\n- I read every changed line of `gh pr diff 14` (16 files, game/ only).\n- I checked out the branch and ran the tests myself:\n  - `python3 -m unittest discover -s tests`: 35 pass.\n  - `cd game && npm ci && npm run check`: typecheck, lint, 72/72 vitest and the vite build all pass. `prettier --check` is clean.\n  - `CHROMIUM_PATH=/usr/bin/google-chrome npx playwright test`: 5/5 pass. That includes the new test \"health and wanted stars: stars light up when the car crashes\" and the overlap/viewport test, which now covers `.hud-status`.\n- PR CI (Vercel) passes and GitHub reports the PR as mergeable. `main`'s history was rewritten after the PR branched, but `game/` on `main` is byte-identical to the PR base 3a9ce3a, so the change applies as reviewed. web/ is not touched.\n\n## Checks\n1. **Speed updates in real time: PASS.** The speedometer from T0023 is unchanged. The e2e test that compares the shown speed with the car's real speed while driving passes.\n2. **Mini-map shows player position: PASS.** The existing unit and e2e tests (map centre = car position, map changes as the car moves) pass. The new status panel does not overlap the map at any tested size.\n3. **Wanted level increments on collisions: PASS.**\n   - `WantedSystem` listens to `collision` events involving the player entity, including static colliders (`other === null`, e.g. walls).\n   - Each crash adds +1 star (+2 for a `police` vehicle), debounced to one offence per 1 s. Stars are capped at 5 and decay one at a time after 10 s + 3 s per star.\n   - Unit tests with real physics cover: no stars while driving clean, +1 per crash counted once, +2 for police, wall crashes up to the cap, and decay.\n   - In the browser, the e2e test starts at 0 stars, crashes into the parked sedan, then checks that at least 1 star is lit and that the DOM matches the game state. I ran it and it passed.\n4. **Responsive layout on common browsers: PASS (Chromium verified by me).**\n   - The HUD is plain HTML/CSS over the canvas with `pointer-events` left alone (parent overlay).\n   - A compact media query applies at ≤700 px wide or ≤540 px tall.\n   - The overlap/off-screen e2e test passes at 1920x1080, 1366x768, 1280x720, 1024x768, 900x600 and 800x500.\n   - I did not re-run WebKit or Firefox myself. The author says plainly that Firefox could not run the game (no WebGL2 headless) and that only the CSS was checked there. Nothing in the CSS is engine-specific apart from `clip-path: polygon` and `steps(2, jump-none)`, which current Chrome, Safari and Firefox all support.\n\n## What is good\n- Clean split: `ui/` reads only `HudModel.status` and never imports `game/`. The DOM is written only when values change.\n- Health is kept separate from car damage, and its numbers are reasonable (×0.12 of car damage, regen 2 HP/s after 6 s). Unfinished parts (death/respawn, police response) are stated rather than faked.\n- The description matches the diff.\n\n## Minor issues (not blocking)\n- The armour bar can never show yet: armour is always 0, so that code path is untested.\n- The debounce timer also resets on crashes that happen at max stars. That is harmless, but it means constant scraping at 5 stars never counts a new offence. That is fine for now.\n- `onCollision` calls `findPlayer(world)` on every contact event. It may be worth caching if contact counts grow.\n- PRs #12 and #13 touch the same files (`main.ts`, `components.ts`, `game/index.ts`), so expect a rebase there.\n"
+    }
+   ],
    "history": [
     {
      "at": "2026-11-27T08:37:26+05:30",
@@ -2368,15 +2377,21 @@
      "actor": "claude-2",
      "event": "review started",
      "detail": ""
+    },
+    {
+     "at": "2026-11-28T18:36:31+05:30",
+     "actor": "claude-2",
+     "event": "review passed",
+     "detail": "score 88 (needs 80)"
     }
    ],
-   "updated_at": "2026-11-28T18:32:55+05:30",
+   "updated_at": "2026-11-28T18:36:31+05:30",
    "claimed_at": "2026-11-28T01:30:44+05:30",
    "run_model": "claude-opus-5-5",
    "run_effort": "high",
    "run_url": "https://github.com/shloki-loki/CATE/actions/runs/46060603034",
    "review_queued_at": "2026-11-28T01:43:28+05:30",
-   "reviewer": "claude-2",
+   "reviewer": null,
    "reviewing_at": "2026-11-28T18:32:55+05:30",
    "review_model": "claude-opus-5-5",
    "review_run_url": "https://github.com/shloki-loki/CATE/actions/runs/46147625170"
