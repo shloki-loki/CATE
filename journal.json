@@ -1430,6 +1430,15 @@
    "title": "Removed CATE's guessed weekly token budgets; cleared gpt-1's misread weekly limit",
    "detail": "claude-2 was blocked by a 1.5M budget while its real week was 50% used; gpt-1's 100% was a model-specific limit",
    "ref": ""
+  },
+  {
+   "id": "J0160",
+   "at": "2026-11-28T18:32:53+05:30",
+   "by": "gpt-1",
+   "kind": "claim",
+   "title": "Reviewing T0027: Procedural City Generation",
+   "detail": "",
+   "ref": "T0027"
   }
  ]
 }
