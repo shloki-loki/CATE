@@ -75,7 +75,8 @@ test('game boots, renders the scene and logs no errors', async ({ page }) => {
 });
 
 /**
- * T0020: the player's car responds to the keyboard in the real browser build.
+ * T0020: the player's car responds to the keyboard in the real browser build
+ * (after getting in with F, T0026).
  * SwiftShader runs only a few frames per second, so thresholds are generous and
  * we wait on game state rather than wall-clock time.
  */
@@ -87,9 +88,22 @@ test('the player car drives, steers and brakes from keyboard input', async ({ pa
   page.on('pageerror', (e) => problems.push(`pageerror: ${e.message}`));
 
   await page.goto('/');
-  await page.waitForFunction(() => window.__neon?.phase === 'running' && window.__neon.ticks > 60, null, {
-    timeout: 45_000,
-  });
+  await page.waitForFunction(
+    () => window.__neon?.phase === 'running' && window.__neon.ticks > 60 && window.__neon.player?.grounded,
+    null,
+    { timeout: 45_000 },
+  );
+  // T0026: the player starts on foot beside the sports car; F gets in.
+  expect(await page.evaluate(() => window.__neon.vehicle)).toBeNull();
+  await page.locator('canvas#game').focus();
+  await page.keyboard.press('KeyF');
+  await page.waitForFunction(
+    () => window.__neon.player?.state === 'inVehicle' && window.__neon.vehicle,
+    null,
+    {
+      timeout: 30_000,
+    },
+  );
   const start = await page.evaluate(() => window.__neon.vehicle);
   expect(start).not.toBeNull();
   expect(Math.abs(start!.speedKmh)).toBeLessThan(1); // parked at boot
@@ -128,5 +142,23 @@ test('the player car drives, steers and brakes from keyboard input', async ({ pa
   expect(Number.isFinite(end.x + end.y + end.z)).toBe(true);
   const shot = await page.locator('canvas#game').screenshot();
   await test.info().attach('driving.png', { body: shot, contentType: 'image/png' });
+
+  // F again: out of the car, on foot beside it, and the follow camera is back on the player.
+  await page.keyboard.press('KeyF');
+  await page.waitForFunction(
+    () => window.__neon.player?.state !== 'inVehicle' && window.__neon.player?.grounded,
+    null,
+    { timeout: 30_000 },
+  );
+  expect(await page.evaluate(() => window.__neon.vehicle)).toBeNull();
+  const out = await page.evaluate(() => ({ p: window.__neon.player!, c: window.__neon.camera! }));
+  expect(Math.hypot(out.p.x - end.x, out.p.z - end.z)).toBeLessThan(3.5);
+  await page.waitForTimeout(1500);
+  const settled = await page.evaluate(() => ({ p: window.__neon.player!, c: window.__neon.camera! }));
+  expect(Math.hypot(settled.c.x - settled.p.x, settled.c.z - settled.p.z)).toBeLessThan(10);
+  await test.info().attach('got-out.png', {
+    body: await page.locator('canvas#game').screenshot(),
+    contentType: 'image/png',
+  });
   expect(problems).toEqual([]);
 });

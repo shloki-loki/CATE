@@ -13,6 +13,20 @@ function collectProblems(page: Page): string[] {
   return problems;
 }
 
+/** The player starts on foot beside the sports car (T0026): press F to get in. */
+async function enterCar(page: Page): Promise<void> {
+  await page.waitForFunction(() => window.__neon.player?.grounded === true, null, { timeout: 30_000 });
+  await page.locator('canvas#game').focus();
+  await page.keyboard.press('KeyF');
+  await page.waitForFunction(
+    () => window.__neon.player?.state === 'inVehicle' && window.__neon.vehicle,
+    null,
+    {
+      timeout: 30_000,
+    },
+  );
+}
+
 async function boxesOverlap(page: Page): Promise<string[]> {
   return page.evaluate(() => {
     const sel = [
@@ -52,9 +66,17 @@ test('HUD shows speed, minimap position and the mission objective, and tracks th
     timeout: 45_000,
   });
 
-  await expect(page.locator('.speedo')).toBeVisible();
+  // On foot: minimap and mission panel, centred on the player; no speedometer.
   await expect(page.locator('.hud-minimap canvas')).toBeVisible();
   await expect(page.locator('.hud-mission')).toBeVisible();
+  await expect(page.locator('.speedo')).toBeHidden();
+  const onFoot = await page.evaluate(() => ({ ...window.__neon.hud, p: window.__neon.player! }));
+  expect(onFoot.speed).toBeNull();
+  expect(onFoot.mapX).toBeCloseTo(onFoot.p.x, 1);
+  expect(onFoot.mapZ).toBeCloseTo(onFoot.p.z, 1);
+
+  await enterCar(page);
+  await expect(page.locator('.speedo')).toBeVisible();
   await expect(page.locator('.hud-mission-title')).toHaveText('WARM-UP LAP');
   await expect(page.locator('.hud-mission-step')).toHaveText('1/6');
   await expect(page.locator('.hud-mission-objective')).toContainText('checkpoint');
@@ -70,7 +92,7 @@ test('HUD shows speed, minimap position and the mission objective, and tracks th
     .evaluate((c: HTMLCanvasElement) => c.toDataURL());
   await test.info().attach('hud-start.png', { body: await page.screenshot(), contentType: 'image/png' });
 
-  // Drive north up the avenue towards the first checkpoint.
+  // Drive north up the arterial towards the first checkpoint.
   await page.locator('canvas#game').focus();
   await page.keyboard.down('KeyW');
   await page.waitForFunction(() => (window.__neon.vehicle?.speedKmh ?? 0) > 30, null, { timeout: 30_000 });
@@ -149,10 +171,14 @@ test('health and wanted stars: stars light up when the car crashes, health is sh
   expect(await page.evaluate(() => window.__neon.hud.wanted)).toBe(0);
   expect(await page.evaluate(() => window.__neon.collisions)).toBe(0);
 
-  // The parked sedan stands in the player's lane 85 m ahead: floor it until we hit something.
-  await page.locator('canvas#game').focus();
+  // Get in, pick up speed, then steer right: the car leaves the arterial (which has no
+  // other traffic) and hits the kerb and buildings on its east side.
+  await enterCar(page);
   await page.keyboard.down('KeyW');
+  await page.waitForFunction(() => (window.__neon.vehicle?.speedKmh ?? 0) > 35, null, { timeout: 30_000 });
+  await page.keyboard.down('KeyD');
   await page.waitForFunction(() => window.__neon.collisions > 0, null, { timeout: 90_000 });
+  await page.keyboard.up('KeyD');
   await page.keyboard.up('KeyW');
   await page.waitForFunction(() => (window.__neon.hud.wanted ?? 0) >= 1, null, { timeout: 10_000 });
   const after = await page.evaluate(() => ({

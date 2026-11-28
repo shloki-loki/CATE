@@ -1,6 +1,7 @@
 import { Vector3 } from 'three';
 import {
   Blip,
+  Character,
   findPlayer,
   getVehicleDef,
   Health,
@@ -48,7 +49,9 @@ export function createHudReader(world: GameWorld): (out?: HudModel) => HudModel 
       out.player = null;
       out.vehicle = null;
     } else {
-      fwd.set(0, 0, 1).applyQuaternion(p.transform.quaternion);
+      // Cars drive along their local +Z (T0020); the on-foot character faces its local -Z (T0021).
+      const forwardZ = !p.inVehicle && world.has(p.entity, Character) ? -1 : 1;
+      fwd.set(0, 0, forwardZ).applyQuaternion(p.transform.quaternion);
       player.x = p.transform.position.x;
       player.z = p.transform.position.z;
       // A car on its roof or side has a near-vertical forward vector; keep the last heading then.

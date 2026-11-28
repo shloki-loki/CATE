@@ -10,7 +10,8 @@ import { CameraTarget, PrevTransform, Transform, VehicleTelemetry } from '../com
  * - pulls back and widens the FOV with speed;
  * - mouse drag orbits around the car, and it recenters after a short delay;
  * - a raycast spring arm against WORLD_STATIC keeps it out of buildings.
- * T0021 adds the on-foot preset.
+ * On foot the follow camera (followCamera.ts) drives the view instead; the player module
+ * adds CameraTarget to the car the player gets into and removes it on the way out.
  */
 export interface ChaseCameraState {
   /** Extra yaw/pitch from mouse look (rad). */
@@ -30,10 +31,16 @@ export function ChaseCameraSystem(): GameSystem[] {
   const dir = new Vector3();
   const desired = new Vector3();
 
+  /** The vehicle target, if any (the follow camera owns the view otherwise). */
+  const findTarget = (world: Parameters<GameSystem['update']>[0]): number | undefined =>
+    world.query(CameraTarget, Transform).find((e) => world.require(e, CameraTarget).preset === 'vehicle');
+  let lastTarget: number | undefined;
+
   const control: GameSystem = {
     name: 'chaseCamera.control',
     phase: 'preSim',
-    update(_w, s, dt) {
+    update(world, s, dt) {
+      if (findTarget(world) === undefined) return;
       const i = s.input;
       const sens = 0.005 * s.settings.values.mouseSensitivity;
       const invert = s.settings.values.invertY ? -1 : 1;
@@ -56,9 +63,14 @@ export function ChaseCameraSystem(): GameSystem[] {
     name: 'chaseCamera.view',
     phase: 'camera',
     update(world, s, dt) {
-      const target = world
-        .query(CameraTarget, Transform)
-        .find((e) => world.require(e, CameraTarget).preset === 'vehicle');
+      const target = findTarget(world);
+      if (target !== lastTarget) {
+        // New car (or back in one): start behind it again instead of swinging from the old pose.
+        smooth.init = false;
+        st.lookYaw = st.lookPitch = 0;
+        st.idle = 0;
+        lastTarget = target;
+      }
       if (target === undefined) return;
       const t = world.require(target, Transform);
       const prev = world.get(target, PrevTransform) ?? t;
