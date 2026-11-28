@@ -1,9 +1,23 @@
 import { Vector3 } from 'three';
-import { Blip, findPlayer, getVehicleDef, MissionStatus, Transform, Vehicle, VehicleTelemetry } from './game';
+import {
+  Blip,
+  findPlayer,
+  getVehicleDef,
+  Health,
+  MAX_WANTED_STARS,
+  MissionStatus,
+  PlayerRecord,
+  Transform,
+  Vehicle,
+  VehicleTelemetry,
+  WantedLevel,
+} from './game';
 import type { GameWorld } from './services';
-import type { BlipKind, HudModel, MinimapBlip } from './ui';
+import type { BlipKind, HudModel, MinimapBlip, StatusHud } from './ui';
 import { emptyHudModel } from './ui';
 
+/** The lit stars blink during the last seconds before one is lost. */
+const WANTED_BLINK_SECONDS = 4;
 const BLIP_KINDS = new Set<BlipKind>(['objective', 'police', 'vehicle', 'poi']);
 
 /**
@@ -19,6 +33,14 @@ export function createHudReader(world: GameWorld): (out?: HudModel) => HudModel 
   const objectiveBlip: MinimapBlip = { x: 0, z: 0, kind: 'objective' };
   const fwd = new Vector3();
   const pool: MinimapBlip[] = [];
+  const playerStatus: StatusHud = {
+    health: 1,
+    armor: 0,
+    wanted: 0,
+    maxWanted: MAX_WANTED_STARS,
+    wantedRevision: 0,
+    wantedFading: false,
+  };
 
   return (out = model) => {
     const p = findPlayer(world);
@@ -46,6 +68,26 @@ export function createHudReader(world: GameWorld): (out?: HudModel) => HudModel 
         out.vehicle = null;
       }
       out.player = player;
+    }
+
+    const rec = world.query(PlayerRecord, Health)[0];
+    const wantedE = world.query(WantedLevel)[0];
+    if (rec === undefined && wantedE === undefined) {
+      out.status = null;
+    } else {
+      if (rec !== undefined) {
+        const h = world.require(rec, Health);
+        const r = world.require(rec, PlayerRecord);
+        playerStatus.health = r.maxHp > 0 ? h.hp / r.maxHp : 0;
+        playerStatus.armor = r.maxArmor > 0 ? h.armor / r.maxArmor : 0;
+      }
+      if (wantedE !== undefined) {
+        const w = world.require(wantedE, WantedLevel);
+        playerStatus.wanted = w.stars;
+        playerStatus.wantedRevision = w.revision;
+        playerStatus.wantedFading = w.coolDownIn !== null && w.coolDownIn <= WANTED_BLINK_SECONDS;
+      }
+      out.status = playerStatus;
     }
 
     let n = 0;

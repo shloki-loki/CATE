@@ -13,6 +13,21 @@ export interface HudModel {
   mission: MissionHud | null;
   /** Extra points of interest for the minimap (police, shops, ...). */
   blips: MinimapBlip[];
+  /** Player health and wanted level (T0028), or null before the game has a player record. */
+  status: StatusHud | null;
+}
+
+export interface StatusHud {
+  /** Player health and armour, 0..1 of their maximum. */
+  health: number;
+  armor: number;
+  /** Wanted stars, 0..maxWanted. */
+  wanted: number;
+  maxWanted: number;
+  /** Bumped whenever the star count goes up, so the stars flash once. */
+  wantedRevision: number;
+  /** True in the last seconds before a star is lost (the lit stars blink). */
+  wantedFading: boolean;
 }
 
 export interface HudPlayer {
@@ -51,5 +66,5 @@ export interface MinimapBlip {
 }
 
 export function emptyHudModel(): HudModel {
-  return { vehicle: null, player: null, mission: null, blips: [] };
+  return { vehicle: null, player: null, mission: null, blips: [], status: null };
 }

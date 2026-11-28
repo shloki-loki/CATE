@@ -282,3 +282,138 @@ body {
     font-size: 20px;
   }
 }
+
+/* Player status (T0028): wanted stars and health, stacked just above the minimap. */
+.hud-status {
+  position: absolute;
+  left: 16px;
+  bottom: 216px;
+  width: 190px;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.hud-wanted {
+  display: flex;
+  justify-content: flex-end;
+  gap: 3px;
+  /* Keeps unlit stars readable over bright buildings and sky. */
+  filter: drop-shadow(0 1px 1.5px rgba(0, 0, 0, 0.85));
+}
+
+.hud-star {
+  width: 22px;
+  height: 22px;
+  background: rgba(255, 255, 255, 0.28);
+  clip-path: polygon(50% 0%, 61% 35%, 98% 35%, 68% 57%, 79% 91%, 50% 70%, 21% 91%, 32% 57%, 2% 35%, 39% 35%);
+  transition: background-color 0.2s;
+}
+
+.hud-star.hud-star-on {
+  background: #ffe066;
+}
+
+.hud-wanted-fading .hud-star-on {
+  animation: hud-blink 0.6s steps(2, jump-none) infinite;
+}
+
+.hud-wanted-flash {
+  animation: hud-pop 0.45s ease-out 2;
+}
+
+@keyframes hud-blink {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0.25;
+  }
+}
+
+@keyframes hud-pop {
+  0% {
+    transform: scale(1);
+  }
+  40% {
+    transform: scale(1.18);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+.hud-health {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 8px;
+  background: rgba(8, 10, 30, 0.6);
+  border-radius: 6px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.hud-health[hidden] {
+  display: none;
+}
+
+.hud-health-icon {
+  width: 1em;
+  text-align: center;
+  color: #ff5f7a;
+}
+
+.hud-armor-row .hud-health-icon {
+  color: #6fc3ff;
+}
+
+.hud-bar {
+  flex: 1;
+  height: 7px;
+  background: rgba(255, 255, 255, 0.15);
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.hud-bar-fill {
+  height: 100%;
+  width: 100%;
+  background: #6ee07a;
+  transition: width 0.25s ease-out;
+}
+
+.hud-bar-fill.hud-low {
+  background: #ff3b5c;
+  animation: hud-blink 0.8s ease-in-out infinite alternate;
+}
+
+.hud-bar-fill.hud-armor {
+  background: #6fc3ff;
+}
+
+.hud-health-text {
+  min-width: 2.2em;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+@media (max-width: 700px), (max-height: 540px) {
+  .hud-status {
+    left: 10px;
+    bottom: 146px;
+    width: 130px;
+    gap: 3px;
+  }
+
+  .hud-star {
+    width: 16px;
+    height: 16px;
+  }
+
+  .hud-health {
+    padding: 3px 6px;
+    font-size: 11px;
+  }
+}

@@ -15,7 +15,15 @@ function collectProblems(page: Page): string[] {
 
 async function boxesOverlap(page: Page): Promise<string[]> {
   return page.evaluate(() => {
-    const sel = ['.debug-overlay', '.speedo', '.hud-minimap', '.hud-mission', '.hud-banner', '.title'];
+    const sel = [
+      '.debug-overlay',
+      '.speedo',
+      '.hud-minimap',
+      '.hud-status',
+      '.hud-mission',
+      '.hud-banner',
+      '.title',
+    ];
     const boxes = sel
       .map((s) => ({ s, el: document.querySelector<HTMLElement>(s) }))
       .filter((b) => b.el && !b.el.hidden && b.el.offsetParent !== null)
@@ -123,5 +131,44 @@ test('HUD elements never overlap or leave the screen at common window sizes', as
     expect(Math.abs(m.w - m.css * m.dpr)).toBeLessThanOrEqual(1);
   }
   await test.info().attach('hud-800x500.png', { body: await page.screenshot(), contentType: 'image/png' });
+  expect(problems).toEqual([]);
+});
+
+test('health and wanted stars: stars light up when the car crashes, health is shown', async ({ page }) => {
+  test.setTimeout(150_000);
+  const problems = collectProblems(page);
+  await page.goto('/');
+  await page.waitForFunction(() => window.__neon?.phase === 'running' && window.__neon.ticks > 60, null, {
+    timeout: 45_000,
+  });
+  await expect(page.locator('.hud-status')).toBeVisible();
+  await expect(page.locator('.hud-star')).toHaveCount(5);
+  await expect(page.locator('.hud-star.hud-star-on')).toHaveCount(0);
+  await expect(page.locator('.hud-wanted')).toHaveAttribute('aria-label', 'Wanted level 0');
+  await expect(page.locator('.hud-health-text').first()).toHaveText('100');
+  expect(await page.evaluate(() => window.__neon.hud.wanted)).toBe(0);
+  expect(await page.evaluate(() => window.__neon.collisions)).toBe(0);
+
+  // The parked sedan stands in the player's lane 85 m ahead: floor it until we hit something.
+  await page.locator('canvas#game').focus();
+  await page.keyboard.down('KeyW');
+  await page.waitForFunction(() => window.__neon.collisions > 0, null, { timeout: 90_000 });
+  await page.keyboard.up('KeyW');
+  await page.waitForFunction(() => (window.__neon.hud.wanted ?? 0) >= 1, null, { timeout: 10_000 });
+  const after = await page.evaluate(() => ({
+    wanted: window.__neon.hud.wanted!,
+    lit: document.querySelectorAll('.hud-star.hud-star-on').length,
+    label: document.querySelector('.hud-wanted')!.getAttribute('aria-label'),
+    health: window.__neon.hud.health!,
+    shownHealth: Number(document.querySelector('.hud-health-text')!.textContent),
+  }));
+  expect(after.wanted).toBeGreaterThanOrEqual(1);
+  expect(after.lit).toBe(after.wanted);
+  expect(after.label).toBe(`Wanted level ${after.wanted}`);
+  expect(after.shownHealth).toBe(after.health);
+  expect(after.health).toBeGreaterThan(0);
+  expect(after.health).toBeLessThanOrEqual(100);
+  await test.info().attach('hud-wanted.png', { body: await page.screenshot(), contentType: 'image/png' });
+  expect(await boxesOverlap(page)).toEqual([]);
   expect(problems).toEqual([]);
 });
