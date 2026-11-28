@@ -2218,8 +2218,8 @@
     "T0026"
    ],
    "inputs": [],
-   "status": "reviewing",
-   "attempts": 0,
+   "status": "queued",
+   "attempts": 1,
    "exclude": [],
    "chat": "C0008",
    "group": "",
@@ -2236,7 +2236,7 @@
    "parent": null,
    "created_by": "owner (chat)",
    "created_at": "2026-11-27T08:37:26+05:30",
-   "queued_at": "2026-11-27T08:37:26+05:30",
+   "queued_at": "2026-11-28T18:35:28+05:30",
    "claimed_by": null,
    "result": {
     "by": "claude-1",
@@ -2247,7 +2247,16 @@
     "tokens_out": 45000,
     "model": "claude-opus-5-5"
    },
-   "reviews": [],
+   "reviews": [
+    {
+     "by": "gpt-1",
+     "model": "gpt-6.2-astra",
+     "at": "2026-11-28T18:35:28+05:30",
+     "score": 76,
+     "verdict": "fail",
+     "notes": "T0027 review of PR #13 at a7d7080. Fail, 76/100.\n\nThe seeded grid is integrated into game boot, physics, the minimap and the checkpoint mission. The default city has 326 buildings, and its GLB validates and reloads with the expected names. Two issues need changes before merge.\n\n- No overlapping geometry — FAIL for a supported layout. Run generateCity({seed:13, gridSize:5, spacing:45, dropChance:1}) and inspect spawnPoints. Both the compact and sedan have (x,z)=(-57,-35.4) and yaw=π/2. Only one side street qualifies. Both iterations at game/src/game/world/generateCity.ts:384 select index 0. The game spawns both meshes and physics bodies from that list at main.ts:188. Allocate distinct parking spaces, skip a car when there is insufficient room, and add this seed as a vehicle-footprint regression. The static ground tiling and building separation tests passed.\n- Asset-pipeline export — FAIL for the final artifact. game/tools/export-city.mjs:42–48 writes and validates the direct exporter output. I inspected the default 7,464,516-byte GLB. It has no extensionsUsed and zero meshopt-compressed buffer views. T0018 §1 specifies EXT_meshopt_compression with KHR_mesh_quantization, and §5.5 puts optimization before validation. Wire the optimization step into the final export, verify the extensions, and round-trip that file with the pipeline's MeshoptDecoder while preserving building IDs, transforms and materials.\n- City loads within five seconds — PASS. The production Chromium run measured 1,518 ms from navigation to city insertion, including 183 ms reported for mesh and collider loading. main.ts:170 performs generation before the shorter loadMs timer starts. Include generation in loadMs or relabel it. The end-to-end timing covers it.\n- Vehicle and character navigation — PASS for street traversal. The Rapier car completed both seeded laps and the side-street tests, and the character controller crossed kerbs and walked the sidewalk. One claim in the report goes beyond the evidence. With seed 0 and dropChance 1, otherwise default options, the park at (-124.5,-122.75) has four alley sides and no adjacent RoadGraph edge. The graph is still connected. Either preserve a street on each block as the test promises or adjust the test and description to allow alley-only frontage.\n- T0018 building mesh naming — PASS. The exported building IDs survived the GLTFLoader round trip under their c_<x>_<z> chunks. The material and runtime index-range checks passed.\n\nVerification on the PR head: 32 Python tests passed. In game/, npm ci and npm run check passed (typecheck, lint, 92 unit tests and production build). All five production Chromium tests passed. The city export CLI completed with zero Khronos validator errors, warnings or infos.\n"
+    }
+   ],
    "history": [
     {
      "at": "2026-11-27T08:37:26+05:30",
@@ -2272,18 +2281,25 @@
      "actor": "gpt-1",
      "event": "review started",
      "detail": ""
+    },
+    {
+     "at": "2026-11-28T18:35:28+05:30",
+     "actor": "gpt-1",
+     "event": "review failed; sent back with feedback",
+     "detail": "score 76 (needs 80)"
     }
    ],
-   "updated_at": "2026-11-28T18:32:53+05:30",
+   "updated_at": "2026-11-28T18:35:28+05:30",
    "claimed_at": "2026-11-28T01:08:55+05:30",
    "run_model": "claude-opus-5-5",
    "run_effort": "high",
    "run_url": "https://github.com/shloki-loki/CATE/actions/runs/46058141973",
    "review_queued_at": "2026-11-28T01:30:00+05:30",
-   "reviewer": "gpt-1",
+   "reviewer": null,
    "reviewing_at": "2026-11-28T18:32:53+05:30",
    "review_model": "gpt-6.2-astra",
-   "review_run_url": "https://github.com/shloki-loki/CATE/actions/runs/46147625170"
+   "review_run_url": "https://github.com/shloki-loki/CATE/actions/runs/46147625170",
+   "feedback": "T0027 review of PR #13 at a7d7080. Fail, 76/100.\n\nThe seeded grid is integrated into game boot, physics, the minimap and the checkpoint mission. The default city has 326 buildings, and its GLB validates and reloads with the expected names. Two issues need changes before merge.\n\n- No overlapping geometry — FAIL for a supported layout. Run generateCity({seed:13, gridSize:5, spacing:45, dropChance:1}) and inspect spawnPoints. Both the compact and sedan have (x,z)=(-57,-35.4) and yaw=π/2. Only one side street qualifies. Both iterations at game/src/game/world/generateCity.ts:384 select index 0. The game spawns both meshes and physics bodies from that list at main.ts:188. Allocate distinct parking spaces, skip a car when there is insufficient room, and add this seed as a vehicle-footprint regression. The static ground tiling and building separation tests passed.\n- Asset-pipeline export — FAIL for the final artifact. game/tools/export-city.mjs:42–48 writes and validates the direct exporter output. I inspected the default 7,464,516-byte GLB. It has no extensionsUsed and zero meshopt-compressed buffer views. T0018 §1 specifies EXT_meshopt_compression with KHR_mesh_quantization, and §5.5 puts optimization before validation. Wire the optimization step into the final export, verify the extensions, and round-trip that file with the pipeline's MeshoptDecoder while preserving building IDs, transforms and materials.\n- City loads within five seconds — PASS. The production Chromium run measured 1,518 ms from navigation to city insertion, including 183 ms reported for mesh and collider loading. main.ts:170 performs generation before the shorter loadMs timer starts. Include generation in loadMs or relabel it. The end-to-end timing covers it.\n- Vehicle and character navigation — PASS for street traversal. The Rapier car completed both seeded laps and the side-street tests, and the character controller crossed kerbs and walked the sidewalk. One claim in the report goes beyond the evidence. With seed 0 and dropChance 1, otherwise default options, the park at (-124.5,-122.75) has four alley sides and no adjacent RoadGraph edge. The graph is still connected. Either preserve a street on each block as the test promises or adjust the test and description to allow alley-only frontage.\n- T0018 building mesh naming — PASS. The exported building IDs survived the GLTFLoader round trip under their c_<x>_<z> chunks. The material and runtime index-range checks passed.\n\nVerification on the PR head: 32 Python tests passed. In game/, npm ci and npm run check passed (typecheck, lint, 92 unit tests and production build). All five production Chromium tests passed. The city export CLI completed with zero Khronos validator errors, warnings or infos.\n"
   },
   {
    "id": "T0028",
