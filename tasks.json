@@ -1685,7 +1685,7 @@
    "merge": {
     "pr": 7,
     "status": "blocked",
-    "detail": "it conflicts with main",
+    "detail": "superseded: combined in the integration step",
     "at": "2026-11-27T14:21:30+05:30"
    }
   },
@@ -1791,7 +1791,7 @@
    "merge": {
     "pr": 9,
     "status": "blocked",
-    "detail": "it conflicts with main",
+    "detail": "superseded: combined in the integration step",
     "at": "2026-11-27T14:37:48+05:30"
    }
   },
@@ -2095,7 +2095,7 @@
    "merge": {
     "pr": 11,
     "status": "blocked",
-    "detail": "it conflicts with main",
+    "detail": "superseded: combined in the integration step",
     "at": "2026-11-28T01:05:47+05:30"
    }
   },
@@ -2201,7 +2201,7 @@
    "merge": {
     "pr": 12,
     "status": "blocked",
-    "detail": "it conflicts with main",
+    "detail": "superseded: combined in the integration step",
     "at": "2026-11-28T01:08:39+05:30"
    }
   },
@@ -2218,7 +2218,7 @@
     "T0026"
    ],
    "inputs": [],
-   "status": "claimed",
+   "status": "cancelled",
    "attempts": 1,
    "exclude": [],
    "chat": "C0008",
@@ -2237,7 +2237,7 @@
    "created_by": "owner (chat)",
    "created_at": "2026-11-27T08:37:26+05:30",
    "queued_at": "2026-11-28T18:35:28+05:30",
-   "claimed_by": "claude-1",
+   "claimed_by": null,
    "result": {
     "by": "claude-1",
     "at": "2026-11-28T01:30:00+05:30",
@@ -2293,9 +2293,15 @@
      "actor": "claude-1",
      "event": "claimed",
      "detail": "Opus 5.5"
+    },
+    {
+     "at": "2026-11-28T18:37:33+05:30",
+     "actor": "claude-setup",
+     "event": "cancelled",
+     "detail": "duplicate of T0022; combined in the integration step"
     }
    ],
-   "updated_at": "2026-11-28T18:37:10+05:30",
+   "updated_at": "2026-11-28T18:37:33+05:30",
    "claimed_at": "2026-11-28T18:37:10+05:30",
    "run_model": "claude-opus-5-5",
    "run_effort": "high",
@@ -2423,7 +2429,8 @@
    "model": "gpt-6.2-sol",
    "priority": 2,
    "after": [
-    "T0027"
+    "T0027",
+    "T0031"
    ],
    "inputs": [],
    "status": "queued",
@@ -2467,7 +2474,8 @@
    "model": "gpt-6.2-sol",
    "priority": 2,
    "after": [
-    "T0027"
+    "T0027",
+    "T0031"
    ],
    "inputs": [],
    "status": "queued",
@@ -2501,6 +2509,47 @@
     }
    ],
    "updated_at": "2026-11-27T08:37:26+05:30"
+  },
+  {
+   "id": "T0031",
+   "title": "Combine the parallel game work into one build",
+   "brief": "Combine the game's parallel work into one working build. Several steps built the same features twice in\nparallel, and their pull requests now clash with main and with each other:\n- Character controller: PR #7 (branch cate/T0021-character-controller) and PR #12 (cate/T0026-character-controller).\n- Procedural city: PR #9 (cate/T0022-procedural-city) and PR #13 (cate/T0027-procedural-city).\n- Vehicle class: PR #11 (cate/T0025-vehicle-class) overlaps vehicle physics already merged in PR #8.\nDo this:\n1. Read main's game/ (skeleton, vehicle physics, HUD and HUD health/wanted are merged) and each of those PRs (`gh pr diff <n>`).\n2. For each feature pick the better implementation (or combine the best parts), on ONE new branch from main\n   named cate/<your task id>-integrate. Keep what is already on main working.\n3. Make it all work together: `cd game && npm ci && npm run build` must pass, plus `npm test` if there are tests,\n   and the Python tests at the repo root. The game must start and let you walk and drive around the city.\n4. Open ONE pull request, and close PRs #7, #9, #11, #12 and #13 with a comment linking yours\n   (`gh pr close <n> --comment \"Superseded by #<yours>\"`).\n5. In your result: the PR link, what you kept from which PR and why, and how you tested it.\nThe game is an original open-world driving game (\"Neon Coast\"), not a copy of any existing game.",
+   "kind": "code",
+   "prefer": "agent:claude-2",
+   "priority": 1,
+   "after": [],
+   "inputs": [],
+   "status": "queued",
+   "attempts": 0,
+   "exclude": [],
+   "review": {
+    "mode": "cross",
+    "pass_score": 80,
+    "checks": [
+     "One pull request; PRs #7, #9, #11, #12 and #13 are closed as superseded",
+     "cd game && npm ci && npm run build passes (and npm test if present); Python tests pass",
+     "Walking, driving and the city all work together; nothing already on main is broken"
+    ]
+   },
+   "parent": null,
+   "model": "claude-opus-5-5",
+   "chat": "C0008",
+   "effort": "",
+   "created_by": "claude-setup",
+   "created_at": "2026-11-28T18:37:33+05:30",
+   "queued_at": "2026-11-28T18:37:33+05:30",
+   "claimed_by": null,
+   "result": null,
+   "reviews": [],
+   "history": [
+    {
+     "at": "2026-11-28T18:37:33+05:30",
+     "actor": "claude-setup",
+     "event": "created",
+     "detail": ""
+    }
+   ],
+   "updated_at": "2026-11-28T18:37:33+05:30"
   }
  ]
 }
