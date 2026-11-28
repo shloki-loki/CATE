@@ -19,7 +19,10 @@ export type RunEvent =
   | { kind: 'step'; step: number; steps: number }
   | { kind: 'passed'; time: number; best: boolean };
 
-/** The clock waits until the player has moved this far from where the run began. */
+/**
+ * The clock waits until the player's car has moved this far from where the player took
+ * the wheel (or where the run began, if they were already driving).
+ */
 const START_MOVE = 2;
 
 export class CheckpointRun {
@@ -32,7 +35,11 @@ export class CheckpointRun {
   /** Bumped whenever the objective changes. */
   revision = 0;
   banner: string | null = null;
+  /** True while the player is driving (the last update had a position). */
+  driving = false;
   private anchor: { x: number; z: number } | null = null;
+  /** Whether this run's 'started' event has been sent. */
+  private announced = false;
   private bannerLeft = 0;
 
   constructor(readonly def: CheckpointRunDef) {
@@ -50,22 +57,39 @@ export class CheckpointRun {
   get objective(): string {
     if (this.phase === 'passed') return 'Next lap starts soon';
     if (this.index === this.steps - 1) return 'Reach the finish';
-    return this.index === 0 && this.phase === 'waiting'
-      ? 'Drive to the yellow checkpoint to start the lap'
-      : 'Drive through the yellow checkpoint';
+    if (this.index === 0 && this.phase === 'waiting')
+      return this.driving
+        ? 'Drive to the yellow checkpoint to start the lap'
+        : 'Get in a car (F) to start the lap';
+    return 'Drive through the yellow checkpoint';
   }
 
-  /** Advance by `dt` seconds with the player at `pos` (null: no player this tick). */
+  /**
+   * Advance by `dt` seconds. `pos` is the position of the car the player is driving, or
+   * null when they are not driving (on foot, or no player). It is a driving lap: only the
+   * car's position counts, and before the clock starts the anchor is retaken wherever the
+   * player takes the wheel, so walking to a car, getting in and idling never starts the
+   * clock. Once running, the clock keeps going if the player gets out.
+   */
   update(dt: number, pos: { x: number; z: number } | null): RunEvent[] {
     const out: RunEvent[] = [];
+    if (this.driving !== (pos !== null)) {
+      this.driving = pos !== null;
+      if (this.phase === 'waiting') this.revision++; // the objective text changes
+    }
     if (this.phase === 'passed') {
       this.bannerLeft -= dt;
       if (this.bannerLeft <= 0) this.restart(pos, out);
       return out;
     }
-    if (!pos) return out;
-    if (this.anchor === null) {
-      this.anchor = { x: pos.x, z: pos.z };
+    if (!pos) {
+      if (this.phase === 'waiting') this.anchor = null;
+      else this.elapsed += dt;
+      return out;
+    }
+    if (this.anchor === null) this.anchor = { x: pos.x, z: pos.z };
+    if (!this.announced) {
+      this.announced = true;
       out.push({ kind: 'started' });
     }
     if (this.phase === 'waiting' && Math.hypot(pos.x - this.anchor.x, pos.z - this.anchor.z) > START_MOVE) {
@@ -98,7 +122,8 @@ export class CheckpointRun {
     this.banner = null;
     this.anchor = pos ? { x: pos.x, z: pos.z } : null;
     this.revision++;
-    if (this.anchor) out.push({ kind: 'started' });
+    this.announced = this.anchor !== null;
+    if (this.announced) out.push({ kind: 'started' });
   }
 }
 

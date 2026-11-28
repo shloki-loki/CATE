@@ -1,6 +1,6 @@
 import { Quaternion, Vector3 } from 'three';
 import type { Entity } from '../../core';
-import type { BodyHandle, VehicleState } from '../../physics';
+import type { BodyHandle } from '../../physics';
 import type { GameSystem } from '../../services';
 import {
   Driver,
@@ -12,10 +12,8 @@ import {
   VehicleTelemetry,
 } from '../components';
 import { getVehicleDef } from './defs';
-import { driveStep, makeWheelControls } from './drive';
+import { createDriveScratch, poseWheelParts, vehicleDriveTick } from './driveTick';
 
-const AIR_DENSITY = 1.225; // kg/m^3
-const G = 9.81;
 /** Damage per N*s of impulse above the vehicle's threshold. */
 const DAMAGE_PER_IMPULSE = 0.01;
 /**
@@ -90,57 +88,24 @@ export function VehicleResetSystem(): GameSystem {
  * resistance, which the raycast vehicle does not model.
  */
 export function VehicleDriveSystem(): GameSystem {
-  const state: VehicleState = {
-    forwardSpeed: 0,
-    velocity: { x: 0, y: 0, z: 0 },
-    angularVelocity: { x: 0, y: 0, z: 0 },
-    wheels: [],
-  };
-  const controls = makeWheelControls(4);
-  const impulse = { x: 0, y: 0, z: 0 };
+  const scratch = createDriveScratch(4);
   return {
     name: 'vehicle.drive',
     phase: 'preSim',
     update(world, s, dt) {
       for (const e of world.query(Vehicle, VehicleControl, VehicleTelemetry, RigidBody)) {
         const v = world.require(e, Vehicle);
-        const def = getVehicleDef(v.defId);
-        const tel = world.require(e, VehicleTelemetry);
-        const input = world.require(e, VehicleControl);
-        s.physics.getVehicleState(v.handle, state);
-
-        let grounded = 0;
-        for (let i = 0; i < state.wheels.length; i++) {
-          const w = state.wheels[i]!;
-          if (w.inContact) grounded++;
-          tel.suspension[i] = w.suspensionLength;
-          tel.spin[i] = w.rotation;
-          tel.steer[i] = w.steering;
-        }
-        tel.speed = state.forwardSpeed;
-        tel.velocity.set(state.velocity.x, state.velocity.y, state.velocity.z);
-        tel.wheelsInContact = grounded;
-        tel.drive.wrecked = v.health <= 0;
-
-        driveStep(def, input, state.forwardSpeed, grounded, tel.drive, dt, controls);
-        tel.braking = tel.drive.gear > 0 ? input.brake > 0.1 : input.throttle > 0.1;
-        s.physics.setVehicleControls(v.handle, controls);
-
-        // Drag (all the time) and rolling resistance (wheels on the ground), as impulses.
-        const vel = tel.velocity;
-        const sp = vel.length();
-        if (sp > 0.05) {
-          const drag = 0.5 * AIR_DENSITY * def.aero.dragArea * sp; // * v gives the force vector
-          const hs = Math.hypot(vel.x, vel.z);
-          const roll =
-            grounded > 0
-              ? (def.aero.rollingResistance * def.mass * G * (grounded / 4)) / Math.max(hs, 0.5)
-              : 0;
-          impulse.x = -(drag + roll) * vel.x * dt;
-          impulse.y = -drag * vel.y * dt;
-          impulse.z = -(drag + roll) * vel.z * dt;
-          s.physics.applyImpulse(world.require(e, RigidBody).handle, impulse);
-        }
+        vehicleDriveTick(
+          s.physics,
+          getVehicleDef(v.defId),
+          v.handle,
+          world.require(e, RigidBody).handle,
+          world.require(e, VehicleControl),
+          world.require(e, VehicleTelemetry),
+          v.health <= 0,
+          dt,
+          scratch,
+        );
       }
     },
   };
@@ -196,16 +161,7 @@ export const VehiclePartsSystem: GameSystem = {
   phase: 'render',
   update(world) {
     for (const e of world.query(VehicleParts, VehicleTelemetry)) {
-      const p = world.require(e, VehicleParts);
-      const tel = world.require(e, VehicleTelemetry);
-      for (let i = 0; i < p.wheelPivots.length; i++) {
-        const pivot = p.wheelPivots[i]!;
-        const m = p.mounts[i]!;
-        pivot.position.set(m.x, m.y - (tel.suspension[i] ?? 0), m.z);
-        pivot.rotation.y = tel.steer[i] ?? 0;
-        p.wheelSpinners[i]!.rotation.x = tel.spin[i] ?? 0;
-      }
-      if (p.brakeLights) p.brakeLights.emissiveIntensity = tel.braking ? 2.2 : 0.25;
+      poseWheelParts(world.require(e, VehicleParts), world.require(e, VehicleTelemetry));
     }
   },
 };

@@ -252,11 +252,12 @@ body {
     2px 2px 0 #ff5fa2;
 }
 
-/* The F3 debug overlay is about 680 px wide at the top left: below that width
-   the mission panel moves under it instead of overlapping it. */
+/* The F3 debug overlay (five lines, about 110 px tall with the on-foot and in-car
+   key help) sits at the top left: on narrower windows the mission panel moves under
+   it instead of overlapping it. */
 @media (max-width: 1100px) {
   .hud-mission {
-    top: 84px;
+    top: 122px;
   }
 }
 

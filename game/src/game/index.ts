@@ -1,7 +1,9 @@
 export * from './components';
 export * from './events';
 export { createDemoScene, type DemoScene } from './demo';
-export { ChaseCameraSystem, OrbitCameraSystem } from './camera';
+export * from './world';
+export { ChaseCameraSystem, OrbitCameraSystem, FollowCameraSystems } from './camera';
+export { createPlayer, PlayerSystems } from './player';
 export * from './vehicles';
 export {
   findPlayer,
@@ -25,3 +27,8 @@ export {
   WantedSystem,
   type Offence,
 } from './wanted';
+// `Vehicle` is both the ECS component (components.ts) and the standalone class (vehicles/).
+// From this barrel, `Vehicle` stays the component (existing systems use it) and the class is
+// `DrivableVehicle`; import the class as `Vehicle` from './vehicles' directly.
+export { Vehicle } from './components';
+export { Vehicle as DrivableVehicle } from './vehicles';
