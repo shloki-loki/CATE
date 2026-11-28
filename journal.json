@@ -1421,6 +1421,15 @@
    "title": "Finished T0028: UI and HUD",
    "detail": "282,000 tokens; now review",
    "ref": "T0028"
+  },
+  {
+   "id": "J0159",
+   "at": "2026-11-28T18:32:09+05:30",
+   "by": "claude-setup",
+   "kind": "fix",
+   "title": "Removed CATE's guessed weekly token budgets; cleared gpt-1's misread weekly limit",
+   "detail": "claude-2 was blocked by a 1.5M budget while its real week was 50% used; gpt-1's 100% was a model-specific limit",
+   "ref": ""
   }
  ]
 }
