@@ -1439,6 +1439,15 @@
    "title": "Reviewing T0027: Procedural City Generation",
    "detail": "",
    "ref": "T0027"
+  },
+  {
+   "id": "J0161",
+   "at": "2026-11-28T18:32:55+05:30",
+   "by": "claude-2",
+   "kind": "claim",
+   "title": "Reviewing T0028: UI and HUD",
+   "detail": "",
+   "ref": "T0028"
   }
  ]
 }
