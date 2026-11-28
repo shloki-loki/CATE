@@ -55,17 +55,39 @@ def pct(value: Any) -> float | None:
 
 
 def window_name(key: str) -> str | None:
+    """Account-wide windows only: 'five_hour' and 'seven_day' exactly (plus a few aliases). Model-specific
+    windows such as 'seven_day_opus' are NOT the account's limit and are handled separately."""
     key = key.lower()
-    if key.startswith("five_hour") or key in ("5h", "session"):
+    if key in ("five_hour", "5h", "session"):
         return "five_hour"
-    if key.startswith("seven_day") or key in ("7d", "weekly", "week"):
+    if key in ("seven_day", "7d", "weekly", "week"):
         return "seven_day"
     return None
 
 
+def model_window(key: str) -> tuple[str, str] | None:
+    """('opus', 'seven_day') for Claude's model-specific windows like 'seven_day_opus'."""
+    key = key.lower()
+    for base in ("five_hour", "seven_day"):
+        if key.startswith(base + "_") and len(key) > len(base) + 1:
+            return key[len(base) + 1:], base
+    return None
+
+
+def _reading(used, resets) -> dict:
+    return {"used_pct": used, "resets_at": when(resets)}
+
+
 def parse(path: str | Path) -> dict:
-    """Returns {"tokens_in", "tokens_out", "cached", "cost_usd", "limits": {"five_hour": {...}, ...}}."""
-    out = {"tokens_in": 0, "tokens_out": 0, "cached": 0, "cost_usd": None, "limits": {}}
+    """Returns {"tokens_in", "tokens_out", "cached", "cost_usd", "limits": {...}, "raw": [...]}.
+
+    limits["five_hour"] / limits["seven_day"] are the ACCOUNT-WIDE windows (they decide whether the account
+    can work). limits["models"][name][window] holds model-specific windows (they only steer model choice).
+    Codex reports several rate-limit snapshots side by side (each with limit_id / limit_name /
+    normal_model_slug); only the general one is account-wide. Claude reports rateLimitType values such as
+    five_hour, seven_day, seven_day_opus, seven_day_sonnet. The last reading of each wins."""
+    out = {"tokens_in": 0, "tokens_out": 0, "cached": 0, "cost_usd": None, "limits": {}, "raw": []}
+    models: dict[str, dict] = {}
     claude_result = None
     codex_turns = []
     for event in events(path):
@@ -75,25 +97,47 @@ def parse(path: str | Path) -> dict:
         if kind == "turn.completed" and isinstance(event.get("usage"), dict):
             codex_turns.append(event["usage"])
         for where, node in walk(event):
-            # Claude: rate_limit_info {rateLimitType: "five_hour", utilization, resetsAt} or
-            # unifiedWindows {five_hour: {utilization, resetsAt}, seven_day: {...}}
+            # ---- Claude: {rateLimitType, utilization (0-1), resetsAt} or unifiedWindows {five_hour: {...}}
             if "utilization" in node:
-                name = window_name(str(node.get("rateLimitType") or (where[-1] if where else "")))
+                key = str(node.get("rateLimitType") or (where[-1] if where else ""))
                 used = pct(node.get("utilization"))
-                if name and used is not None:
-                    out["limits"][name] = {"used_pct": used, "resets_at": when(node.get("resetsAt") or node.get("resets_at"))}
-            # Codex: rate_limits {primary: {used_percent, window_minutes, resets_in_seconds|resets_at}, secondary: {...}}
-            if "used_percent" in node:
-                minutes = node.get("window_minutes")
-                name = WINDOWS.get(int(minutes)) if isinstance(minutes, (int, float)) else window_name(where[-1] if where else "")
-                if name is None and where:
-                    name = {"primary": "five_hour", "secondary": "seven_day"}.get(where[-1])
-                used = pct(node.get("used_percent"))
-                if name and used is not None:
-                    resets = node.get("resets_at")
-                    if resets is None and isinstance(node.get("resets_in_seconds"), (int, float)):
-                        resets = (now() + timedelta(seconds=node["resets_in_seconds"])).isoformat()
-                    out["limits"][name] = {"used_pct": used, "resets_at": when(resets)}
+                if used is None:
+                    continue
+                reading = _reading(used, node.get("resetsAt") or node.get("resets_at"))
+                out["raw"].append(f"claude {key}: {used}% used, resets {reading['resets_at']}")
+                if window_name(key):
+                    out["limits"][window_name(key)] = reading
+                elif model_window(key):
+                    model, base = model_window(key)
+                    models.setdefault(model, {})[base] = reading
+            # ---- Codex: a snapshot {limit_id?, limit_name?, normal_model_slug?, primary: {...}, secondary: {...}}
+            if isinstance(node.get("primary"), dict) or isinstance(node.get("secondary"), dict):
+                label = node.get("normal_model_slug") or node.get("limit_name") or node.get("metered_limit_name")
+                general = not label or str(node.get("limit_id") or "").lower() in ("codex", "default", "")
+                general = general and not node.get("normal_model_slug")
+                for side in ("primary", "secondary"):
+                    w = node.get(side)
+                    if not isinstance(w, dict) or "used_percent" not in w:
+                        continue
+                    minutes = w.get("window_minutes")
+                    name = WINDOWS.get(int(minutes)) if isinstance(minutes, (int, float)) else \
+                        {"primary": "five_hour", "secondary": "seven_day"}[side]
+                    if name is None:
+                        continue
+                    used = pct(w.get("used_percent"))
+                    resets = w.get("resets_at")
+                    if resets is None and isinstance(w.get("resets_in_seconds"), (int, float)):
+                        resets = (now() + timedelta(seconds=w["resets_in_seconds"])).isoformat()
+                    reading = _reading(used, resets)
+                    who = "account" if general else f"model {label}"
+                    out["raw"].append(f"codex {who} {name}: {used}% used, resets {reading['resets_at']}"
+                                      f" (limit_id={node.get('limit_id')}, limit_name={node.get('limit_name')})")
+                    if general:
+                        out["limits"][name] = reading
+                    else:
+                        models.setdefault(str(label), {})[name] = reading
+    if models:
+        out["limits"]["models"] = models
     if claude_result:
         u = claude_result["usage"]
         out["tokens_in"] = int(u.get("input_tokens", 0)) + int(u.get("cache_creation_input_tokens", 0))

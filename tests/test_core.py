@@ -340,3 +340,38 @@ class AutoMerge(unittest.TestCase):
         run("merge-record", "--task", "T0001", "--pr", "7", "--status", "merged", "--detail", "all passed")
         self.assertEqual(core.merge_candidates(store.load("tasks")["tasks"]), [])
         self.assertIn("Merged pull request #7", store.load("chats")["chats"][0]["messages"][-1]["text"])
+
+
+class LimitWindows(unittest.TestCase):
+    def write(self, lines):
+        Path(TMP).mkdir(exist_ok=True)
+        path = Path(TMP) / "lim.jsonl"
+        path.write_text("\n".join(json.dumps(x) for x in lines))
+        return path
+
+    def test_claude_model_windows_do_not_overwrite_the_account(self):
+        from cate import runs
+        info = runs.parse(self.write([
+            {"type": "rate_limit_event", "rate_limit_info": {"rateLimitType": "seven_day", "utilization": 0.15, "resetsAt": 1796000000}},
+            {"type": "rate_limit_event", "rate_limit_info": {"rateLimitType": "seven_day_opus", "utilization": 0.98, "resetsAt": 1796000000}},
+            {"type": "rate_limit_event", "rate_limit_info": {"rateLimitType": "five_hour", "utilization": 0.4, "resetsAt": 1795660000}},
+        ]))
+        self.assertEqual(info["limits"]["seven_day"]["used_pct"], 15.0)
+        self.assertEqual(info["limits"]["models"]["opus"]["seven_day"]["used_pct"], 98.0)
+
+    def test_codex_model_limit_does_not_block_the_account(self):
+        from cate import runs
+        info = runs.parse(self.write([{"type": "event_msg", "payload": {"type": "token_count", "rate_limits": [
+            {"limit_id": "codex", "primary": {"used_percent": 7, "window_minutes": 300}, "secondary": {"used_percent": 21, "window_minutes": 10080}},
+            {"limit_id": "astra", "limit_name": "GPT-6 Astra", "normal_model_slug": "gpt-6-astra",
+             "primary": {"used_percent": 40, "window_minutes": 300}, "secondary": {"used_percent": 100, "window_minutes": 10080}},
+        ]}}]))
+        self.assertEqual(info["limits"]["seven_day"]["used_pct"], 21.0)
+        self.assertEqual(info["limits"]["models"]["gpt-6-astra"]["seven_day"]["used_pct"], 100.0)
+
+    def test_exhausted_model_is_skipped_and_stale_readings_reset(self):
+        agent = {"id": "gpt-1", "provider": "openai", "limits": {
+            "seven_day": {"used_pct": 100, "resets_at": (now() - timedelta(hours=1)).isoformat()},
+            "models": {"gpt-6.2-astra": {"seven_day": {"used_pct": 100, "resets_at": (now() + timedelta(days=2)).isoformat()}}}}}
+        self.assertEqual(core.lowest_left(agent), 100)  # the weekly reading is past its reset
+        self.assertNotEqual(core.choose_model(agent, {"kind": "code"})[0], "gpt-6.2-astra")

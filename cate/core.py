@@ -101,16 +101,35 @@ def enabled_models(agent: dict) -> list[str]:
     return known or ([agent["model"]] if agent.get("model") else [])
 
 
+def window_used(agent: dict, window: str) -> float:
+    """% used of an account-wide window, or 0 if the reading is older than its reset time."""
+    w = (agent.get("limits") or {}).get(window) or {}
+    if not w or (w.get("resets_at") and minutes_since(w["resets_at"]) >= 0):
+        return 0.0
+    return float(w.get("used_pct") or 0)
+
+
 def lowest_left(agent: dict) -> float:
-    lim = agent.get("limits") or {}
-    return min([100 - float((lim.get(w) or {}).get("used_pct") or 0) for w in ("five_hour", "seven_day")] or [100])
+    return min(100 - window_used(agent, w) for w in ("five_hour", "seven_day"))
+
+
+def model_exhausted(agent: dict, model: str) -> bool:
+    """True if a model-specific window (e.g. Claude's seven_day_opus, a Codex per-model limit) for this model
+    is (nearly) used up and has not reset yet."""
+    for name, windows in ((agent.get("limits") or {}).get("models") or {}).items():
+        if name.lower() not in model.lower():
+            continue
+        for w in windows.values():
+            if float(w.get("used_pct") or 0) >= 97 and minutes_since(w.get("resets_at")) < 0:
+                return True
+    return False
 
 
 def choose_model(agent: dict, task: dict) -> tuple[str, str]:
     """(model id, effort) for this agent doing this task. The task's own choice wins if this agent has that
     model; then the agent's per-job default; then the best-scoring enabled model for the job, picking a
-    lighter one when the account is low on limits."""
-    allowed = enabled_models(agent)
+    lighter one when the account is low on limits. Models whose own limit is used up are skipped."""
+    allowed = [m for m in enabled_models(agent) if not model_exhausted(agent, m)] or enabled_models(agent)
     kind = task.get("kind", "other")
     wanted = task.get("model")
     if wanted and wanted in allowed:
@@ -198,7 +217,7 @@ def order(task: dict) -> tuple:
 
 
 def limit_pct(agent: dict, window: str) -> float:
-    return float(((agent.get("limits") or {}).get(window) or {}).get("used_pct") or 0)
+    return window_used(agent, window)
 
 
 def plan_dispatch(agents: list[dict], tasks: list[dict], ledger: dict) -> list[dict]:
@@ -259,7 +278,9 @@ def record_run(agent_id: str, tokens_in: int, tokens_out: int, cached: int, limi
         agents = store.load("agents")
         agent = store.find(agents["agents"], agent_id)
         if agent:
-            agent["limits"] = {**(agent.get("limits") or {}), **limits, "at": now_iso()}
+            # A run's readings replace the old ones (keeping a window the CLI did not report this time).
+            merged = {k: v for k, v in (agent.get("limits") or {}).items() if k in ("five_hour", "seven_day")}
+            agent["limits"] = {**merged, **limits, "at": now_iso()}
             store.save("agents", agents)
 
 

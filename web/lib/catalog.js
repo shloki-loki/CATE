@@ -37,9 +37,16 @@ export function enabledModels(catalog, agent) {
   return known.length ? known : (agent.model ? [agent.model] : []);
 }
 
+// % used of an account-wide window, or 0 once its reset time has passed (the reading is stale).
+export function windowUsed(agent, key) {
+  const w = (agent.limits || {})[key];
+  if (!w || w.used_pct === undefined) return 0;
+  if (w.resets_at && new Date(w.resets_at).getTime() <= Date.now()) return 0;
+  return Number(w.used_pct) || 0;
+}
+
 export function lowestLeft(agent) {
-  const l = agent.limits || {};
-  return Math.min(...['five_hour', 'seven_day'].map((w) => 100 - Number(l[w]?.used_pct || 0)), 100);
+  return Math.min(...['five_hour', 'seven_day'].map((w) => 100 - windowUsed(agent, w)), 100);
 }
 
 export function chooseModel(catalog, agent, kind, wanted) {

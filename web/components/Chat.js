@@ -146,6 +146,7 @@ function UsagePanel({ usage, onClose }) {
           </div>
           <div className="limits">
             {r.windows.map((w) => <Limit key={w.label} w={w} />)}
+            {(r.modelLimits || []).map((w) => <Limit key={w.label} w={{ ...w, detail: 'Limit for this model only; other models on this account are not affected' }} />)}
             {r.budgetLeft !== null ? <Limit w={{ label: 'Budget', left: r.budgetLeft, detail: `${r.tokens.toLocaleString()} tokens used this week` }} /> : null}
             {!r.windows.length && r.budgetLeft === null ? <span className="faint" style={{ fontSize: 12.5 }}>{r.runner === 'api' ? 'No daily allowance known.' : 'Limits appear after its next run.'}</span> : null}
           </div>

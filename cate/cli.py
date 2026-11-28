@@ -273,7 +273,10 @@ def cmd_usage(a):
     info = runs.parse(a.stream)
     store.transact(lambda: core.record_run(a.agent, info["tokens_in"], info["tokens_out"], info["cached"], info["limits"]),
                    f"usage: {a.agent}")
-    lims = ", ".join(f"{k} {v['used_pct']}% (resets {v.get('resets_at') or '?'})" for k, v in info["limits"].items())
+    for line in info.get("raw", []):
+        print("  raw reading:", line)
+    lims = ", ".join(f"{k} {v['used_pct']}% (resets {v.get('resets_at') or '?'})" for k, v in info["limits"].items()
+                     if k in ("five_hour", "seven_day"))
     print(f"{a.agent}: {info['tokens_in']:,} in, {info['tokens_out']:,} out, {info['cached']:,} cached"
           + (f"; limits: {lims}" if lims else "; no limit readings in the output"))
 
